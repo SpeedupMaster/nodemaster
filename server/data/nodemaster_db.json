@@ -2,27 +2,28 @@
   "nodes": [
     {
       "id": "node-hk-01",
-      "name": "HK-BGP-Reality-01",
+      "name": "HK-BGP-Direct-01",
       "ip": "103.145.75.22",
       "port": 443,
-      "type": "exit",
+      "type": "direct",
       "protocol": "vless-reality",
       "status": "online",
       "country": "HK",
       "countryName": "中国香港",
       "token": "token_hk_8848",
-      "trafficUsedBytes": 230901107411,
+      "trafficUsedBytes": 184598512403,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 0,
-      "downlinkSpeedBytes": 0,
-      "cpuUsage": 46.9,
+      "uplinkSpeedBytes": 1443966,
+      "downlinkSpeedBytes": 5648801,
+      "cpuUsage": 17.6,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
       "tags": [
         "香港",
-        "原生IP",
-        "流媒体解锁"
+        "主力直连",
+        "低延迟BGP",
+        "千兆带宽"
       ],
       "reality": {
         "uuid": "3d5f470a-7e3e-4b6e-8d5c-9d6cfba61a91",
@@ -34,69 +35,33 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789399596533,
-      "createdAt": 1788091505735
+      "lastSeen": 1789399668352,
+      "createdAt": 1788103641428
     },
     {
-      "id": "node-us-02",
-      "name": "US-LAX-AI-Ready",
-      "ip": "154.23.189.90",
-      "port": 443,
-      "type": "exit",
-      "protocol": "vless-reality",
-      "status": "online",
-      "country": "US",
-      "countryName": "美国洛杉矶",
-      "token": "token_us_8848",
-      "trafficUsedBytes": 429738524938,
-      "trafficLimitBytes": 2147483648000,
-      "uplinkSpeedBytes": 0,
-      "downlinkSpeedBytes": 0,
-      "cpuUsage": 63.3,
-      "memUsage": 22.4,
-      "diskUsage": 41,
-      "latencyMs": 145,
-      "tags": [
-        "美国",
-        "OpenAI/Claude专线",
-        "超大带宽"
-      ],
-      "reality": {
-        "uuid": "7b2c9182-3d4e-5f60-7a8b-9c0d1e2f3a4b",
-        "flow": "xtls-rprx-vision",
-        "serverName": "www.apple.com",
-        "publicKey": "pX9q42Lm7n8kYm12Zp3wXq4Rt5Y6u7I8o9P0a1S2d3C",
-        "privateKey": "1JLBx1ZqLf8JixE5KQDdLqyqy9RXsGCksrkitpNkeVh",
-        "shortId": "fa5c1c0e44d65fa5",
-        "fingerprint": "safari",
-        "dest": "www.apple.com:443"
-      },
-      "lastSeen": 1789399596534,
-      "createdAt": 1787659505735
-    },
-    {
-      "id": "node-jp-03",
-      "name": "JP-TYO-Premium",
+      "id": "node-jp-02",
+      "name": "JP-TYO-Direct-02",
       "ip": "198.13.44.112",
       "port": 443,
-      "type": "exit",
+      "type": "direct",
       "protocol": "vless-reality",
       "status": "online",
       "country": "JP",
       "countryName": "日本东京",
       "token": "token_jp_8848",
-      "trafficUsedBytes": 312969827892,
+      "trafficUsedBytes": 312054781464,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 0,
-      "downlinkSpeedBytes": 0,
-      "cpuUsage": 18.8,
+      "uplinkSpeedBytes": 756429,
+      "downlinkSpeedBytes": 2932230,
+      "cpuUsage": 21,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
       "tags": [
         "日本",
-        "软银线路",
-        "Netflix解锁"
+        "软银直连",
+        "主力大带宽",
+        "双向CN2"
       ],
       "reality": {
         "uuid": "5e8d9c12-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
@@ -108,48 +73,99 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789399596534,
-      "createdAt": 1788523505735
+      "lastSeen": 1789399668353,
+      "createdAt": 1788535641428
     },
     {
-      "id": "node-cn-transit-01",
-      "name": "CN-GZ-BGP-中转入口",
-      "ip": "120.232.18.99",
-      "port": 10443,
-      "type": "transit",
-      "protocol": "dokodemo",
+      "id": "node-us-unlock-01",
+      "name": "US-Residential-Unlock-01",
+      "ip": "154.23.189.90",
+      "port": 443,
+      "type": "unlock",
+      "protocol": "vless-reality",
       "status": "online",
-      "country": "CN",
-      "countryName": "中国广州 (BGP入口)",
-      "token": "token_cn_transit_8848",
-      "trafficUsedBytes": 253085453638,
-      "trafficLimitBytes": 3221225472000,
-      "uplinkSpeedBytes": 0,
-      "downlinkSpeedBytes": 0,
-      "cpuUsage": 40.5,
-      "memUsage": 19.8,
-      "diskUsage": 22,
-      "latencyMs": 12,
+      "country": "US",
+      "countryName": "美国洛杉矶 (原生住宅)",
+      "token": "token_us_unlock_8848",
+      "trafficUsedBytes": 129526051999,
+      "trafficLimitBytes": 2147483648000,
+      "uplinkSpeedBytes": 401429,
+      "downlinkSpeedBytes": 2148831,
+      "cpuUsage": 11.6,
+      "memUsage": 22.4,
+      "diskUsage": 41,
+      "latencyMs": 145,
       "tags": [
-        "国内入口",
-        "三网优化",
-        "低延迟转发"
+        "美国家宽",
+        "原生双ISP",
+        "OpenAI/Claude",
+        "Netflix/Disney+"
       ],
-      "lastSeen": 1789399596534,
-      "createdAt": 1788696305735
+      "reality": {
+        "uuid": "7b2c9182-3d4e-5f60-7a8b-9c0d1e2f3a4b",
+        "flow": "xtls-rprx-vision",
+        "serverName": "www.apple.com",
+        "publicKey": "pX9q42Lm7n8kYm12Zp3wXq4Rt5Y6u7I8o9P0a1S2d3C",
+        "privateKey": "1JLBx1ZqLf8JixE5KQDdLqyqy9RXsGCksrkitpNkeVh",
+        "shortId": "fa5c1c0e44d65fa5",
+        "fingerprint": "safari",
+        "dest": "www.apple.com:443"
+      },
+      "lastSeen": 1789399668353,
+      "createdAt": 1787671641428
+    },
+    {
+      "id": "node-uk-unlock-02",
+      "name": "UK-London-Unlock-02",
+      "ip": "185.220.101.55",
+      "port": 443,
+      "type": "unlock",
+      "protocol": "vless-reality",
+      "status": "online",
+      "country": "GB",
+      "countryName": "英国伦敦 (原生IP)",
+      "token": "token_uk_unlock_8848",
+      "trafficUsedBytes": 85214345928,
+      "trafficLimitBytes": 1073741824000,
+      "uplinkSpeedBytes": 174323,
+      "downlinkSpeedBytes": 954639,
+      "cpuUsage": 9.5,
+      "memUsage": 19,
+      "diskUsage": 25,
+      "latencyMs": 180,
+      "tags": [
+        "英国原生",
+        "BBC iPlayer",
+        "全流媒体解锁"
+      ],
+      "reality": {
+        "uuid": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+        "flow": "xtls-rprx-vision",
+        "serverName": "www.icloud.com",
+        "publicKey": "mN8b73Vv6c5xZz43Aa2sSs1Dd0Ff9Gg8Hh7Jj6Kk5Ll",
+        "privateKey": "3LNDy3BsNh0LlzG7MSEfNszsz1TZuIEmtmsjvRPmfXj",
+        "shortId": "c1c0e44d6fa55fa5",
+        "fingerprint": "chrome",
+        "dest": "www.icloud.com:443"
+      },
+      "lastSeen": 1789399668353,
+      "createdAt": 1788708441428
     }
   ],
   "relays": [
     {
-      "id": "relay-gz-hk",
-      "name": "广港专线 (广州BGP → 香港01)",
-      "transitNodeId": "node-cn-transit-01",
-      "exitNodeId": "node-hk-01",
-      "transitPort": 10443,
+      "id": "relay-hk-us-ai",
+      "name": "港美链式解锁 (香港主力 ➔ 美国家宽 AI/流媒体)",
+      "mainNodeId": "node-hk-01",
+      "unlockNodeId": "node-us-unlock-01",
+      "mode": "ai_media",
+      "transitNodeId": "node-hk-01",
+      "exitNodeId": "node-us-unlock-01",
+      "transitPort": 443,
       "status": "active",
-      "trafficBytes": 154800000000,
-      "latencyMs": 22,
-      "createdAt": 1788782705735
+      "trafficBytes": 85400000000,
+      "latencyMs": 142,
+      "createdAt": 1788794841428
     }
   ],
   "subscriptions": [
@@ -161,7 +177,7 @@
       "trafficLimitBytes": 0,
       "trafficUsedBytes": 674520394800,
       "expireAt": 0,
-      "createdAt": 1788177905735
+      "createdAt": 1788190041428
     }
   ],
   "config": {
