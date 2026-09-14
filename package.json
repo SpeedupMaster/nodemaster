@@ -1,0 +1,14 @@
+{
+  "name": "nodemaster",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-VPS Node Management and Traffic Shunting Control Panel",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./web\" --filter \"./server\" dev",
+    "build": "pnpm --filter \"./server\" build && pnpm --filter \"./web\" build",
+    "start": "pnpm --filter \"./server\" start"
+  },
+  "keywords": ["vps", "xray", "proxy", "clash", "mihomo", "singbox", "hallmark", "gsap"],
+  "author": "Antigravity",
+  "license": "MIT"
+}

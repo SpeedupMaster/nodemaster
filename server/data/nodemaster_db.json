@@ -1,0 +1,176 @@
+{
+  "nodes": [
+    {
+      "id": "node-hk-01",
+      "name": "HK-BGP-Reality-01",
+      "ip": "103.145.75.22",
+      "port": 443,
+      "type": "exit",
+      "protocol": "vless-reality",
+      "status": "online",
+      "country": "HK",
+      "countryName": "中国香港",
+      "token": "token_hk_8848",
+      "trafficUsedBytes": 230901107411,
+      "trafficLimitBytes": 1073741824000,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 38.8,
+      "memUsage": 28.2,
+      "diskUsage": 35.1,
+      "latencyMs": 38,
+      "tags": [
+        "香港",
+        "原生IP",
+        "流媒体解锁"
+      ],
+      "reality": {
+        "uuid": "3d5f470a-7e3e-4b6e-8d5c-9d6cfba61a91",
+        "flow": "xtls-rprx-vision",
+        "serverName": "www.microsoft.com",
+        "publicKey": "kM9f83Kk4r7lYm89Zp0wXq5Rt6Y7u8I9o0P1a2S3d4E",
+        "privateKey": "0HYBx0ZqLf7JixE4KQDdLqyqy8RXsGCksrkitpNkeVg",
+        "shortId": "e44d6fa55fa5c1c0",
+        "fingerprint": "chrome",
+        "dest": "www.microsoft.com:443"
+      },
+      "lastSeen": 1789397813815,
+      "createdAt": 1788091505735
+    },
+    {
+      "id": "node-us-02",
+      "name": "US-LAX-AI-Ready",
+      "ip": "154.23.189.90",
+      "port": 443,
+      "type": "exit",
+      "protocol": "vless-reality",
+      "status": "online",
+      "country": "US",
+      "countryName": "美国洛杉矶",
+      "token": "token_us_8848",
+      "trafficUsedBytes": 429738524938,
+      "trafficLimitBytes": 2147483648000,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 42.8,
+      "memUsage": 22.4,
+      "diskUsage": 41,
+      "latencyMs": 145,
+      "tags": [
+        "美国",
+        "OpenAI/Claude专线",
+        "超大带宽"
+      ],
+      "reality": {
+        "uuid": "7b2c9182-3d4e-5f60-7a8b-9c0d1e2f3a4b",
+        "flow": "xtls-rprx-vision",
+        "serverName": "www.apple.com",
+        "publicKey": "pX9q42Lm7n8kYm12Zp3wXq4Rt5Y6u7I8o9P0a1S2d3C",
+        "privateKey": "1JLBx1ZqLf8JixE5KQDdLqyqy9RXsGCksrkitpNkeVh",
+        "shortId": "fa5c1c0e44d65fa5",
+        "fingerprint": "safari",
+        "dest": "www.apple.com:443"
+      },
+      "lastSeen": 1789397813815,
+      "createdAt": 1787659505735
+    },
+    {
+      "id": "node-jp-03",
+      "name": "JP-TYO-Premium",
+      "ip": "198.13.44.112",
+      "port": 443,
+      "type": "exit",
+      "protocol": "vless-reality",
+      "status": "online",
+      "country": "JP",
+      "countryName": "日本东京",
+      "token": "token_jp_8848",
+      "trafficUsedBytes": 312969827892,
+      "trafficLimitBytes": 1073741824000,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 27.2,
+      "memUsage": 31,
+      "diskUsage": 29.5,
+      "latencyMs": 65,
+      "tags": [
+        "日本",
+        "软银线路",
+        "Netflix解锁"
+      ],
+      "reality": {
+        "uuid": "5e8d9c12-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
+        "flow": "xtls-rprx-vision",
+        "serverName": "addons.mozilla.org",
+        "publicKey": "rY8z53Nn9o0lZn23Aq4xYr5Su6Z7v8J9p0Q1b2T3e4D",
+        "privateKey": "2KMCx2ArMg9KjyF6LREeMrzrz0SYtHDltrliuQOleWi",
+        "shortId": "6fa55fa5c1c0e44d",
+        "fingerprint": "firefox",
+        "dest": "addons.mozilla.org:443"
+      },
+      "lastSeen": 1789397813816,
+      "createdAt": 1788523505735
+    },
+    {
+      "id": "node-cn-transit-01",
+      "name": "CN-GZ-BGP-中转入口",
+      "ip": "120.232.18.99",
+      "port": 10443,
+      "type": "transit",
+      "protocol": "dokodemo",
+      "status": "online",
+      "country": "CN",
+      "countryName": "中国广州 (BGP入口)",
+      "token": "token_cn_transit_8848",
+      "trafficUsedBytes": 253085453638,
+      "trafficLimitBytes": 3221225472000,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 38.2,
+      "memUsage": 19.8,
+      "diskUsage": 22,
+      "latencyMs": 12,
+      "tags": [
+        "国内入口",
+        "三网优化",
+        "低延迟转发"
+      ],
+      "lastSeen": 1789397813816,
+      "createdAt": 1788696305735
+    }
+  ],
+  "relays": [
+    {
+      "id": "relay-gz-hk",
+      "name": "广港专线 (广州BGP → 香港01)",
+      "transitNodeId": "node-cn-transit-01",
+      "exitNodeId": "node-hk-01",
+      "transitPort": 10443,
+      "status": "active",
+      "trafficBytes": 154800000000,
+      "latencyMs": 22,
+      "createdAt": 1788782705735
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": "sub-default",
+      "name": "默认全量节点订阅",
+      "token": "nodemaster_universal_sub_token_7788",
+      "nodeIds": [],
+      "trafficLimitBytes": 0,
+      "trafficUsedBytes": 674520394800,
+      "expireAt": 0,
+      "createdAt": 1788177905735
+    }
+  ],
+  "config": {
+    "port": 3880,
+    "host": "0.0.0.0",
+    "jwtSecret": "nm_secret_key_8848_secure",
+    "panelUrl": "http://127.0.0.1:3880",
+    "autoCircuitBreaker": true,
+    "circuitBreakerThresholdPct": 98,
+    "trafficResetDay": 1
+  }
+}

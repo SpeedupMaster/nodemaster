@@ -1,0 +1,46 @@
+﻿/* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
+
+:root {
+  /* 1. Base Paper Surfaces (Cool Engineered Dark Slate) */
+  --color-paper: oklch(14% 0.012 250);
+  --color-paper-2: oklch(18% 0.014 250);
+  --color-paper-3: oklch(23% 0.016 250);
+  --color-paper-hover: oklch(21% 0.015 250);
+  --color-paper-active: oklch(25% 0.018 250);
+
+  /* 2. Hairlines and Structural Rules */
+  --color-rule: oklch(28% 0.014 250);
+  --color-rule-subtle: oklch(21% 0.009 250);
+  --color-rule-active: oklch(42% 0.02 250);
+
+  /* 3. Ink and Typography */
+  --color-ink: oklch(96% 0.006 250);
+  --color-ink-secondary: oklch(78% 0.012 250);
+  --color-neutral: oklch(62% 0.012 250);
+  --color-muted: oklch(48% 0.012 250);
+
+  /* 4. Signal Accents (Occupies <= 3% viewport) */
+  --color-accent: oklch(68% 0.19 240);
+  --color-accent-subtle: oklch(25% 0.06 240);
+  --color-accent-hover: oklch(74% 0.20 240);
+  --color-focus: oklch(70% 0.20 240);
+
+  /* 5. Telemetry State Tokens */
+  --color-status-online: oklch(72% 0.18 150);
+  --color-status-online-bg: oklch(22% 0.05 150);
+  --color-status-warning: oklch(78% 0.17 75);
+  --color-status-warning-bg: oklch(24% 0.05 75);
+  --color-status-danger: oklch(65% 0.22 25);
+  --color-status-danger-bg: oklch(23% 0.06 25);
+
+  /* 6. Typography Scale & Fonts */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Fira Code', 'JetBrains Mono', monospace;
+
+  /* 7. Spacing & Radii (Strict 4pt scale & 6-8px tight engineered radii) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+}

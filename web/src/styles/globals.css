@@ -1,0 +1,62 @@
+﻿@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: var(--color-rule);
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    letter-spacing: -0.015em;
+  }
+
+  /* Hallmark Rule: Display type is always Roman, never italic */
+  h1, h2, h3, h4, h5, h6 {
+    font-style: normal;
+    letter-spacing: -0.025em;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-paper);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-rule);
+    border-radius: var(--radius-sm);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-rule-active);
+  }
+}
+
+/* 8-state component standard helper classes */
+.interactive-surface {
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.interactive-surface:hover {
+  background-color: var(--color-paper-hover);
+  border-color: var(--color-rule-active);
+}
+
+.interactive-surface:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.interactive-surface:active {
+  background-color: var(--color-paper-active);
+  transform: translateY(1px);
+}
