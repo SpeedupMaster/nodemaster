@@ -16,7 +16,7 @@ apiRouter.get("/nodes", (req, res) => {
 });
 
 apiRouter.post("/nodes", (req, res) => {
-  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags, sni, serverName, ssMethod, ssPassword } = req.body;
+  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags, sni, serverName, ssMethod, ssPassword, bandwidthMbps, trafficResetDay } = req.body;
   
   if (!name || !ip) {
     return res.status(400).json({ success: false, message: "名称与 IP 为必填项" });
@@ -64,6 +64,8 @@ apiRouter.post("/nodes", (req, res) => {
     latencyMs: isUnlock ? 140 : 45,
     reality,
     shadowsocks,
+    bandwidthMbps: Number(bandwidthMbps) || 1000,
+    trafficResetDay: Math.min(31, Math.max(1, Number(trafficResetDay) || 1)),
     lastSeen: Date.now(),
     createdAt: Date.now(),
     tags: tags && tags.length > 0 ? tags : defaultTags,

@@ -11,11 +11,11 @@
       "country": "HK",
       "countryName": "中国香港",
       "token": "token_hk_8848",
-      "trafficUsedBytes": 185388017090,
+      "trafficUsedBytes": 185403576197,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 17146,
-      "downlinkSpeedBytes": 67193,
-      "cpuUsage": 6.7,
+      "uplinkSpeedBytes": 127,
+      "downlinkSpeedBytes": 647,
+      "cpuUsage": 15.9,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,8 +35,10 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789400776035,
-      "createdAt": 1788104083984
+      "lastSeen": 1789402536269,
+      "createdAt": 1788104083984,
+      "bandwidthMbps": 1000,
+      "trafficResetDay": 1
     },
     {
       "id": "node-jp-02",
@@ -49,11 +51,11 @@
       "country": "JP",
       "countryName": "日本东京",
       "token": "token_jp_8848",
-      "trafficUsedBytes": 313262625606,
+      "trafficUsedBytes": 317837589627,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 139287,
-      "downlinkSpeedBytes": 540147,
-      "cpuUsage": 23.4,
+      "uplinkSpeedBytes": 611008,
+      "downlinkSpeedBytes": 2372573,
+      "cpuUsage": 16.8,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -73,8 +75,10 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789400776036,
-      "createdAt": 1788536083984
+      "lastSeen": 1789402536270,
+      "createdAt": 1788536083984,
+      "bandwidthMbps": 1000,
+      "trafficResetDay": 1
     },
     {
       "id": "node-us-unlock-01",
@@ -87,11 +91,11 @@
       "country": "US",
       "countryName": "美国洛杉矶 (原生住宅)",
       "token": "token_us_unlock_8848",
-      "trafficUsedBytes": 130426648306,
+      "trafficUsedBytes": 130775145688,
       "trafficLimitBytes": 2147483648000,
-      "uplinkSpeedBytes": 58782,
-      "downlinkSpeedBytes": 314841,
-      "cpuUsage": 13.3,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 23,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -105,8 +109,10 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789400776036,
-      "createdAt": 1787672083984
+      "lastSeen": 1789402536271,
+      "createdAt": 1787672083984,
+      "bandwidthMbps": 500,
+      "trafficResetDay": 15
     },
     {
       "id": "node-uk-unlock-02",
@@ -119,11 +125,11 @@
       "country": "GB",
       "countryName": "英国伦敦 (原生IP)",
       "token": "token_uk_unlock_8848",
-      "trafficUsedBytes": 85467181581,
+      "trafficUsedBytes": 85479834348,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 14693,
-      "downlinkSpeedBytes": 80651,
-      "cpuUsage": 34.3,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 149,
+      "cpuUsage": 59.6,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -137,8 +143,10 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789400776037,
-      "createdAt": 1788708883984
+      "lastSeen": 1789402536271,
+      "createdAt": 1788708883984,
+      "bandwidthMbps": 500,
+      "trafficResetDay": 28
     }
   ],
   "relays": [

@@ -29,6 +29,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
     btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))
   );
   const [trafficLimitGB, setTrafficLimitGB] = useState("1000");
+  const [bandwidthMbps, setBandwidthMbps] = useState("1000");
+  const [trafficResetDay, setTrafficResetDay] = useState("1");
   const [tagsStr, setTagsStr] = useState("主力直连, 原生IP, 千兆带宽");
   const [submitting, setSubmitting] = useState(false);
 
@@ -72,6 +74,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         country,
         countryName,
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
+        bandwidthMbps: Number(bandwidthMbps) || 1000,
+        trafficResetDay: Number(trafficResetDay) || 1,
         tags,
         sni: type === "direct" ? sni : undefined,
         ssMethod: type === "unlock" ? ssMethod : undefined,
@@ -277,7 +281,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
         </div>
 
-        {/* Region & Traffic Quota */}
+        {/* Region & Bandwidth */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
@@ -295,14 +299,93 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
-              月度流量配额 (GB)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-ink-muted">
+                标称峰值带宽
+              </label>
+              <div className="flex items-center gap-1">
+                {[
+                  { label: "500M", val: "500" },
+                  { label: "1Gbps", val: "1000" },
+                  { label: "2.5G", val: "2500" },
+                  { label: "10G", val: "10000" },
+                ].map((p) => (
+                  <button
+                    key={p.val}
+                    type="button"
+                    onClick={() => setBandwidthMbps(p.val)}
+                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Input
+              type="number"
+              value={bandwidthMbps}
+              onChange={(e) => setBandwidthMbps(e.target.value)}
+              placeholder="1000"
+              suffixText="Mbps"
+            />
+          </div>
+        </div>
+
+        {/* Traffic Quota & Reset Day */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-ink-muted">
+                月度流量配额
+              </label>
+              <div className="flex items-center gap-1">
+                {["500", "1000", "2000", "5000"].map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setTrafficLimitGB(q)}
+                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
+                  >
+                    {Number(q) >= 1000 ? `${Number(q) / 1000}T` : `${q}G`}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Input
               type="number"
               value={trafficLimitGB}
               onChange={(e) => setTrafficLimitGB(e.target.value)}
+              placeholder="1000"
               suffixText="GB"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-ink-muted">
+                流量重置日期 (账单日)
+              </label>
+              <div className="flex items-center gap-1">
+                {["1", "15", "28"].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setTrafficResetDay(d)}
+                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
+                  >
+                    每月{d}日
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Input
+              type="number"
+              min={1}
+              max={31}
+              value={trafficResetDay}
+              onChange={(e) => setTrafficResetDay(e.target.value)}
+              placeholder="1"
+              suffixText="日/月"
             />
           </div>
         </div>

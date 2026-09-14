@@ -70,7 +70,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                 {node.countryName}
               </span>
             </div>
-            <div className="text-xs font-mono text-ink-muted mt-0.5 flex items-center gap-1.5">
+            <div className="text-xs font-mono text-ink-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span>{node.ip}:{node.port}</span>
               <span>•</span>
               <span
@@ -80,6 +80,16 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               >
                 {node.protocol === "shadowsocks" ? "Shadowsocks" : node.protocol}
               </span>
+              {node.bandwidthMbps && (
+                <>
+                  <span>•</span>
+                  <span className="text-emerald-400/90 text-[11px] font-medium">
+                    {node.bandwidthMbps >= 1000
+                      ? `${node.bandwidthMbps / 1000} Gbps`
+                      : `${node.bandwidthMbps} Mbps`}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -202,7 +212,12 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         {/* Traffic Progress */}
         <div className="mt-4">
           <div className="flex justify-between text-[11px] font-mono text-ink-muted mb-1">
-            <span>当月流量消耗</span>
+            <span>
+              当月流量消耗
+              <span className="text-ink-muted/70 text-[10px] ml-1">
+                (每月{node.trafficResetDay || 1}日重置)
+              </span>
+            </span>
             <span className={trafficPct > 90 ? "text-status-danger font-semibold" : "text-ink"}>
               {usedGB} / {limitGB} GB ({trafficPct.toFixed(1)}%)
             </span>

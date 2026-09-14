@@ -46,6 +46,8 @@ const INITIAL_NODES: NodeItem[] = [
     diskUsage: 35.1,
     latencyMs: 38,
     tags: ["香港", "主力直连", "低延迟BGP", "千兆带宽"],
+    bandwidthMbps: 1000,
+    trafficResetDay: 1,
     reality: {
       uuid: "3d5f470a-7e3e-4b6e-8d5c-9d6cfba61a91",
       flow: "xtls-rprx-vision",
@@ -79,6 +81,8 @@ const INITIAL_NODES: NodeItem[] = [
     diskUsage: 29.5,
     latencyMs: 65,
     tags: ["日本", "软银直连", "主力大带宽", "双向CN2"],
+    bandwidthMbps: 1000,
+    trafficResetDay: 1,
     reality: {
       uuid: "5e8d9c12-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
       flow: "xtls-rprx-vision",
@@ -112,6 +116,8 @@ const INITIAL_NODES: NodeItem[] = [
     diskUsage: 41.0,
     latencyMs: 145,
     tags: ["美国家宽", "原生双ISP", "Shadowsocks", "OpenAI/流媒体全解锁"],
+    bandwidthMbps: 500,
+    trafficResetDay: 15,
     shadowsocks: {
       method: "2022-blake3-aes-128-gcm",
       password: "u0J9xK1L2m3N4o5P6q7R8s=="
@@ -139,6 +145,8 @@ const INITIAL_NODES: NodeItem[] = [
     diskUsage: 25.0,
     latencyMs: 180,
     tags: ["英国原生", "Shadowsocks", "BBC iPlayer", "全流媒体解锁"],
+    bandwidthMbps: 500,
+    trafficResetDay: 28,
     shadowsocks: {
       method: "2022-blake3-aes-128-gcm",
       password: "v1K0yL2M3n4O5p6Q7r8S9t=="

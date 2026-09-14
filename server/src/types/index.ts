@@ -39,6 +39,8 @@ export interface NodeItem {
   createdAt: number;
   tags: string[];
   sni?: string;
+  bandwidthMbps?: number;
+  trafficResetDay?: number;
 }
 
 export interface RelayLink {
