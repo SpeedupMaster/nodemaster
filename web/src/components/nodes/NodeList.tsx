@@ -1,10 +1,11 @@
-﻿import React, { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { NodeItem } from "../../types";
 import { NodeCard } from "./NodeCard";
 import { ConfigModal } from "./ConfigModal";
 import { InstallModal } from "./InstallModal";
+import { Input } from "../common/Input";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 
 gsap.registerPlugin(useGSAP);
@@ -84,14 +85,12 @@ export const NodeList: React.FC<NodeListProps> = ({
           ))}
         </div>
 
-        <div className="relative w-full sm:w-64">
-          <MagnifyingGlass className="w-3.5 h-3.5 text-ink-muted absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
+        <div className="w-full sm:w-64">
+          <Input
+            prefixIcon={<MagnifyingGlass className="w-3.5 h-3.5" />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索节点名称、IP 或标签..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-md bg-paper border border-rule text-xs text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent font-mono"
           />
         </div>
       </div>

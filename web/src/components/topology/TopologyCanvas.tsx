@@ -1,9 +1,11 @@
-﻿import React, { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { NodeItem, RelayLink } from "../../types";
 import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
+import { Select } from "../common/Select";
+import { Input } from "../common/Input";
 import {
   ShareNetwork,
   Plus,
@@ -265,13 +267,11 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               链路名称 *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="例如: 广港BGP专线01"
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
             />
           </div>
 
@@ -279,30 +279,28 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               前置中转机 (入口节点) *
             </label>
-            <select
+            <Select
+              options={transitNodes.map((n) => ({
+                value: n.id,
+                label: `${n.name} (${n.ip})`,
+                badge: n.countryName,
+              }))}
               value={transitId}
-              onChange={(e) => setTransitId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
-            >
-              {transitNodes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.name} ({n.ip}) - {n.countryName}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setTransitId(val)}
+            />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
               前置机中转转发端口 *
             </label>
-            <input
+            <Input
               type="number"
               required
               value={port}
               onChange={(e) => setPort(e.target.value)}
               placeholder="10443"
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
+              suffixText="端口"
             />
           </div>
 
@@ -310,17 +308,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               目标落地机 (海外出口节点) *
             </label>
-            <select
+            <Select
+              options={exitNodes.map((n) => ({
+                value: n.id,
+                label: `${n.name} (${n.ip}:${n.port})`,
+                badge: n.countryName,
+              }))}
               value={exitId}
-              onChange={(e) => setExitId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
-            >
-              {exitNodes.map((n) => (
-                <option key={n.id} value={n.id}>
-                  {n.name} ({n.ip}:{n.port}) - {n.countryName}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setExitId(val)}
+            />
           </div>
 
           <div className="pt-4 border-t border-rule flex items-center justify-end gap-3">

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
+import { Select, SelectOption } from "../common/Select";
+import { Input } from "../common/Input";
 import { NodeItem } from "../../types";
 
 interface AddNodeModalProps {
@@ -61,13 +63,28 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
     }
   };
 
-  const countries = [
-    { code: "HK", name: "中国香港" },
-    { code: "JP", name: "日本东京" },
-    { code: "US", name: "美国洛杉矶" },
-    { code: "SG", name: "新加坡" },
-    { code: "DE", name: "德国法兰克福" },
-    { code: "CN", name: "中国内地 (中转)" },
+  const typeOptions: SelectOption[] = [
+    {
+      value: "exit",
+      label: "海外落地机 (Exit Node)",
+      desc: "部署 VLESS-Reality 代理服务，作为网络访问出口",
+      badge: "Reality",
+    },
+    {
+      value: "transit",
+      label: "前置中转机 (Transit Node)",
+      desc: "部署 Dokodemo-door 转发，作为国内或前置优化入口",
+      badge: "中继",
+    },
+  ];
+
+  const countryOptions: SelectOption[] = [
+    { value: "HK", label: "中国香港 (HK)", badge: "香港" },
+    { value: "JP", label: "日本东京 (JP)", badge: "日本" },
+    { value: "US", label: "美国洛杉矶 (US)", badge: "美国" },
+    { value: "SG", label: "新加坡 (SG)", badge: "新加坡" },
+    { value: "DE", label: "德国法兰克福 (DE)", badge: "欧洲" },
+    { value: "CN", label: "中国内地 (CN)", badge: "中转入口" },
   ];
 
   return (
@@ -84,13 +101,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           <label className="block text-xs font-medium text-ink-muted mb-1">
             节点标识名称 *
           </label>
-          <input
-            type="text"
+          <Input
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="例如: HK-BGP-Reality-02"
-            className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
           />
         </div>
 
@@ -100,24 +115,22 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               公网 IP 地址 *
             </label>
-            <input
-              type="text"
+            <Input
               required
               value={ip}
               onChange={(e) => setIp(e.target.value)}
               placeholder="例如: 103.145.75.88"
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
               服务端口
             </label>
-            <input
+            <Input
               type="number"
               value={port}
               onChange={(e) => setPort(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
+              suffixText="端口"
             />
           </div>
         </div>
@@ -128,40 +141,31 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               节点拓扑类型
             </label>
-            <select
+            <Select
+              options={typeOptions}
               value={type}
-              onChange={(e) => {
-                const t = e.target.value as "exit" | "transit";
+              onChange={(val) => {
+                const t = val as "exit" | "transit";
                 setType(t);
                 if (t === "transit") setProtocol("dokodemo");
                 else setProtocol("vless-reality");
               }}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
-            >
-              <option value="exit">海外落地机 (Exit Node)</option>
-              <option value="transit">前置中转机 (Transit Node)</option>
-            </select>
+            />
           </div>
 
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
               地理位置
             </label>
-            <select
+            <Select
+              options={countryOptions}
               value={country}
-              onChange={(e) => {
-                const c = countries.find((item) => item.code === e.target.value);
-                setCountry(e.target.value);
-                if (c) setCountryName(c.name);
+              onChange={(val) => {
+                const c = countryOptions.find((item) => item.value === val);
+                setCountry(val);
+                if (c) setCountryName(c.label.split(" ")[0]);
               }}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
-            >
-              {countries.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name} ({c.code})
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
@@ -171,11 +175,9 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               底层协议
             </label>
-            <input
-              type="text"
+            <Input
               disabled
               value={type === "transit" ? "Dokodemo-door (中继转发)" : "VLESS-Reality (Vision/XTLS)"}
-              className="w-full px-3 py-2 rounded-md bg-paper-3 border border-rule text-ink-secondary text-xs cursor-not-allowed font-mono"
             />
           </div>
 
@@ -183,11 +185,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <label className="block text-xs font-medium text-ink-muted mb-1">
               月度流量配额 (GB)
             </label>
-            <input
+            <Input
               type="number"
               value={trafficLimitGB}
               onChange={(e) => setTrafficLimitGB(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
+              suffixText="GB"
             />
           </div>
         </div>
@@ -211,20 +213,19 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                     key={domain}
                     type="button"
                     onClick={() => setSni(domain)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono"
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
                   >
                     {domain.split(".")[1] || domain}
                   </button>
                 ))}
               </div>
             </div>
-            <input
-              type="text"
+            <Input
               required
               value={sni}
               onChange={(e) => setSni(e.target.value)}
               placeholder="例如: www.microsoft.com"
-              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
+              suffixText="SNI"
             />
             <p className="text-[11px] text-ink-muted mt-1">
               VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
@@ -237,12 +238,10 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           <label className="block text-xs font-medium text-ink-muted mb-1">
             标签 (以逗号分隔)
           </label>
-          <input
-            type="text"
+          <Input
             value={tagsStr}
             onChange={(e) => setTagsStr(e.target.value)}
             placeholder="原生IP, 流媒体解锁, OpenAI"
-            className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink text-xs"
           />
         </div>
 
