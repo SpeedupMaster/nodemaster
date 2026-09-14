@@ -19,8 +19,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
   const [name, setName] = useState("");
   const [ip, setIp] = useState("");
   const [port, setPort] = useState("443");
-  const [type, setType] = useState<"exit" | "transit">("exit");
-  const [protocol, setProtocol] = useState<"vless-reality" | "dokodemo">("vless-reality");
+  const [type, setType] = useState<"direct" | "unlock">("direct");
+  const [protocol, setProtocol] = useState<"vless-reality">("vless-reality");
   const [country, setCountry] = useState("HK");
   const [countryName, setCountryName] = useState("中国香港");
   const [sni, setSni] = useState("www.microsoft.com");
@@ -44,12 +44,12 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         ip,
         port: Number(port) || 443,
         type,
-        protocol: type === "transit" ? "dokodemo" : protocol,
+        protocol,
         country,
         countryName,
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
         tags,
-        sni: type === "exit" ? sni : undefined,
+        sni,
       });
 
       // Reset form
@@ -65,16 +65,16 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
 
   const typeOptions: SelectOption[] = [
     {
-      value: "exit",
-      label: "海外落地机 (Exit Node)",
-      desc: "部署 VLESS-Reality 代理服务，作为网络访问出口",
-      badge: "Reality",
+      value: "direct",
+      label: "主力直连机 (Direct Node)",
+      desc: "部署 VLESS-Reality 高速直连，作为客户端主要连接节点",
+      badge: "高速直连",
     },
     {
-      value: "transit",
-      label: "前置中转机 (Transit Node)",
-      desc: "部署 Dokodemo-door 转发，作为国内或前置优化入口",
-      badge: "中继",
+      value: "unlock",
+      label: "流媒体/AI 解锁机 (Unlock Node)",
+      desc: "原生住宅/干净 IP，用于在链式代理中专属解锁 Netflix、ChatGPT 等",
+      badge: "原生解锁",
     },
   ];
 
@@ -82,9 +82,10 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
     { value: "HK", label: "中国香港 (HK)", badge: "香港" },
     { value: "JP", label: "日本东京 (JP)", badge: "日本" },
     { value: "US", label: "美国洛杉矶 (US)", badge: "美国" },
+    { value: "GB", label: "英国伦敦 (GB)", badge: "英国" },
     { value: "SG", label: "新加坡 (SG)", badge: "新加坡" },
-    { value: "DE", label: "德国法兰克福 (DE)", badge: "欧洲" },
-    { value: "CN", label: "中国内地 (CN)", badge: "中转入口" },
+    { value: "DE", label: "德国法兰克福 (DE)", badge: "德国" },
+    { value: "CN", label: "中国内地 (CN)", badge: "内地" },
   ];
 
   return (
@@ -144,12 +145,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <Select
               options={typeOptions}
               value={type}
-              onChange={(val) => {
-                const t = val as "exit" | "transit";
-                setType(t);
-                if (t === "transit") setProtocol("dokodemo");
-                else setProtocol("vless-reality");
-              }}
+              onChange={(val) => setType(val as "direct" | "unlock")}
             />
           </div>
 
@@ -177,7 +173,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             </label>
             <Input
               disabled
-              value={type === "transit" ? "Dokodemo-door (中继转发)" : "VLESS-Reality (Vision/XTLS)"}
+              value="VLESS-Reality (Vision/XTLS)"
             />
           </div>
 
@@ -194,44 +190,42 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
         </div>
 
-        {/* SNI (Server Name Indication) for Reality Exit Nodes */}
-        {type === "exit" && (
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-ink-muted">
-                SNI 伪装域名 (Server Name Indication) *
-              </label>
-              <div className="flex items-center gap-1">
-                {[
-                  "www.microsoft.com",
-                  "www.apple.com",
-                  "addons.mozilla.org",
-                  "gateway.icloud.com",
-                  "itunes.apple.com",
-                ].map((domain) => (
-                  <button
-                    key={domain}
-                    type="button"
-                    onClick={() => setSni(domain)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                  >
-                    {domain.split(".")[1] || domain}
-                  </button>
-                ))}
-              </div>
+        {/* SNI (Server Name Indication) */}
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-medium text-ink-muted">
+              SNI 伪装域名 (Server Name Indication) *
+            </label>
+            <div className="flex items-center gap-1">
+              {[
+                "www.microsoft.com",
+                "www.apple.com",
+                "addons.mozilla.org",
+                "gateway.icloud.com",
+                "itunes.apple.com",
+              ].map((domain) => (
+                <button
+                  key={domain}
+                  type="button"
+                  onClick={() => setSni(domain)}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
+                >
+                  {domain.split(".")[1] || domain}
+                </button>
+              ))}
             </div>
-            <Input
-              required
-              value={sni}
-              onChange={(e) => setSni(e.target.value)}
-              placeholder="例如: www.microsoft.com"
-              suffixText="SNI"
-            />
-            <p className="text-[11px] text-ink-muted mt-1">
-              VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
-            </p>
           </div>
-        )}
+          <Input
+            required
+            value={sni}
+            onChange={(e) => setSni(e.target.value)}
+            placeholder="例如: www.microsoft.com"
+            suffixText="SNI"
+          />
+          <p className="text-[11px] text-ink-muted mt-1">
+            VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
+          </p>
+        </div>
 
         {/* Tags */}
         <div>

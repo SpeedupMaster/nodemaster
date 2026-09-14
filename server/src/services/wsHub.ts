@@ -1,4 +1,4 @@
-﻿import { WebSocket, WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import { Server } from "http";
 import { db } from "../db/index.js";
 import { NodeItem } from "../types/index.js";
@@ -108,7 +108,7 @@ export class WsHub {
           const addedTraffic = Math.floor((upSpeed + downSpeed) * 3);
           const newTotalTraffic = node.trafficUsedBytes + addedTraffic;
 
-          let newStatus = node.status;
+          let newStatus: NodeItem["status"] = node.status;
           if (config.autoCircuitBreaker && node.trafficLimitBytes > 0) {
             const pct = (newTotalTraffic / node.trafficLimitBytes) * 100;
             if (pct >= config.circuitBreakerThresholdPct) {

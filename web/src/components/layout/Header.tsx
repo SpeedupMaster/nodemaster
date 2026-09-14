@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { Plus, ArrowsClockwise, ShieldCheck } from "@phosphor-icons/react";
 import { Button } from "../common/Button";
 
@@ -25,8 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
       desc: "支持 VLESS-Reality 免证书协议、Dokodemo 转发与实时指标统计",
     },
     topology: {
-      title: "中转分流拓扑",
-      desc: "入口中转机与海外落地机链式组装与流向监控",
+      title: "链式代理与解锁拓扑",
+      desc: "主力直连机与专属解锁机智能分流绑定与流向拓扑",
     },
     subscription: {
       title: "订阅分享与客户端导出",

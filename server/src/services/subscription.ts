@@ -1,4 +1,4 @@
-﻿import YAML from "yaml";
+import YAML from "yaml";
 import { NodeItem, RelayLink } from "../types/index.js";
 
 // Helper to construct VLESS URL
@@ -64,13 +64,13 @@ export function toSingboxOutbound(node: NodeItem, customHost?: string, customPor
   };
 }
 
-// Build Active Proxies List considering Relays
+// Build Active Proxies List considering Relays and Chained Unlock Nodes
 export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
   const result: { node: NodeItem; host: string; port: number; name: string }[] = [];
 
-  // 1. Direct Exit Nodes
+  // 1. All Direct & Unlock Nodes with valid Reality config
   for (const n of nodes) {
-    if (n.status !== "offline" && n.type === "exit" && n.reality) {
+    if (n.status !== "offline" && n.reality) {
       result.push({
         node: n,
         host: n.ip,
@@ -80,17 +80,19 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
     }
   }
 
-  // 2. Relay Chains (Transit -> Exit)
+  // 2. Chained Unlock Pairs (Main Node -> Unlock Node)
   for (const r of relays) {
     if (r.status !== "active") continue;
-    const transit = nodes.find(n => n.id === r.transitNodeId);
-    const exit = nodes.find(n => n.id === r.exitNodeId);
-    if (transit && exit && exit.reality) {
+    const mainId = r.mainNodeId || r.transitNodeId;
+    const unlockId = r.unlockNodeId || r.exitNodeId;
+    const main = nodes.find(n => n.id === mainId);
+    const unlock = nodes.find(n => n.id === unlockId);
+    if (main && unlock && main.reality) {
       result.push({
-        node: exit,
-        host: transit.ip,
-        port: r.transitPort,
-        name: `⚡ ${r.name}`,
+        node: main,
+        host: main.ip,
+        port: main.port,
+        name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
       });
     }
   }

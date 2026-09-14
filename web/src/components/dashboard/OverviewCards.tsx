@@ -1,4 +1,4 @@
-﻿import React, { useRef } from "react";
+import React, { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
@@ -157,8 +157,8 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
       <div className="telemetry-card p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider">中转分流专线</span>
-            <ShareNetwork className="w-4 h-4 text-sky-400" />
+            <span className="font-mono uppercase tracking-wider">链式解锁代理</span>
+            <ShareNetwork className="w-4 h-4 text-purple-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-ink font-mono">{relaysCount}</span>
@@ -167,8 +167,8 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
         </div>
 
         <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono">
-          <span className="text-ink-muted">转发机制</span>
-          <span className="text-sky-400 font-semibold">Dokodemo-door</span>
+          <span className="text-ink-muted">分流引擎</span>
+          <span className="text-purple-400 font-semibold">Xray 智能路由 (AI/流媒体)</span>
         </div>
       </div>
     </div>

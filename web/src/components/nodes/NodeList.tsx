@@ -36,8 +36,8 @@ export const NodeList: React.FC<NodeListProps> = ({
 
     if (!matchSearch) return false;
     if (typeFilter === "all") return true;
-    if (typeFilter === "exit") return node.type === "exit";
-    if (typeFilter === "transit") return node.type === "transit";
+    if (typeFilter === "direct") return node.type === "direct" || node.type === "exit";
+    if (typeFilter === "unlock") return node.type === "unlock";
     if (typeFilter === "circuit_broken") return node.status === "circuit_broken";
     return true;
   });
@@ -67,8 +67,8 @@ export const NodeList: React.FC<NodeListProps> = ({
         <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule w-full sm:w-auto">
           {[
             { id: "all", label: "全部节点" },
-            { id: "exit", label: "海外落地" },
-            { id: "transit", label: "中转入口" },
+            { id: "direct", label: "主力直连" },
+            { id: "unlock", label: "专属解锁" },
             { id: "circuit_broken", label: "超额熔断" },
           ].map((t) => (
             <button

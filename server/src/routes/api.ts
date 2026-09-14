@@ -75,18 +75,20 @@ apiRouter.get("/nodes/:id/xray-config", (req, res) => {
   const node = db.getNodeById(req.params.id);
   if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
 
-  let targetExit: NodeItem | undefined;
-  let transitPort = 10443;
+  let targetUnlock: NodeItem | undefined;
+  let unlockMode: "ai_media" | "all" = "ai_media";
 
-  if (node.type === "transit") {
-    const relay = db.getRelays().find(r => r.transitNodeId === node.id);
-    if (relay) {
-      targetExit = db.getNodeById(relay.exitNodeId);
-      transitPort = relay.transitPort;
+  // Check if this node is paired with an Unlock Node
+  const relay = db.getRelays().find(r => r.mainNodeId === node.id || r.transitNodeId === node.id);
+  if (relay) {
+    const unlockId = relay.unlockNodeId || relay.exitNodeId;
+    if (unlockId) {
+      targetUnlock = db.getNodeById(unlockId);
+      unlockMode = relay.mode || "ai_media";
     }
   }
 
-  const config = generateXrayServerConfig(node, targetExit, transitPort);
+  const config = generateXrayServerConfig(node, targetUnlock, unlockMode);
   res.json({ success: true, data: config });
 });
 
@@ -101,27 +103,33 @@ apiRouter.post("/nodes/:id/reset-traffic", (req, res) => {
 });
 
 // -------------------------------------------------------------
-// 2. Relay Chains (中转拓扑)
+// 2. Chained Relays (链式代理与解锁拓扑)
 // -------------------------------------------------------------
 apiRouter.get("/relays", (req, res) => {
   res.json({ success: true, data: db.getRelays() });
 });
 
 apiRouter.post("/relays", (req, res) => {
-  const { name, transitNodeId, exitNodeId, transitPort } = req.body;
-  if (!transitNodeId || !exitNodeId) {
-    return res.status(400).json({ success: false, message: "中转入口与目标落地节点为必选项" });
+  const { name, mainNodeId, unlockNodeId, mode, transitNodeId, exitNodeId } = req.body;
+  const mainId = mainNodeId || transitNodeId;
+  const unlockId = unlockNodeId || exitNodeId;
+
+  if (!mainId || !unlockId) {
+    return res.status(400).json({ success: false, message: "主力连接节点与目标解锁机为必选项" });
   }
 
   const newRelay: RelayLink = {
     id: `relay-${Date.now().toString(36)}`,
-    name: name || "链路中继",
-    transitNodeId,
-    exitNodeId,
-    transitPort: Number(transitPort) || 10443,
+    name: name || "链式解锁代理",
+    mainNodeId: mainId,
+    unlockNodeId: unlockId,
+    mode: mode || "ai_media",
+    transitNodeId: mainId,
+    exitNodeId: unlockId,
+    transitPort: 443,
     status: "active",
     trafficBytes: 0,
-    latencyMs: 25,
+    latencyMs: 35,
     createdAt: Date.now(),
   };
 

@@ -1,4 +1,4 @@
-﻿import crypto from "crypto";
+import crypto from "crypto";
 import { NodeItem, XrayRealityConfig } from "../types/index.js";
 
 // Helper to generate reality credentials
@@ -23,37 +23,109 @@ export function generateRealityCredentials(serverName = "www.microsoft.com"): Xr
   };
 }
 
-// Generate the Xray server-side config.json for a node
-export function generateXrayServerConfig(node: NodeItem, targetExitNode?: NodeItem, transitPort = 10443) {
-  if (node.type === "transit" && targetExitNode) {
-    // Dokodemo-door transit inbound -> exit node outbound
-    return {
-      log: { loglevel: "warning" },
-      dns: { servers: ["1.1.1.1", "8.8.8.8"] },
-      inbounds: [
-        {
-          tag: `DOKODEMO_RELAY_${node.id}`,
-          listen: "0.0.0.0",
-          port: transitPort,
-          protocol: "dokodemo",
-          settings: {
-            address: targetExitNode.ip,
-            port: targetExitNode.port,
-            network: "tcp,udp",
+// Generate the Xray server-side config.json for a node (including chained unlock proxy)
+export function generateXrayServerConfig(
+  node: NodeItem,
+  targetUnlockNode?: NodeItem,
+  unlockMode: "ai_media" | "all" = "ai_media"
+) {
+  const reality = node.reality || generateRealityCredentials();
+
+  // Outbounds definition
+  const outbounds: any[] = [
+    {
+      tag: "DIRECT",
+      protocol: "freedom",
+    },
+    {
+      tag: "BLOCK",
+      protocol: "blackhole",
+    },
+  ];
+
+  // If paired with an Unlock Node, append UNLOCK_OUT outbound (VLESS-Reality egress chain)
+  if (targetUnlockNode && targetUnlockNode.reality) {
+    const ur = targetUnlockNode.reality;
+    outbounds.push({
+      tag: "UNLOCK_OUT",
+      protocol: "vless",
+      settings: {
+        vnext: [
+          {
+            address: targetUnlockNode.ip,
+            port: targetUnlockNode.port || 443,
+            users: [
+              {
+                id: ur.uuid,
+                flow: ur.flow || "xtls-rprx-vision",
+                encryption: "none",
+              },
+            ],
           },
+        ],
+      },
+      streamSettings: {
+        network: "raw",
+        security: "reality",
+        realitySettings: {
+          show: false,
+          serverName: ur.serverName,
+          publicKey: ur.publicKey,
+          shortId: ur.shortId,
+          fingerprint: ur.fingerprint || "chrome",
         },
-      ],
-      outbounds: [
-        {
-          tag: "DIRECT",
-          protocol: "freedom",
-        },
-      ],
-    };
+      },
+    });
   }
 
-  // Standard Exit node with VLESS-Reality
-  const reality = node.reality || generateRealityCredentials();
+  // Routing rules
+  const routingRules: any[] = [
+    {
+      type: "field",
+      ip: ["geoip:private"],
+      outboundTag: "BLOCK",
+    },
+    {
+      type: "field",
+      domain: ["geosite:private"],
+      outboundTag: "BLOCK",
+    },
+    {
+      type: "field",
+      protocol: ["bittorrent"],
+      outboundTag: "BLOCK",
+    },
+  ];
+
+  // Inject Chained Unlock Routing Rules
+  if (targetUnlockNode) {
+    if (unlockMode === "all") {
+      // All traffic routed through unlock node
+      routingRules.push({
+        type: "field",
+        inboundTag: [`VLESS_REALITY_${node.id}`],
+        outboundTag: "UNLOCK_OUT",
+      });
+    } else {
+      // AI and Streaming services domain unlock
+      routingRules.push({
+        type: "field",
+        domain: [
+          "geosite:openai",
+          "geosite:anthropic",
+          "geosite:netflix",
+          "geosite:disney",
+          "geosite:spotify",
+          "geosite:tiktok",
+          "domain:oaistatic.com",
+          "domain:oaiusercontent.com",
+          "domain:claude.ai",
+        ],
+        outboundTag: "UNLOCK_OUT",
+      });
+    }
+  }
+
   return {
     log: {
       loglevel: "warning",
@@ -98,35 +170,10 @@ export function generateXrayServerConfig(node: NodeItem, targetExitNode?: NodeIt
         },
       },
     ],
-    outbounds: [
-      {
-        tag: "DIRECT",
-        protocol: "freedom",
-      },
-      {
-        tag: "BLOCK",
-        protocol: "blackhole",
-      },
-    ],
+    outbounds,
     routing: {
       domainStrategy: "AsIs",
-      rules: [
-        {
-          type: "field",
-          ip: ["geoip:private"],
-          outboundTag: "BLOCK",
-        },
-        {
-          type: "field",
-          domain: ["geosite:private"],
-          outboundTag: "BLOCK",
-        },
-        {
-          type: "field",
-          protocol: ["bittorrent"],
-          outboundTag: "BLOCK",
-        },
-      ],
+      rules: routingRules,
     },
   };
 }

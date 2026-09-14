@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import {
   Cpu,
   HardDrive,
@@ -95,8 +95,25 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                 离线
               </Badge>
             )}
-            <Badge variant={node.type === "transit" ? "transit" : "exit"} size="sm">
-              {node.type === "transit" ? "中转入口" : "海外落地"}
+            <Badge
+              variant={
+                node.type === "unlock"
+                  ? "exit"
+                  : node.type === "direct"
+                  ? "accent"
+                  : node.type === "transit"
+                  ? "transit"
+                  : "exit"
+              }
+              size="sm"
+            >
+              {node.type === "unlock"
+                ? "专属解锁"
+                : node.type === "direct"
+                ? "主力直连"
+                : node.type === "transit"
+                ? "中转入口"
+                : "海外落地"}
             </Badge>
           </div>
         </div>

@@ -14,8 +14,8 @@ export interface NodeItem {
   name: string;
   ip: string;
   port: number;
-  type: "direct" | "transit" | "exit";
-  protocol: "vless-reality" | "trojan" | "dokodemo";
+  type: "direct" | "unlock" | "transit" | "exit";
+  protocol: "vless-reality" | "trojan" | "dokodemo" | "socks5";
   status: "online" | "offline" | "circuit_broken";
   country: string;
   countryName: string;
@@ -38,9 +38,12 @@ export interface NodeItem {
 export interface RelayLink {
   id: string;
   name: string;
-  transitNodeId: string;
-  exitNodeId: string;
-  transitPort: number;
+  mainNodeId: string;
+  unlockNodeId: string;
+  mode?: "ai_media" | "all";
+  transitNodeId?: string;
+  exitNodeId?: string;
+  transitPort?: number;
   status: "active" | "inactive";
   trafficBytes: number;
   latencyMs: number;
