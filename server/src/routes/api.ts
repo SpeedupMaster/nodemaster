@@ -1,10 +1,10 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { db } from "../db/index.js";
-import { generateRealityCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
+import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
-import { NodeItem, RelayLink } from "../types/index.js";
+import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig } from "../types/index.js";
 
 export const apiRouter = Router();
 
@@ -16,40 +16,58 @@ apiRouter.get("/nodes", (req, res) => {
 });
 
 apiRouter.post("/nodes", (req, res) => {
-  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags, sni, serverName } = req.body;
+  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags, sni, serverName, ssMethod, ssPassword } = req.body;
   
   if (!name || !ip) {
     return res.status(400).json({ success: false, message: "名称与 IP 为必填项" });
   }
 
-  const targetSni = (sni || serverName || "").trim() || "www.microsoft.com";
+  const isUnlock = type === "unlock" || protocol === "shadowsocks";
+  const nodeProtocol = isUnlock ? "shadowsocks" : (protocol || "vless-reality");
+  const targetPort = Number(port) || (isUnlock ? 8388 : 443);
+
+  let reality: XrayRealityConfig | undefined;
+  let shadowsocks: ShadowsocksConfig | undefined;
+
+  if (nodeProtocol === "shadowsocks") {
+    shadowsocks = generateShadowsocksCredentials(ssMethod, ssPassword);
+  } else {
+    const targetSni = (sni || serverName || "").trim() || "www.microsoft.com";
+    reality = generateRealityCredentials(targetSni);
+  }
+
   const id = `node-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
   const token = `tok_${crypto.randomBytes(16).toString("hex")}`;
-  const reality = protocol === "vless-reality" ? generateRealityCredentials(targetSni) : undefined;
+
+  const defaultTags = isUnlock
+    ? ["住宅IP", "Shadowsocks", "流媒体解锁"]
+    : ["Xray", "Reality", "主力直连"];
 
   const newNode: NodeItem = {
     id,
     name,
     ip,
-    port: Number(port) || 443,
-    type: type || "exit",
-    protocol: protocol || "vless-reality",
+    port: targetPort,
+    type: type || (isUnlock ? "unlock" : "direct"),
+    protocol: nodeProtocol,
     status: "online",
     country: country || "US",
-    countryName: countryName || "海外节点",
+    countryName: countryName || (isUnlock ? "美国原生住宅" : "海外主力节点"),
     token,
     trafficUsedBytes: 0,
-    trafficLimitBytes: Number(trafficLimitBytes) || 1073741824000, // 1TB default
+    trafficLimitBytes: Number(trafficLimitBytes) || (isUnlock ? 2147483648000 : 1073741824000), // 2TB or 1TB default
     uplinkSpeedBytes: 0,
     downlinkSpeedBytes: 0,
     cpuUsage: 5.0,
     memUsage: 15.0,
     diskUsage: 20.0,
-    latencyMs: 50,
+    latencyMs: isUnlock ? 140 : 45,
     reality,
+    shadowsocks,
     lastSeen: Date.now(),
     createdAt: Date.now(),
-    tags: tags || ["Xray", "Reality"],
+    tags: tags && tags.length > 0 ? tags : defaultTags,
+    sni: !isUnlock ? (sni || "www.microsoft.com") : undefined,
   };
 
   db.addNode(newNode);

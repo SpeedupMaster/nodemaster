@@ -54,6 +54,13 @@ export const NodeList: React.FC<NodeListProps> = ({
   }, { scope: containerRef, dependencies: [typeFilter] });
 
   const handleCopyUrl = (node: NodeItem) => {
+    if (node.protocol === "shadowsocks" && node.shadowsocks) {
+      const auth = btoa(`${node.shadowsocks.method}:${node.shadowsocks.password}`);
+      const url = `ss://${auth}@${node.ip}:${node.port}#${encodeURIComponent(node.name)}`;
+      navigator.clipboard.writeText(url);
+      return;
+    }
+
     if (!node.reality) return;
     const r = node.reality;
     const url = `vless://${r.uuid}@${node.ip}:${node.port}?type=tcp&security=reality&pbk=${r.publicKey}&fp=${r.fingerprint}&sni=${r.serverName}&sid=${r.shortId}&spx=%2F&flow=${r.flow}#${encodeURIComponent(node.name)}`;

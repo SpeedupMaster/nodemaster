@@ -11,11 +11,11 @@
       "country": "HK",
       "countryName": "中国香港",
       "token": "token_hk_8848",
-      "trafficUsedBytes": 184598512403,
+      "trafficUsedBytes": 184695722243,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 1443966,
-      "downlinkSpeedBytes": 5648801,
-      "cpuUsage": 17.6,
+      "uplinkSpeedBytes": 875333,
+      "downlinkSpeedBytes": 3424313,
+      "cpuUsage": 10.5,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,8 +35,8 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789399668352,
-      "createdAt": 1788103641428
+      "lastSeen": 1789400132369,
+      "createdAt": 1788104083984
     },
     {
       "id": "node-jp-02",
@@ -49,11 +49,11 @@
       "country": "JP",
       "countryName": "日本东京",
       "token": "token_jp_8848",
-      "trafficUsedBytes": 312054781464,
+      "trafficUsedBytes": 312171664992,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 756429,
-      "downlinkSpeedBytes": 2932230,
-      "cpuUsage": 21,
+      "uplinkSpeedBytes": 1314151,
+      "downlinkSpeedBytes": 5094189,
+      "cpuUsage": 11.3,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -73,83 +73,72 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789399668353,
-      "createdAt": 1788535641428
+      "lastSeen": 1789400132370,
+      "createdAt": 1788536083984
     },
     {
       "id": "node-us-unlock-01",
       "name": "US-Residential-Unlock-01",
       "ip": "154.23.189.90",
-      "port": 443,
+      "port": 8388,
       "type": "unlock",
-      "protocol": "vless-reality",
+      "protocol": "shadowsocks",
       "status": "online",
       "country": "US",
       "countryName": "美国洛杉矶 (原生住宅)",
       "token": "token_us_unlock_8848",
-      "trafficUsedBytes": 129526051999,
+      "trafficUsedBytes": 129582486148,
       "trafficLimitBytes": 2147483648000,
-      "uplinkSpeedBytes": 401429,
-      "downlinkSpeedBytes": 2148831,
-      "cpuUsage": 11.6,
+      "uplinkSpeedBytes": 381000,
+      "downlinkSpeedBytes": 2039504,
+      "cpuUsage": 8.3,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
       "tags": [
         "美国家宽",
         "原生双ISP",
-        "OpenAI/Claude",
-        "Netflix/Disney+"
+        "Shadowsocks",
+        "OpenAI/流媒体全解锁"
       ],
-      "reality": {
-        "uuid": "7b2c9182-3d4e-5f60-7a8b-9c0d1e2f3a4b",
-        "flow": "xtls-rprx-vision",
-        "serverName": "www.apple.com",
-        "publicKey": "pX9q42Lm7n8kYm12Zp3wXq4Rt5Y6u7I8o9P0a1S2d3C",
-        "privateKey": "1JLBx1ZqLf8JixE5KQDdLqyqy9RXsGCksrkitpNkeVh",
-        "shortId": "fa5c1c0e44d65fa5",
-        "fingerprint": "safari",
-        "dest": "www.apple.com:443"
+      "shadowsocks": {
+        "method": "2022-blake3-aes-128-gcm",
+        "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789399668353,
-      "createdAt": 1787671641428
+      "lastSeen": 1789400132370,
+      "createdAt": 1787672083984
     },
     {
       "id": "node-uk-unlock-02",
       "name": "UK-London-Unlock-02",
       "ip": "185.220.101.55",
-      "port": 443,
+      "port": 8388,
       "type": "unlock",
-      "protocol": "vless-reality",
+      "protocol": "shadowsocks",
       "status": "online",
       "country": "GB",
       "countryName": "英国伦敦 (原生IP)",
       "token": "token_uk_unlock_8848",
-      "trafficUsedBytes": 85214345928,
+      "trafficUsedBytes": 85235039340,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 174323,
-      "downlinkSpeedBytes": 954639,
-      "cpuUsage": 9.5,
+      "uplinkSpeedBytes": 138959,
+      "downlinkSpeedBytes": 760999,
+      "cpuUsage": 5,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
       "tags": [
         "英国原生",
+        "Shadowsocks",
         "BBC iPlayer",
         "全流媒体解锁"
       ],
-      "reality": {
-        "uuid": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-        "flow": "xtls-rprx-vision",
-        "serverName": "www.icloud.com",
-        "publicKey": "mN8b73Vv6c5xZz43Aa2sSs1Dd0Ff9Gg8Hh7Jj6Kk5Ll",
-        "privateKey": "3LNDy3BsNh0LlzG7MSEfNszsz1TZuIEmtmsjvRPmfXj",
-        "shortId": "c1c0e44d6fa55fa5",
-        "fingerprint": "chrome",
-        "dest": "www.icloud.com:443"
+      "shadowsocks": {
+        "method": "2022-blake3-aes-128-gcm",
+        "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789399668353,
-      "createdAt": 1788708441428
+      "lastSeen": 1789400132371,
+      "createdAt": 1788708883984
     }
   ],
   "relays": [
@@ -165,7 +154,7 @@
       "status": "active",
       "trafficBytes": 85400000000,
       "latencyMs": 142,
-      "createdAt": 1788794841428
+      "createdAt": 1788795283984
     }
   ],
   "subscriptions": [
@@ -177,7 +166,7 @@
       "trafficLimitBytes": 0,
       "trafficUsedBytes": 674520394800,
       "expireAt": 0,
-      "createdAt": 1788190041428
+      "createdAt": 1788190483984
     }
   ],
   "config": {

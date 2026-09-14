@@ -4,11 +4,12 @@ import { Button } from "../common/Button";
 import { Select, SelectOption } from "../common/Select";
 import { Input } from "../common/Input";
 import { NodeItem } from "../../types";
+import { ArrowsClockwise, ShieldCheck, Key } from "@phosphor-icons/react";
 
 interface AddNodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (nodeData: Partial<NodeItem>) => Promise<any>;
+  onSubmit: (nodeData: any) => Promise<any>;
 }
 
 export const AddNodeModal: React.FC<AddNodeModalProps> = ({
@@ -20,13 +21,36 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
   const [ip, setIp] = useState("");
   const [port, setPort] = useState("443");
   const [type, setType] = useState<"direct" | "unlock">("direct");
-  const [protocol, setProtocol] = useState<"vless-reality">("vless-reality");
   const [country, setCountry] = useState("HK");
   const [countryName, setCountryName] = useState("中国香港");
   const [sni, setSni] = useState("www.microsoft.com");
+  const [ssMethod, setSsMethod] = useState("2022-blake3-aes-128-gcm");
+  const [ssPassword, setSsPassword] = useState(() =>
+    btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))
+  );
   const [trafficLimitGB, setTrafficLimitGB] = useState("1000");
-  const [tagsStr, setTagsStr] = useState("原生IP, 流媒体解锁");
+  const [tagsStr, setTagsStr] = useState("主力直连, 原生IP, 千兆带宽");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleTypeChange = (newType: "direct" | "unlock") => {
+    setType(newType);
+    if (newType === "unlock") {
+      setPort("8388");
+      setCountry("US");
+      setCountryName("美国洛杉矶");
+      setTagsStr("原生住宅, Shadowsocks, 流媒体解锁, OpenAI");
+    } else {
+      setPort("443");
+      setCountry("HK");
+      setCountryName("中国香港");
+      setTagsStr("主力直连, 原生IP, 千兆带宽");
+    }
+  };
+
+  const handleRefreshKey = () => {
+    const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+    setSsPassword(key);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +66,16 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       await onSubmit({
         name,
         ip,
-        port: Number(port) || 443,
+        port: Number(port) || (type === "unlock" ? 8388 : 443),
         type,
-        protocol,
+        protocol: type === "unlock" ? "shadowsocks" : "vless-reality",
         country,
         countryName,
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
         tags,
-        sni,
+        sni: type === "direct" ? sni : undefined,
+        ssMethod: type === "unlock" ? ssMethod : undefined,
+        ssPassword: type === "unlock" ? ssPassword : undefined,
       });
 
       // Reset form
@@ -67,14 +93,35 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
     {
       value: "direct",
       label: "主力直连机 (Direct Node)",
-      desc: "部署 VLESS-Reality 高速直连，作为客户端主要连接节点",
+      desc: "客户端第一跳直连出口，部署 VLESS-Reality 高速免证书协议",
       badge: "高速直连",
     },
     {
       value: "unlock",
       label: "流媒体/AI 解锁机 (Unlock Node)",
-      desc: "原生住宅/干净 IP，用于在链式代理中专属解锁 Netflix、ChatGPT 等",
-      badge: "原生解锁",
+      desc: "原生住宅 VPS，部署轻量 Shadowsocks 协议，专供海外链式解锁",
+      badge: "SS 解锁",
+    },
+  ];
+
+  const ssMethodOptions: SelectOption[] = [
+    {
+      value: "2022-blake3-aes-128-gcm",
+      label: "2022-blake3-aes-128-gcm (推荐)",
+      desc: "最新 Shadowsocks 2022 标准，极低 CPU 开销，吞吐速度最快",
+      badge: "SS 2022",
+    },
+    {
+      value: "aes-128-gcm",
+      label: "aes-128-gcm (标准通用 AEAD)",
+      desc: "全平台客户端与代理内核极佳兼容性",
+      badge: "AEAD",
+    },
+    {
+      value: "chacha20-ietf-poly1305",
+      label: "chacha20-ietf-poly1305 (ARM 优化)",
+      desc: "适合 ARM 架构 VPS 或低功耗小鸡运行",
+      badge: "ARM 优化",
     },
   ];
 
@@ -93,7 +140,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="添加新的 VPS 节点"
-      subtitle="纳管一台新的 VPS 并自动生成 Xray-core Reality 免证书代理配置"
+      subtitle={
+        type === "unlock"
+          ? "纳管原生解锁机，自动生成低开销 Shadowsocks 服务端配置"
+          : "纳管主力直连机，自动生成 Xray-core Reality 免证书代理配置"
+      }
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-sm">
@@ -106,7 +157,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="例如: HK-BGP-Reality-02"
+            placeholder={
+              type === "unlock"
+                ? "例如: US-Residential-Unlock-02"
+                : "例如: HK-BGP-Direct-02"
+            }
           />
         </div>
 
@@ -120,7 +175,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               required
               value={ip}
               onChange={(e) => setIp(e.target.value)}
-              placeholder="例如: 103.145.75.88"
+              placeholder="例如: 154.23.189.90"
             />
           </div>
           <div>
@@ -145,7 +200,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <Select
               options={typeOptions}
               value={type}
-              onChange={(val) => setType(val as "direct" | "unlock")}
+              onChange={(val) => handleTypeChange(val as "direct" | "unlock")}
             />
           </div>
 
@@ -173,7 +228,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             </label>
             <Input
               disabled
-              value="VLESS-Reality (Vision/XTLS)"
+              value={
+                type === "unlock"
+                  ? "Shadowsocks (SS 2022 / AEAD)"
+                  : "VLESS-Reality (Vision/XTLS)"
+              }
             />
           </div>
 
@@ -190,42 +249,93 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
         </div>
 
-        {/* SNI (Server Name Indication) */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-medium text-ink-muted">
-              SNI 伪装域名 (Server Name Indication) *
-            </label>
-            <div className="flex items-center gap-1">
-              {[
-                "www.microsoft.com",
-                "www.apple.com",
-                "addons.mozilla.org",
-                "gateway.icloud.com",
-                "itunes.apple.com",
-              ].map((domain) => (
-                <button
-                  key={domain}
-                  type="button"
-                  onClick={() => setSni(domain)}
-                  className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                >
-                  {domain.split(".")[1] || domain}
-                </button>
-              ))}
+        {/* Dynamic Protocol Fields: Direct (Reality SNI) vs Unlock (Shadowsocks Key) */}
+        {type === "direct" ? (
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-ink-muted">
+                SNI 伪装域名 (Server Name Indication) *
+              </label>
+              <div className="flex items-center gap-1">
+                {[
+                  "www.microsoft.com",
+                  "www.apple.com",
+                  "addons.mozilla.org",
+                  "gateway.icloud.com",
+                  "itunes.apple.com",
+                ].map((domain) => (
+                  <button
+                    key={domain}
+                    type="button"
+                    onClick={() => setSni(domain)}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
+                  >
+                    {domain.split(".")[1] || domain}
+                  </button>
+                ))}
+              </div>
             </div>
+            <Input
+              required
+              value={sni}
+              onChange={(e) => setSni(e.target.value)}
+              placeholder="例如: www.microsoft.com"
+              suffixText="SNI"
+            />
+            <p className="text-[11px] text-ink-muted mt-1">
+              VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
+            </p>
           </div>
-          <Input
-            required
-            value={sni}
-            onChange={(e) => setSni(e.target.value)}
-            placeholder="例如: www.microsoft.com"
-            suffixText="SNI"
-          />
-          <p className="text-[11px] text-ink-muted mt-1">
-            VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
-          </p>
-        </div>
+        ) : (
+          <div className="space-y-3 p-3.5 rounded-lg bg-paper-3/40 border border-purple-500/20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-purple-400" />
+                Shadowsocks 解锁专用参数 (海外高速直达)
+              </span>
+              <span className="text-[10px] text-ink-muted font-mono">
+                免去 Reality 握手开销
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink-muted mb-1">
+                加密算法 (Cipher Method) *
+              </label>
+              <Select
+                options={ssMethodOptions}
+                value={ssMethod}
+                onChange={(val) => setSsMethod(val)}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-ink-muted">
+                  连接密码 / Base64 密钥 *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleRefreshKey}
+                  className="text-[10px] text-accent hover:underline flex items-center gap-1 cursor-pointer font-mono"
+                >
+                  <ArrowsClockwise className="w-3 h-3" />
+                  生成随机密钥
+                </button>
+              </div>
+              <Input
+                required
+                value={ssPassword}
+                onChange={(e) => setSsPassword(e.target.value)}
+                placeholder="Shadowsocks 密码或 Base64 密钥"
+              />
+            </div>
+
+            <p className="text-[11px] text-ink-muted leading-relaxed">
+              提示：解锁机仅与海外主力机通信，不穿越国内防火墙，因此采用高效的 Shadowsocks 协议即可，极大地节约 VPS 的 CPU 开销并带来更高的数据吞吐。
+            </p>
+          </div>
+        )}
 
         {/* Tags */}
         <div>

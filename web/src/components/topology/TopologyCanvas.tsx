@@ -232,7 +232,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           <div className="space-y-4">
             <div className="text-[11px] font-mono text-ink-muted mb-2 flex items-center gap-1.5 md:justify-end">
               <Sparkle className="w-3.5 h-3.5 text-purple-400" />
-              <span>原生住宅 / 纯净双ISP • 专享流媒体与 AI 出站</span>
+              <span>原生住宅 / 纯净双ISP • 轻量 Shadowsocks 极速出站</span>
             </div>
 
             {unlockNodes.map((un) => {
@@ -263,7 +263,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   <div className="text-xs font-mono text-ink-muted mt-2 flex items-center justify-between">
                     <span>IP: {un.ip}:{un.port}</span>
                     <span className="uppercase text-[11px] text-purple-400 font-medium">
-                      {un.protocol}
+                      {un.protocol === "shadowsocks" ? "Shadowsocks (SS)" : un.protocol}
                     </span>
                   </div>
 

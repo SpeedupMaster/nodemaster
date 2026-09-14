@@ -73,8 +73,12 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             <div className="text-xs font-mono text-ink-muted mt-0.5 flex items-center gap-1.5">
               <span>{node.ip}:{node.port}</span>
               <span>•</span>
-              <span className="text-accent uppercase text-[11px] font-medium">
-                {node.protocol}
+              <span
+                className={`uppercase text-[11px] font-medium font-mono ${
+                  node.protocol === "shadowsocks" ? "text-purple-400" : "text-accent"
+                }`}
+              >
+                {node.protocol === "shadowsocks" ? "Shadowsocks" : node.protocol}
               </span>
             </div>
           </div>

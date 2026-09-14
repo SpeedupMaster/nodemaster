@@ -96,9 +96,9 @@ const INITIAL_NODES: NodeItem[] = [
     id: "node-us-unlock-01",
     name: "US-Residential-Unlock-01",
     ip: "154.23.189.90",
-    port: 443,
+    port: 8388,
     type: "unlock",
-    protocol: "vless-reality",
+    protocol: "shadowsocks",
     status: "online",
     country: "US",
     countryName: "美国洛杉矶 (原生住宅)",
@@ -111,16 +111,10 @@ const INITIAL_NODES: NodeItem[] = [
     memUsage: 22.4,
     diskUsage: 41.0,
     latencyMs: 145,
-    tags: ["美国家宽", "原生双ISP", "OpenAI/Claude", "Netflix/Disney+"],
-    reality: {
-      uuid: "7b2c9182-3d4e-5f60-7a8b-9c0d1e2f3a4b",
-      flow: "xtls-rprx-vision",
-      serverName: "www.apple.com",
-      publicKey: "pX9q42Lm7n8kYm12Zp3wXq4Rt5Y6u7I8o9P0a1S2d3C",
-      privateKey: "1JLBx1ZqLf8JixE5KQDdLqyqy9RXsGCksrkitpNkeVh",
-      shortId: "fa5c1c0e44d65fa5",
-      fingerprint: "safari",
-      dest: "www.apple.com:443"
+    tags: ["美国家宽", "原生双ISP", "Shadowsocks", "OpenAI/流媒体全解锁"],
+    shadowsocks: {
+      method: "2022-blake3-aes-128-gcm",
+      password: "u0J9xK1L2m3N4o5P6q7R8s=="
     },
     lastSeen: Date.now(),
     createdAt: Date.now() - 86400000 * 20
@@ -129,9 +123,9 @@ const INITIAL_NODES: NodeItem[] = [
     id: "node-uk-unlock-02",
     name: "UK-London-Unlock-02",
     ip: "185.220.101.55",
-    port: 443,
+    port: 8388,
     type: "unlock",
-    protocol: "vless-reality",
+    protocol: "shadowsocks",
     status: "online",
     country: "GB",
     countryName: "英国伦敦 (原生IP)",
@@ -144,16 +138,10 @@ const INITIAL_NODES: NodeItem[] = [
     memUsage: 19.0,
     diskUsage: 25.0,
     latencyMs: 180,
-    tags: ["英国原生", "BBC iPlayer", "全流媒体解锁"],
-    reality: {
-      uuid: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-      flow: "xtls-rprx-vision",
-      serverName: "www.icloud.com",
-      publicKey: "mN8b73Vv6c5xZz43Aa2sSs1Dd0Ff9Gg8Hh7Jj6Kk5Ll",
-      privateKey: "3LNDy3BsNh0LlzG7MSEfNszsz1TZuIEmtmsjvRPmfXj",
-      shortId: "c1c0e44d6fa55fa5",
-      fingerprint: "chrome",
-      dest: "www.icloud.com:443"
+    tags: ["英国原生", "Shadowsocks", "BBC iPlayer", "全流媒体解锁"],
+    shadowsocks: {
+      method: "2022-blake3-aes-128-gcm",
+      password: "v1K0yL2M3n4O5p6Q7r8S9t=="
     },
     lastSeen: Date.now(),
     createdAt: Date.now() - 86400000 * 8

@@ -9,13 +9,18 @@ export interface XrayRealityConfig {
   dest: string;
 }
 
+export interface ShadowsocksConfig {
+  method: string;
+  password: string;
+}
+
 export interface NodeItem {
   id: string;
   name: string;
   ip: string;
   port: number;
   type: "direct" | "unlock" | "transit" | "exit";
-  protocol: "vless-reality" | "trojan" | "dokodemo" | "socks5";
+  protocol: "vless-reality" | "shadowsocks" | "trojan" | "dokodemo" | "socks5";
   status: "online" | "offline" | "circuit_broken";
   country: string;
   countryName: string;
@@ -29,6 +34,7 @@ export interface NodeItem {
   diskUsage: number;
   latencyMs: number;
   reality?: XrayRealityConfig;
+  shadowsocks?: ShadowsocksConfig;
   lastSeen: number;
   createdAt: number;
   tags: string[];

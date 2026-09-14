@@ -12,8 +12,30 @@ export function toVlessUrl(node: NodeItem, customHost?: string, customPort?: num
   return `vless://${r.uuid}@${host}:${port}?type=tcp&security=reality&pbk=${r.publicKey}&fp=${r.fingerprint}&sni=${r.serverName}&sid=${r.shortId}&spx=%2F&flow=${r.flow}#${name}`;
 }
 
+// Helper to construct Shadowsocks URL (SIP002 standard)
+export function toSsUrl(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string): string {
+  if (!node.shadowsocks) return "";
+  const host = customHost || node.ip;
+  const port = customPort || node.port;
+  const name = encodeURIComponent(aliasName || node.name);
+  const auth = Buffer.from(`${node.shadowsocks.method}:${node.shadowsocks.password}`).toString("base64");
+  return `ss://${auth}@${host}:${port}#${name}`;
+}
+
 // Generate Clash Meta / Mihomo Proxy Object
 export function toClashProxy(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string) {
+  if (node.protocol === "shadowsocks" && node.shadowsocks) {
+    return {
+      name: aliasName || node.name,
+      type: "ss",
+      server: customHost || node.ip,
+      port: customPort || node.port,
+      cipher: node.shadowsocks.method,
+      password: node.shadowsocks.password,
+      udp: true,
+    };
+  }
+
   if (!node.reality) return null;
   const r = node.reality;
 
@@ -37,6 +59,17 @@ export function toClashProxy(node: NodeItem, customHost?: string, customPort?: n
 
 // Generate Sing-box Outbound Object
 export function toSingboxOutbound(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string) {
+  if (node.protocol === "shadowsocks" && node.shadowsocks) {
+    return {
+      type: "shadowsocks",
+      tag: aliasName || node.name,
+      server: customHost || node.ip,
+      server_port: customPort || node.port,
+      method: node.shadowsocks.method,
+      password: node.shadowsocks.password,
+    };
+  }
+
   if (!node.reality) return null;
   const r = node.reality;
 
@@ -68,9 +101,9 @@ export function toSingboxOutbound(node: NodeItem, customHost?: string, customPor
 export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
   const result: { node: NodeItem; host: string; port: number; name: string }[] = [];
 
-  // 1. All Direct & Unlock Nodes with valid Reality config
+  // 1. All Direct & Unlock Nodes with valid Reality or Shadowsocks config
   for (const n of nodes) {
-    if (n.status !== "offline" && n.reality) {
+    if (n.status !== "offline" && (n.reality || n.shadowsocks)) {
       result.push({
         node: n,
         host: n.ip,
@@ -87,7 +120,7 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
     const unlockId = r.unlockNodeId || r.exitNodeId;
     const main = nodes.find(n => n.id === mainId);
     const unlock = nodes.find(n => n.id === unlockId);
-    if (main && unlock && main.reality) {
+    if (main && unlock && (main.reality || main.shadowsocks)) {
       result.push({
         node: main,
         host: main.ip,
@@ -225,10 +258,14 @@ export function renderSingboxJson(proxiesData: ReturnType<typeof assembleProxies
   return JSON.stringify(singboxConfig, null, 2);
 }
 
-// Render Base64 / Standard VLESS URL List
+// Render Base64 / Standard URL List (VLESS & Shadowsocks)
 export function renderBase64(proxiesData: ReturnType<typeof assembleProxies>): string {
   const urls = proxiesData
-    .map(p => toVlessUrl(p.node, p.host, p.port, p.name))
+    .map(p =>
+      p.node.protocol === "shadowsocks"
+        ? toSsUrl(p.node, p.host, p.port, p.name)
+        : toVlessUrl(p.node, p.host, p.port, p.name)
+    )
     .filter(Boolean);
 
   const raw = urls.join("\n");
