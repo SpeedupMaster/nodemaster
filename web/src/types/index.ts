@@ -1,4 +1,4 @@
-﻿export interface XrayRealityConfig {
+export interface XrayRealityConfig {
   uuid: string;
   flow: string;
   serverName: string;
@@ -32,6 +32,7 @@ export interface NodeItem {
   lastSeen: number;
   createdAt: number;
   tags: string[];
+  sni?: string;
 }
 
 export interface RelayLink {

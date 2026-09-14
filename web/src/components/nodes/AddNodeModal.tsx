@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { NodeItem } from "../../types";
@@ -21,6 +21,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
   const [protocol, setProtocol] = useState<"vless-reality" | "dokodemo">("vless-reality");
   const [country, setCountry] = useState("HK");
   const [countryName, setCountryName] = useState("中国香港");
+  const [sni, setSni] = useState("www.microsoft.com");
   const [trafficLimitGB, setTrafficLimitGB] = useState("1000");
   const [tagsStr, setTagsStr] = useState("原生IP, 流媒体解锁");
   const [submitting, setSubmitting] = useState(false);
@@ -46,6 +47,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         countryName,
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
         tags,
+        sni: type === "exit" ? sni : undefined,
       });
 
       // Reset form
@@ -189,6 +191,46 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             />
           </div>
         </div>
+
+        {/* SNI (Server Name Indication) for Reality Exit Nodes */}
+        {type === "exit" && (
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-ink-muted">
+                SNI 伪装域名 (Server Name Indication) *
+              </label>
+              <div className="flex items-center gap-1">
+                {[
+                  "www.microsoft.com",
+                  "www.apple.com",
+                  "addons.mozilla.org",
+                  "gateway.icloud.com",
+                  "itunes.apple.com",
+                ].map((domain) => (
+                  <button
+                    key={domain}
+                    type="button"
+                    onClick={() => setSni(domain)}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono"
+                  >
+                    {domain.split(".")[1] || domain}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <input
+              type="text"
+              required
+              value={sni}
+              onChange={(e) => setSni(e.target.value)}
+              placeholder="例如: www.microsoft.com"
+              className="w-full px-3 py-2 rounded-md bg-paper border border-rule focus:border-accent focus:outline-none text-ink font-mono text-xs"
+            />
+            <p className="text-[11px] text-ink-muted mt-1">
+              VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
+            </p>
+          </div>
+        )}
 
         {/* Tags */}
         <div>

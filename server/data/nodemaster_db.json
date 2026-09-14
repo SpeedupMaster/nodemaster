@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 38.8,
+      "cpuUsage": 17.5,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -34,7 +34,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789397813815,
+      "lastSeen": 1789398057582,
       "createdAt": 1788091505735
     },
     {
@@ -52,7 +52,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 42.8,
+      "cpuUsage": 48.2,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -71,7 +71,7 @@
         "fingerprint": "safari",
         "dest": "www.apple.com:443"
       },
-      "lastSeen": 1789397813815,
+      "lastSeen": 1789398057583,
       "createdAt": 1787659505735
     },
     {
@@ -89,7 +89,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 27.2,
+      "cpuUsage": 31.3,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -108,7 +108,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789397813816,
+      "lastSeen": 1789398057583,
       "createdAt": 1788523505735
     },
     {
@@ -126,7 +126,7 @@
       "trafficLimitBytes": 3221225472000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 38.2,
+      "cpuUsage": 53.9,
       "memUsage": 19.8,
       "diskUsage": 22,
       "latencyMs": 12,
@@ -135,7 +135,7 @@
         "三网优化",
         "低延迟转发"
       ],
-      "lastSeen": 1789397813816,
+      "lastSeen": 1789398057583,
       "createdAt": 1788696305735
     }
   ],

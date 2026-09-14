@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import crypto from "crypto";
 import { db } from "../db/index.js";
 import { generateRealityCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
@@ -16,15 +16,16 @@ apiRouter.get("/nodes", (req, res) => {
 });
 
 apiRouter.post("/nodes", (req, res) => {
-  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags } = req.body;
+  const { name, ip, port, type, protocol, country, countryName, trafficLimitBytes, tags, sni, serverName } = req.body;
   
   if (!name || !ip) {
     return res.status(400).json({ success: false, message: "名称与 IP 为必填项" });
   }
 
+  const targetSni = (sni || serverName || "").trim() || "www.microsoft.com";
   const id = `node-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
   const token = `tok_${crypto.randomBytes(16).toString("hex")}`;
-  const reality = protocol === "vless-reality" ? generateRealityCredentials() : undefined;
+  const reality = protocol === "vless-reality" ? generateRealityCredentials(targetSni) : undefined;
 
   const newNode: NodeItem = {
     id,
