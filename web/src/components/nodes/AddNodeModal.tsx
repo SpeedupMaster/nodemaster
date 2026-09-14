@@ -149,7 +149,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           ? "纳管原生解锁机，自动生成低开销 Shadowsocks 服务端配置"
           : "纳管主力直连机，自动生成 Xray-core Reality 免证书代理配置"
       }
-      maxWidth="lg"
+      maxWidth="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-sm">
         {/* Node Name */}
@@ -284,9 +284,38 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         {/* Region & Bandwidth */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
-              地理位置
-            </label>
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
+                地理位置
+              </label>
+              <div className="flex items-center gap-1 shrink-0">
+                {[
+                  { code: "HK", name: "中国香港", label: "HK" },
+                  { code: "JP", name: "日本东京", label: "JP" },
+                  { code: "US", name: "美国洛杉矶", label: "US" },
+                  { code: "SG", name: "新加坡", label: "SG" },
+                ].map((r) => {
+                  const isActive = country === r.code;
+                  return (
+                    <button
+                      key={r.code}
+                      type="button"
+                      onClick={() => {
+                        setCountry(r.code);
+                        setCountryName(r.name);
+                      }}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <Select
               options={countryOptions}
               value={country}
@@ -299,26 +328,33 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-ink-muted">
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 标称峰值带宽
               </label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {[
                   { label: "500M", val: "500" },
                   { label: "1Gbps", val: "1000" },
                   { label: "2.5G", val: "2500" },
                   { label: "10G", val: "10000" },
-                ].map((p) => (
-                  <button
-                    key={p.val}
-                    type="button"
-                    onClick={() => setBandwidthMbps(p.val)}
-                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                  >
-                    {p.label}
-                  </button>
-                ))}
+                ].map((p) => {
+                  const isActive = bandwidthMbps === p.val;
+                  return (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => setBandwidthMbps(p.val)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <Input
@@ -334,21 +370,33 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         {/* Traffic Quota & Reset Day */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-ink-muted">
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 月度流量配额
               </label>
-              <div className="flex items-center gap-1">
-                {["500", "1000", "2000", "5000"].map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => setTrafficLimitGB(q)}
-                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                  >
-                    {Number(q) >= 1000 ? `${Number(q) / 1000}T` : `${q}G`}
-                  </button>
-                ))}
+              <div className="flex items-center gap-1 shrink-0">
+                {[
+                  { label: "500G", val: "500" },
+                  { label: "1T", val: "1000" },
+                  { label: "2T", val: "2000" },
+                  { label: "5T", val: "5000" },
+                ].map((q) => {
+                  const isActive = trafficLimitGB === q.val;
+                  return (
+                    <button
+                      key={q.val}
+                      type="button"
+                      onClick={() => setTrafficLimitGB(q.val)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {q.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <Input
@@ -361,21 +409,32 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-ink-muted">
-                流量重置日期 (账单日)
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
+                流量重置日
               </label>
-              <div className="flex items-center gap-1">
-                {["1", "15", "28"].map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setTrafficResetDay(d)}
-                    className="text-[9px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                  >
-                    每月{d}日
-                  </button>
-                ))}
+              <div className="flex items-center gap-1 shrink-0">
+                {[
+                  { label: "1日", val: "1" },
+                  { label: "15日", val: "15" },
+                  { label: "28日", val: "28" },
+                ].map((d) => {
+                  const isActive = trafficResetDay === d.val;
+                  return (
+                    <button
+                      key={d.val}
+                      type="button"
+                      onClick={() => setTrafficResetDay(d.val)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <Input
@@ -385,7 +444,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               value={trafficResetDay}
               onChange={(e) => setTrafficResetDay(e.target.value)}
               placeholder="1"
-              suffixText="日/月"
+              suffixText="日"
             />
           </div>
         </div>
@@ -393,27 +452,34 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         {/* Dynamic Protocol Fields: Direct (Reality SNI) vs Unlock (Shadowsocks Key) */}
         {type === "direct" ? (
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-xs font-medium text-ink-muted">
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 SNI 伪装域名 (Server Name Indication) *
               </label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 {[
                   "www.microsoft.com",
                   "www.apple.com",
                   "addons.mozilla.org",
                   "gateway.icloud.com",
                   "itunes.apple.com",
-                ].map((domain) => (
-                  <button
-                    key={domain}
-                    type="button"
-                    onClick={() => setSni(domain)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border border-rule transition-colors font-mono cursor-pointer"
-                  >
-                    {domain.split(".")[1] || domain}
-                  </button>
-                ))}
+                ].map((domain) => {
+                  const isActive = sni === domain;
+                  return (
+                    <button
+                      key={domain}
+                      type="button"
+                      onClick={() => setSni(domain)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border-rule"
+                      }`}
+                    >
+                      {domain.split(".")[1] || domain}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <Input
