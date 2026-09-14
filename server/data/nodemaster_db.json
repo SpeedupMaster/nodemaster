@@ -11,11 +11,11 @@
       "country": "HK",
       "countryName": "中国香港",
       "token": "token_hk_8848",
-      "trafficUsedBytes": 184695722243,
+      "trafficUsedBytes": 185388017090,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 875333,
-      "downlinkSpeedBytes": 3424313,
-      "cpuUsage": 10.5,
+      "uplinkSpeedBytes": 17146,
+      "downlinkSpeedBytes": 67193,
+      "cpuUsage": 6.7,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789400132369,
+      "lastSeen": 1789400776035,
       "createdAt": 1788104083984
     },
     {
@@ -49,11 +49,11 @@
       "country": "JP",
       "countryName": "日本东京",
       "token": "token_jp_8848",
-      "trafficUsedBytes": 312171664992,
+      "trafficUsedBytes": 313262625606,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 1314151,
-      "downlinkSpeedBytes": 5094189,
-      "cpuUsage": 11.3,
+      "uplinkSpeedBytes": 139287,
+      "downlinkSpeedBytes": 540147,
+      "cpuUsage": 23.4,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -73,7 +73,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789400132370,
+      "lastSeen": 1789400776036,
       "createdAt": 1788536083984
     },
     {
@@ -87,11 +87,11 @@
       "country": "US",
       "countryName": "美国洛杉矶 (原生住宅)",
       "token": "token_us_unlock_8848",
-      "trafficUsedBytes": 129582486148,
+      "trafficUsedBytes": 130426648306,
       "trafficLimitBytes": 2147483648000,
-      "uplinkSpeedBytes": 381000,
-      "downlinkSpeedBytes": 2039504,
-      "cpuUsage": 8.3,
+      "uplinkSpeedBytes": 58782,
+      "downlinkSpeedBytes": 314841,
+      "cpuUsage": 13.3,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -105,7 +105,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789400132370,
+      "lastSeen": 1789400776036,
       "createdAt": 1787672083984
     },
     {
@@ -119,11 +119,11 @@
       "country": "GB",
       "countryName": "英国伦敦 (原生IP)",
       "token": "token_uk_unlock_8848",
-      "trafficUsedBytes": 85235039340,
+      "trafficUsedBytes": 85467181581,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 138959,
-      "downlinkSpeedBytes": 760999,
-      "cpuUsage": 5,
+      "uplinkSpeedBytes": 14693,
+      "downlinkSpeedBytes": 80651,
+      "cpuUsage": 34.3,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -137,7 +137,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789400132371,
+      "lastSeen": 1789400776037,
       "createdAt": 1788708883984
     }
   ],

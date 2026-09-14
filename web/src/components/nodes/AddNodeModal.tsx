@@ -4,7 +4,7 @@ import { Button } from "../common/Button";
 import { Select, SelectOption } from "../common/Select";
 import { Input } from "../common/Input";
 import { NodeItem } from "../../types";
-import { ArrowsClockwise, ShieldCheck, Key } from "@phosphor-icons/react";
+import { ArrowsClockwise, ShieldCheck, Key, Globe, Sparkle } from "@phosphor-icons/react";
 
 interface AddNodeModalProps {
   isOpen: boolean;
@@ -191,19 +191,94 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
         </div>
 
-        {/* Node Type & Region */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
-              节点拓扑类型
-            </label>
-            <Select
-              options={typeOptions}
-              value={type}
-              onChange={(val) => handleTypeChange(val as "direct" | "unlock")}
-            />
-          </div>
+        {/* Node Topology Type Selection Cards */}
+        <div>
+          <label className="block text-xs font-medium text-ink-muted mb-1.5">
+            节点拓扑类型 *
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Card 1: Direct Node */}
+            <div
+              onClick={() => handleTypeChange("direct")}
+              className={`p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between select-none ${
+                type === "direct"
+                  ? "bg-accent/10 border-accent ring-1 ring-accent/40 shadow-sm"
+                  : "bg-paper border-rule hover:border-rule-active hover:bg-paper-hover"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Globe
+                      weight="bold"
+                      className={`w-4 h-4 ${type === "direct" ? "text-accent" : "text-ink-muted"}`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        type === "direct" ? "text-ink" : "text-ink-secondary"
+                      }`}
+                    >
+                      主力直连机
+                    </span>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-subtle text-accent border border-accent/20 font-mono whitespace-nowrap shrink-0">
+                    高速直连
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted mt-2 leading-relaxed">
+                  客户端第一跳直连出口，部署 VLESS-Reality 高速免证书协议
+                </p>
+              </div>
 
+              <div className="mt-3 pt-2 border-t border-rule/50 flex items-center justify-between text-[10px] font-mono">
+                <span className="text-accent font-medium">协议: VLESS-Reality</span>
+                <span className="text-ink-muted">端口: 443</span>
+              </div>
+            </div>
+
+            {/* Card 2: Unlock Node */}
+            <div
+              onClick={() => handleTypeChange("unlock")}
+              className={`p-3.5 rounded-lg border transition-all cursor-pointer flex flex-col justify-between select-none ${
+                type === "unlock"
+                  ? "bg-purple-950/20 border-purple-500 ring-1 ring-purple-500/40 shadow-sm"
+                  : "bg-paper border-rule hover:border-rule-active hover:bg-paper-hover"
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkle
+                      weight="bold"
+                      className={`w-4 h-4 ${type === "unlock" ? "text-purple-400" : "text-ink-muted"}`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        type === "unlock" ? "text-ink" : "text-ink-secondary"
+                      }`}
+                    >
+                      流媒体/AI 解锁机
+                    </span>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/40 text-purple-300 border border-purple-500/30 font-mono whitespace-nowrap shrink-0">
+                    SS 解锁
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted mt-2 leading-relaxed">
+                  原生住宅 VPS，部署轻量 Shadowsocks 协议，专供海外链式解锁
+                </p>
+              </div>
+
+              <div className="mt-3 pt-2 border-t border-rule/50 flex items-center justify-between text-[10px] font-mono">
+                <span className="text-purple-400 font-medium">协议: Shadowsocks</span>
+                <span className="text-ink-muted">端口: 8388</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Region & Traffic Quota */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1">
               地理位置
@@ -216,23 +291,6 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                 setCountry(val);
                 if (c) setCountryName(c.label.split(" ")[0]);
               }}
-            />
-          </div>
-        </div>
-
-        {/* Protocol & Quota */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-ink-muted mb-1">
-              底层协议
-            </label>
-            <Input
-              disabled
-              value={
-                type === "unlock"
-                  ? "Shadowsocks (SS 2022 / AEAD)"
-                  : "VLESS-Reality (Vision/XTLS)"
-              }
             />
           </div>
 

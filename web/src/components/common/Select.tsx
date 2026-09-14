@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { CaretDown, Check } from "@phosphor-icons/react";
@@ -81,12 +81,12 @@ export const Select: React.FC<SelectProps> = ({
             : "border-rule hover:border-rule-active hover:bg-paper-hover"
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
-        <div className="flex items-center gap-2 truncate">
-          <span className={`truncate ${selectedOption ? "text-ink font-medium" : "text-ink-muted"}`}>
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden pr-2">
+          <span className={`truncate text-xs ${selectedOption ? "text-ink font-medium" : "text-ink-muted"}`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption?.badge && (
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-mono">
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-mono shrink-0 whitespace-nowrap">
               {selectedOption.badge}
             </span>
           )}
@@ -94,7 +94,7 @@ export const Select: React.FC<SelectProps> = ({
 
         <CaretDown
           weight="bold"
-          className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 flex-shrink-0 ${
+          className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180 text-accent" : ""
           }`}
         />
@@ -104,7 +104,7 @@ export const Select: React.FC<SelectProps> = ({
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute left-0 right-0 top-full mt-1 bg-paper-2 border border-rule rounded-md shadow-2xl py-1 z-50 max-h-60 overflow-y-auto"
+          className="absolute left-0 top-full mt-1.5 min-w-full w-max max-w-[min(90vw,420px)] bg-paper-2 border border-rule rounded-lg shadow-2xl py-1 z-50 max-h-64 overflow-y-auto"
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
@@ -112,28 +112,28 @@ export const Select: React.FC<SelectProps> = ({
               <div
                 key={opt.value}
                 onClick={() => handleSelect(opt.value)}
-                className={`px-3 py-2 flex items-center justify-between text-xs cursor-pointer transition-colors ${
+                className={`px-3.5 py-2.5 flex items-start justify-between gap-3 text-xs cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-accent/10 text-accent font-medium"
                     : "text-ink-secondary hover:bg-paper-hover hover:text-ink"
                 }`}
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span>{opt.label}</span>
+                    <span className="font-medium">{opt.label}</span>
                     {opt.badge && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0 whitespace-nowrap">
                         {opt.badge}
                       </span>
                     )}
                   </div>
                   {opt.desc && (
-                    <div className="text-[10px] text-ink-muted mt-0.5">{opt.desc}</div>
+                    <div className="text-[11px] text-ink-muted mt-1 leading-relaxed">{opt.desc}</div>
                   )}
                 </div>
 
                 {isSelected && (
-                  <Check weight="bold" className="w-3.5 h-3.5 text-accent flex-shrink-0 ml-2" />
+                  <Check weight="bold" className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                 )}
               </div>
             );
