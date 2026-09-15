@@ -516,13 +516,15 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 )}
 
                 {/* 3. 图表主体 (SVG) */}
-                <div className="w-full overflow-x-auto relative">
+                <div
+                  className="w-full overflow-x-auto relative"
+                  onMouseLeave={() => setLatencyHoverIdx(null)}
+                >
                   <svg
                     ref={latencySvgRef}
                     viewBox={`0 0 ${chartWidth} ${latencyChartHeight}`}
                     className="w-full h-72 select-none cursor-crosshair block"
                     onMouseMove={handleLatencyMouseMove}
-                    onMouseLeave={() => setLatencyHoverIdx(null)}
                   >
                     {/* SVG Linear Gradient Defs for Area Fills */}
                     <defs>
@@ -693,8 +695,15 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                   {/* Hover Floating Tooltip */}
                   {latencyHoverIdx !== null && latencyTimestamps[latencyHoverIdx] && (
-                    <div className="absolute top-2 right-4 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono pointer-events-none min-w-[190px] space-y-2 backdrop-blur-md">
-                      <div className="text-[11px] text-ink-muted border-b border-rule pb-1.5 flex items-center justify-between">
+                    <div
+                      className={`absolute top-2 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono backdrop-blur-md transition-all duration-150 pointer-events-auto ${
+                        latencyHoverIdx >= latencyPointsCount / 2
+                          ? "left-16 right-auto"
+                          : "right-4 left-auto"
+                      }`}
+                      style={{ minWidth: visibleSeries.length > 5 ? "320px" : "190px" }}
+                    >
+                      <div className="text-[11px] text-ink-muted border-b border-rule pb-1.5 mb-2 flex items-center justify-between">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-ink-muted" />
                           <span>采样时刻</span>
@@ -703,7 +712,13 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           {formatTimeTick(latencyTimestamps[latencyHoverIdx])}
                         </span>
                       </div>
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                      <div
+                        className={`pr-1 max-h-56 overflow-y-auto ${
+                          visibleSeries.length > 5
+                            ? "grid grid-cols-2 gap-x-3 gap-y-1.5"
+                            : "space-y-1.5"
+                        }`}
+                      >
                         {visibleSeries.map((series) => {
                           const pt = series.history[latencyHoverIdx];
                           if (!pt) return null;
@@ -711,12 +726,16 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           return (
                             <div
                               key={series.taskId}
-                              className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded transition-colors ${
-                                isHovered ? "bg-paper-3 font-bold" : ""
+                              onMouseEnter={() => setHoveredTarget(series.taskName)}
+                              onMouseLeave={() => setHoveredTarget(null)}
+                              className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                                isHovered
+                                  ? "bg-paper-3 font-bold ring-1 ring-accent/30"
+                                  : "hover:bg-paper-3/50"
                               }`}
                             >
                               <span
-                                className="flex items-center gap-1.5 truncate max-w-[110px]"
+                                className="flex items-center gap-1.5 truncate max-w-[95px]"
                                 style={{ color: series.color }}
                               >
                                 <span
@@ -725,7 +744,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                 />
                                 <span className="truncate">{series.taskName}</span>
                               </span>
-                              <span className="font-bold text-ink">
+                              <span className="font-bold text-ink ml-1.5">
                                 {pt.latencyMs} ms
                               </span>
                             </div>
@@ -894,13 +913,15 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                 {/* 3. 图表主体 (SVG) */}
                 {loadData ? (
-                  <div className="w-full overflow-x-auto relative">
+                  <div
+                    className="w-full overflow-x-auto relative"
+                    onMouseLeave={() => setLoadHoverIdx(null)}
+                  >
                     <svg
                       ref={loadSvgRef}
                       viewBox={`0 0 ${chartWidth} ${loadChartHeight}`}
                       className="w-full h-56 select-none cursor-crosshair block"
                       onMouseMove={handleLoadMouseMove}
-                      onMouseLeave={() => setLoadHoverIdx(null)}
                     >
                       <defs>
                         {/* CPU Linear Gradient Area */}
@@ -1127,7 +1148,13 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                     {/* Hover Floating Tooltip */}
                     {loadHoverIdx !== null && loadTimestamps[loadHoverIdx] && (
-                      <div className="absolute top-2 right-4 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono pointer-events-none min-w-[180px] space-y-2 backdrop-blur-md">
+                      <div
+                        className={`absolute top-2 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono backdrop-blur-md transition-all duration-150 pointer-events-auto min-w-[190px] space-y-2 ${
+                          loadHoverIdx >= loadPointsCount / 2
+                            ? "left-16 right-auto"
+                            : "right-4 left-auto"
+                        }`}
+                      >
                         <div className="text-[11px] text-ink-muted border-b border-rule pb-1.5 flex items-center justify-between">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3 text-ink-muted" />
