@@ -46,6 +46,26 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
     return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
   };
 
+  const cleanOsName = (os?: string) => {
+    if (!os) return "Debian 12";
+    return os
+      .replace(/\s*\([^)]*\)/g, "")
+      .replace(/(\d+\.\d+)\.\d+/g, "$1")
+      .replace(/LTS/gi, "")
+      .trim();
+  };
+
+  const formatCompactBytes = (bytes?: number) => {
+    if (!bytes || bytes === 0) return "0";
+    if (bytes >= 1024 * 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)}T`;
+    if (bytes >= 1024 * 1024 * 1024) {
+      const gb = bytes / (1024 * 1024 * 1024);
+      return gb % 1 === 0 ? `${gb.toFixed(0)}G` : `${gb.toFixed(1)}G`;
+    }
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(0)}M`;
+    return `${(bytes / 1024).toFixed(0)}K`;
+  };
+
   const filteredNodes = nodes.filter((node) => {
     const matchSearch =
       node.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -216,17 +236,17 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-rule bg-paper/50 text-[11px] font-mono text-ink-muted uppercase select-none">
-                  <th className="py-3 px-4 font-medium">服务器节点</th>
-                  <th className="py-3 px-3 font-medium">操作系统 / 架构</th>
-                  <th className="py-3 px-3 font-medium">开机时长</th>
-                  <th className="py-3 px-3 font-medium min-w-[140px]">CPU 负载</th>
-                  <th className="py-3 px-3 font-medium min-w-[130px]">物理内存</th>
-                  <th className="py-3 px-3 font-medium min-w-[120px]">硬盘存储</th>
-                  <th className="py-3 px-3 font-medium min-w-[130px]">实时网络吞吐</th>
-                  <th className="py-3 px-3 font-medium min-w-[130px]">月度流量配额</th>
-                  <th className="py-3 px-3 font-medium text-center">延迟</th>
-                  <th className="py-3 px-4 font-medium text-right">探针状态</th>
+                <tr className="border-b border-rule bg-paper/50 text-[11px] font-mono text-ink-muted uppercase select-none whitespace-nowrap">
+                  <th className="py-3 px-4 font-medium min-w-[190px] whitespace-nowrap">服务器节点</th>
+                  <th className="py-3 px-3 font-medium min-w-[120px] whitespace-nowrap">系统 / 架构</th>
+                  <th className="py-3 px-3 font-medium min-w-[100px] whitespace-nowrap">开机时长</th>
+                  <th className="py-3 px-3 font-medium min-w-[110px] whitespace-nowrap">CPU 负载</th>
+                  <th className="py-3 px-3 font-medium min-w-[125px] whitespace-nowrap">物理内存</th>
+                  <th className="py-3 px-3 font-medium min-w-[115px] whitespace-nowrap">硬盘存储</th>
+                  <th className="py-3 px-3 font-medium min-w-[110px] whitespace-nowrap">实时网速</th>
+                  <th className="py-3 px-3 font-medium min-w-[130px] whitespace-nowrap">月度流量</th>
+                  <th className="py-3 px-3 font-medium min-w-[80px] text-center whitespace-nowrap">延迟</th>
+                  <th className="py-3 px-4 font-medium min-w-[80px] text-right whitespace-nowrap">状态</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rule font-mono">
@@ -247,20 +267,23 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                       className="probe-item-anim hover:bg-paper-hover transition-colors group"
                     >
                       {/* Node Name & IP */}
-                      <td className="py-3.5 px-4 font-sans">
+                      <td className="py-3.5 px-4 font-sans whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-ink text-xs tracking-tight group-hover:text-accent transition-colors">
+                          <span
+                            className="font-semibold text-ink text-xs tracking-tight group-hover:text-accent transition-colors max-w-[150px] truncate inline-block"
+                            title={node.name}
+                          >
                             {node.name}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0 whitespace-nowrap">
                             {node.countryName.split(" ")[0]}
                           </span>
                         </div>
-                        <div className="text-[11px] font-mono text-ink-muted mt-0.5 flex items-center gap-1.5">
+                        <div className="text-[11px] font-mono text-ink-muted mt-0.5 flex items-center gap-1.5 whitespace-nowrap">
                           <span>{node.ip}:{node.port}</span>
                           <span>•</span>
                           <span
-                            className={`uppercase text-[10px] font-medium ${
+                            className={`uppercase text-[10px] font-medium shrink-0 whitespace-nowrap ${
                               node.type === "unlock" ? "text-purple-400" : "text-accent"
                             }`}
                           >
@@ -270,31 +293,31 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                       </td>
 
                       {/* OS & Arch */}
-                      <td className="py-3.5 px-3">
-                        <div className="text-ink font-medium text-xs">
-                          {node.os || "Debian 12.5 (bookworm)"}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="text-ink font-medium text-xs whitespace-nowrap truncate max-w-[120px]" title={node.os}>
+                          {cleanOsName(node.os)}
                         </div>
-                        <div className="text-[11px] text-ink-muted mt-0.5 flex items-center gap-1">
-                          <span className="px-1 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule text-[10px]">
+                        <div className="text-[11px] text-ink-muted mt-0.5 flex items-center gap-1.5 whitespace-nowrap">
+                          <span className="px-1 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule text-[10px] font-mono shrink-0">
                             {node.arch || "x86_64"}
                           </span>
-                          <span>{node.tcpCount || 120} TCP</span>
+                          <span className="shrink-0">{node.tcpCount || 120} TCP</span>
                         </div>
                       </td>
 
                       {/* Uptime */}
                       <td className="py-3.5 px-3 text-xs text-ink-secondary whitespace-nowrap">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-ink-muted" />
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <Clock className="w-3.5 h-3.5 text-ink-muted shrink-0" />
                           <span>{node.uptime || "28天 14小时"}</span>
                         </div>
                       </td>
 
                       {/* CPU Usage & Load */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
                           <span className="text-ink font-semibold">{node.cpuUsage}%</span>
-                          <span className="text-[10px] text-ink-muted">
+                          <span className="text-[10px] text-ink-muted shrink-0 font-mono">
                             Load {node.loadAvg ? node.loadAvg[0] : 0.15}
                           </span>
                         </div>
@@ -313,11 +336,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                       </td>
 
                       {/* RAM Usage */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
                           <span className="text-ink font-semibold">{node.memUsage}%</span>
-                          <span className="text-[10px] text-ink-muted">
-                            {formatBytes(memUsed)} / {formatBytes(memTotal)}
+                          <span className="text-[10px] text-ink-muted shrink-0 whitespace-nowrap font-mono">
+                            {formatCompactBytes(memUsed)} / {formatCompactBytes(memTotal)}
                           </span>
                         </div>
                         <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
@@ -331,11 +354,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                       </td>
 
                       {/* Disk Storage */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
                           <span className="text-ink font-semibold">{node.diskUsage}%</span>
-                          <span className="text-[10px] text-ink-muted">
-                            {formatBytes(diskUsed)} / {formatBytes(diskTotal)}
+                          <span className="text-[10px] text-ink-muted shrink-0 whitespace-nowrap font-mono">
+                            {formatCompactBytes(diskUsed)} / {formatCompactBytes(diskTotal)}
                           </span>
                         </div>
                         <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
@@ -347,24 +370,24 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                       </td>
 
                       {/* Network Speeds */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center gap-1 text-emerald-400 font-semibold text-xs">
-                          <ArrowDown className="w-3 h-3" />
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-emerald-400 font-semibold text-xs whitespace-nowrap">
+                          <ArrowDown className="w-3 h-3 shrink-0" />
                           <RollingCounter value={down.val} decimals={1} suffix={` ${down.unit}`} />
                         </div>
-                        <div className="flex items-center gap-1 text-sky-400 font-semibold text-xs mt-0.5">
-                          <ArrowUp className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-sky-400 font-semibold text-xs mt-0.5 whitespace-nowrap">
+                          <ArrowUp className="w-3 h-3 shrink-0" />
                           <RollingCounter value={up.val} decimals={1} suffix={` ${up.unit}`} />
                         </div>
                       </td>
 
                       {/* Monthly Traffic & Reset Day */}
-                      <td className="py-3.5 px-3">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-ink-secondary text-[11px]">
-                            {trafficUsedGB} / {trafficLimitGB} GB
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
+                          <span className="text-ink-secondary text-[11px] whitespace-nowrap font-mono">
+                            {trafficUsedGB} <span className="text-[10px] text-ink-muted">/ {trafficLimitGB}G</span>
                           </span>
-                          <span className="text-[10px] text-ink-muted">
+                          <span className="text-[10px] text-ink-muted shrink-0 font-mono">
                             {trafficPct.toFixed(0)}%
                           </span>
                         </div>
@@ -376,22 +399,22 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                             style={{ width: `${trafficPct}%` }}
                           />
                         </div>
-                        <div className="text-[9px] text-ink-muted mt-0.5">
+                        <div className="text-[10px] text-ink-muted mt-0.5 whitespace-nowrap">
                           每月{node.trafficResetDay || 1}日重置
                         </div>
                       </td>
 
                       {/* Latency */}
-                      <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-paper-3 border border-rule text-xs font-semibold text-accent">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-paper-3 border border-rule text-xs font-semibold text-accent whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                           <span>{node.latencyMs} ms</span>
                         </div>
                       </td>
 
                       {/* Status Badge */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end shrink-0 whitespace-nowrap min-w-[64px]">
                           <Badge
                             variant={
                               node.status === "online"
