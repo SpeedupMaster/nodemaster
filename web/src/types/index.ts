@@ -79,3 +79,33 @@ export interface SubscriptionToken {
   expireAt: number;
   createdAt: number;
 }
+
+export interface LatencyTask {
+  id: string;
+  name: string;
+  target: string;
+  type: "tcp" | "icmp";
+  intervalSec: number;
+  nodeIds: string[]; // empty array means all nodes
+  enabled: boolean;
+  order: number;
+}
+
+export interface LatencyPoint {
+  timestamp: number;
+  latencyMs: number;
+  lossRate: number;
+  jitter: number;
+}
+
+export interface NodeLatencyHistory {
+  nodeId: string;
+  taskId: string;
+  taskName: string;
+  color: string;
+  currentLatency: number;
+  lossRate: number;
+  jitter: number;
+  history: LatencyPoint[];
+}
+

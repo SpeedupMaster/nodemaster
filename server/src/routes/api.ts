@@ -7,7 +7,7 @@ import { db } from "../db/index.js";
 import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
-import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig } from "../types/index.js";
+import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask } from "../types/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -364,4 +364,78 @@ apiRouter.get("/install.sh", (req, res) => {
   }
   res.status(500).send("# Error: install.sh template missing");
 });
+
+// -------------------------------------------------------------
+// 7. Latency Monitoring Tasks & History API
+// -------------------------------------------------------------
+apiRouter.get("/ping/tasks", (req, res) => {
+  res.json({ success: true, data: db.getLatencyTasks() });
+});
+
+apiRouter.post("/ping/tasks", (req, res) => {
+  const { name, target, type, intervalSec, nodeIds, enabled } = req.body;
+  if (!name || !target) {
+    return res.status(400).json({ success: false, message: "任务名称与目标地址为必填项" });
+  }
+
+  const tasks = db.getLatencyTasks();
+  const newTask: LatencyTask = {
+    id: `task-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+    name: name.trim(),
+    target: target.trim(),
+    type: type === "icmp" ? "icmp" : "tcp",
+    intervalSec: Number(intervalSec) || 60,
+    nodeIds: Array.isArray(nodeIds) ? nodeIds : [],
+    enabled: enabled !== false,
+    order: tasks.length + 1,
+  };
+
+  db.addLatencyTask(newTask);
+  res.json({ success: true, data: newTask });
+});
+
+apiRouter.put("/ping/tasks/:id", (req, res) => {
+  const existing = db.getLatencyTaskById(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ success: false, message: "任务不存在" });
+  }
+
+  const { name, target, type, intervalSec, nodeIds, enabled, order } = req.body;
+  const updates: Partial<LatencyTask> = {};
+  if (name !== undefined) updates.name = name.trim();
+  if (target !== undefined) updates.target = target.trim();
+  if (type !== undefined) updates.type = type === "icmp" ? "icmp" : "tcp";
+  if (intervalSec !== undefined) updates.intervalSec = Number(intervalSec) || 60;
+  if (nodeIds !== undefined) updates.nodeIds = Array.isArray(nodeIds) ? nodeIds : [];
+  if (enabled !== undefined) updates.enabled = Boolean(enabled);
+  if (order !== undefined) updates.order = Number(order);
+
+  const updated = db.updateLatencyTask(req.params.id, updates);
+  res.json({ success: true, data: updated });
+});
+
+apiRouter.delete("/ping/tasks/:id", (req, res) => {
+  const ok = db.deleteLatencyTask(req.params.id);
+  if (!ok) return res.status(404).json({ success: false, message: "任务不存在" });
+  res.json({ success: true, message: "任务已删除" });
+});
+
+apiRouter.post("/ping/tasks/presets", (req, res) => {
+  const resetTasks = db.resetLatencyTasks();
+  res.json({ success: true, data: resetTasks });
+});
+
+apiRouter.get("/ping/node-history/:nodeId", (req, res) => {
+  const range = (req.query.range as string) || "1h";
+  const history = db.getNodeLatencyHistory(req.params.nodeId, range);
+  res.json({ success: true, data: history });
+});
+
+apiRouter.get("/nodes/:id/history", (req, res) => {
+  const range = (req.query.range as string) || "1h";
+  const history = db.getNodeLoadHistory(req.params.id, range);
+  if (!history) return res.status(404).json({ success: false, message: "节点不存在" });
+  res.json({ success: true, data: history });
+});
+
 

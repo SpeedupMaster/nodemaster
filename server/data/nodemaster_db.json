@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 28.4,
+      "cpuUsage": 83.7,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789473551944,
+      "lastSeen": 1789479635576,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -43,8 +43,8 @@
       "arch": "x86_64",
       "uptime": "28天 14小时",
       "loadAvg": [
-        0.42,
-        0.08,
+        1.22,
+        0.51,
         0.18
       ],
       "memTotalBytes": 2147483648,
@@ -69,7 +69,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 40.8,
+      "cpuUsage": 65.2,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -89,7 +89,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789473551945,
+      "lastSeen": 1789479635576,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -97,8 +97,8 @@
       "arch": "x86_64",
       "uptime": "42天 8小时",
       "loadAvg": [
-        0.63,
-        0.71,
+        1,
+        0.94,
         0.45
       ],
       "memTotalBytes": 4294967296,
@@ -123,7 +123,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 65.6,
+      "cpuUsage": 83.2,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -137,7 +137,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789473551945,
+      "lastSeen": 1789479635577,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
       "trafficResetDay": 15,
@@ -145,8 +145,8 @@
       "arch": "x86_64",
       "uptime": "15天 2小时",
       "loadAvg": [
-        1,
-        0.09,
+        1.24,
+        0.16,
         0.1
       ],
       "memTotalBytes": 1073741824,
@@ -171,7 +171,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 77.1,
+      "cpuUsage": 7.7,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -185,7 +185,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789473551946,
+      "lastSeen": 1789479635577,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
       "trafficResetDay": 28,
@@ -193,8 +193,8 @@
       "arch": "aarch64",
       "uptime": "33天 19小时",
       "loadAvg": [
-        1.17,
-        0.28,
+        0.12,
+        0.42,
         0.14
       ],
       "memTotalBytes": 2147483648,
@@ -241,5 +241,97 @@
     "autoCircuitBreaker": true,
     "circuitBreakerThresholdPct": 98,
     "trafficResetDay": 1
-  }
+  },
+  "latencyTasks": [
+    {
+      "id": "task-gd-cm",
+      "name": "广东移动",
+      "target": "gd-cm-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 1
+    },
+    {
+      "id": "task-gd-cu",
+      "name": "广东联通",
+      "target": "gd-cu-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 2
+    },
+    {
+      "id": "task-gd-ct",
+      "name": "广东电信",
+      "target": "gd-ct-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 3
+    },
+    {
+      "id": "task-hb-cm",
+      "name": "湖北移动",
+      "target": "hb-cm-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 4
+    },
+    {
+      "id": "task-hb-cu",
+      "name": "湖北联通",
+      "target": "hb-cu-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 5
+    },
+    {
+      "id": "task-hb-ct",
+      "name": "湖北电信",
+      "target": "hb-ct-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 6
+    },
+    {
+      "id": "task-sc-cm",
+      "name": "四川移动",
+      "target": "sc-cm-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 7
+    },
+    {
+      "id": "task-sc-cu",
+      "name": "四川联通",
+      "target": "sc-cu-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 8
+    },
+    {
+      "id": "task-sc-ct",
+      "name": "四川电信",
+      "target": "sc-ct-v4.ip.zstaticcdn.com:80",
+      "type": "tcp",
+      "intervalSec": 60,
+      "nodeIds": [],
+      "enabled": true,
+      "order": 9
+    }
+  ]
 }

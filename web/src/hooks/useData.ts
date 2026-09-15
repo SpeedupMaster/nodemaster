@@ -1,25 +1,28 @@
-﻿import { useState, useEffect, useCallback } from "react";
-import { NodeItem, RelayLink, SubscriptionToken } from "../types";
+import { useState, useEffect, useCallback } from "react";
+import { NodeItem, RelayLink, SubscriptionToken, LatencyTask } from "../types";
 
 export function useData() {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [relays, setRelays] = useState<RelayLink[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionToken[]>([]);
+  const [latencyTasks, setLatencyTasks] = useState<LatencyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
 
   // Initial Fetch
   const fetchData = useCallback(async () => {
     try {
-      const [resNodes, resRelays, resSubs] = await Promise.all([
+      const [resNodes, resRelays, resSubs, resTasks] = await Promise.all([
         fetch("/api/nodes").then((r) => r.json()),
         fetch("/api/relays").then((r) => r.json()),
         fetch("/api/subscriptions").then((r) => r.json()),
+        fetch("/api/ping/tasks").then((r) => r.json()),
       ]);
 
       if (resNodes.success) setNodes(resNodes.data);
       if (resRelays.success) setRelays(resRelays.data);
       if (resSubs.success) setSubscriptions(resSubs.data);
+      if (resTasks.success) setLatencyTasks(resTasks.data);
     } catch (err) {
       console.error("[useData] fetch error:", err);
     } finally {
@@ -157,6 +160,51 @@ export function useData() {
     return res;
   };
 
+  // Latency Tasks API helpers
+  const addLatencyTask = async (taskData: Partial<LatencyTask>) => {
+    const res = await fetch("/api/ping/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(taskData),
+    }).then((r) => r.json());
+    if (res.success) {
+      setLatencyTasks((prev) => [...prev, res.data]);
+    }
+    return res;
+  };
+
+  const updateLatencyTask = async (id: string, updates: Partial<LatencyTask>) => {
+    const res = await fetch(`/api/ping/tasks/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).then((r) => r.json());
+    if (res.success) {
+      setLatencyTasks((prev) => prev.map((t) => (t.id === id ? res.data : t)));
+    }
+    return res;
+  };
+
+  const deleteLatencyTask = async (id: string) => {
+    const res = await fetch(`/api/ping/tasks/${id}`, {
+      method: "DELETE",
+    }).then((r) => r.json());
+    if (res.success) {
+      setLatencyTasks((prev) => prev.filter((t) => t.id !== id));
+    }
+    return res;
+  };
+
+  const resetLatencyTasks = async () => {
+    const res = await fetch("/api/ping/tasks/presets", {
+      method: "POST",
+    }).then((r) => r.json());
+    if (res.success) {
+      setLatencyTasks(res.data);
+    }
+    return res;
+  };
+
   // Aggregated Telemetry
   const totalUplinkSpeed = nodes.reduce((acc, n) => acc + (n.uplinkSpeedBytes || 0), 0);
   const totalDownlinkSpeed = nodes.reduce((acc, n) => acc + (n.downlinkSpeedBytes || 0), 0);
@@ -168,6 +216,7 @@ export function useData() {
     nodes,
     relays,
     subscriptions,
+    latencyTasks,
     loading,
     wsConnected,
     fetchData,
@@ -177,6 +226,10 @@ export function useData() {
     resetTraffic,
     addRelay,
     deleteRelay,
+    addLatencyTask,
+    updateLatencyTask,
+    deleteLatencyTask,
+    resetLatencyTasks,
     totalUplinkSpeed,
     totalDownlinkSpeed,
     totalTrafficUsed,

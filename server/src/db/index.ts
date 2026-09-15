@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { NodeItem, RelayLink, SubscriptionToken, SystemConfig } from "../types/index.js";
+import { NodeItem, RelayLink, SubscriptionToken, SystemConfig, LatencyTask, NodeLatencyHistory } from "../types/index.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +13,7 @@ export interface DatabaseSchema {
   relays: RelayLink[];
   subscriptions: SubscriptionToken[];
   config: SystemConfig;
+  latencyTasks: LatencyTask[];
 }
 
 const DEFAULT_CONFIG: SystemConfig = {
@@ -226,6 +227,116 @@ const INITIAL_SUBSCRIPTIONS: SubscriptionToken[] = [
   }
 ];
 
+export const INITIAL_LATENCY_TASKS: LatencyTask[] = [
+  {
+    id: "task-gd-cm",
+    name: "广东移动",
+    target: "gd-cm-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 1,
+  },
+  {
+    id: "task-gd-cu",
+    name: "广东联通",
+    target: "gd-cu-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 2,
+  },
+  {
+    id: "task-gd-ct",
+    name: "广东电信",
+    target: "gd-ct-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 3,
+  },
+  {
+    id: "task-hb-cm",
+    name: "湖北移动",
+    target: "hb-cm-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 4,
+  },
+  {
+    id: "task-hb-cu",
+    name: "湖北联通",
+    target: "hb-cu-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 5,
+  },
+  {
+    id: "task-hb-ct",
+    name: "湖北电信",
+    target: "hb-ct-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 6,
+  },
+  {
+    id: "task-sc-cm",
+    name: "四川移动",
+    target: "sc-cm-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 7,
+  },
+  {
+    id: "task-sc-cu",
+    name: "四川联通",
+    target: "sc-cu-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 8,
+  },
+  {
+    id: "task-sc-ct",
+    name: "四川电信",
+    target: "sc-ct-v4.ip.zstaticcdn.com:80",
+    type: "tcp",
+    intervalSec: 60,
+    nodeIds: [],
+    enabled: true,
+    order: 9,
+  },
+];
+
+const TASK_DEFAULT_COLORS: Record<string, string> = {
+  "广东移动": "#ef4444",
+  "广东联通": "#22c55e",
+  "广东电信": "#6366f1",
+  "湖北移动": "#06b6d4",
+  "湖北联通": "#38bdf8",
+  "湖北电信": "#a855f7",
+  "四川移动": "#f97316",
+  "四川联通": "#eab308",
+  "四川电信": "#ec4899",
+};
+
+const FALLBACK_PALETTE = [
+  "#10b981", "#3b82f6", "#8b5cf6", "#f43f5e",
+  "#14b8a6", "#f59e0b", "#06b6d4", "#64748b"
+];
+
 class Database {
   private data: DatabaseSchema;
 
@@ -238,6 +349,10 @@ class Database {
       try {
         const raw = fs.readFileSync(DATA_FILE, "utf-8");
         this.data = JSON.parse(raw);
+        if (!this.data.latencyTasks || this.data.latencyTasks.length === 0) {
+          this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
+          this.save();
+        }
       } catch (err) {
         console.error("[Database] Corrupt DB file, initializing defaults", err);
         this.data = this.createDefault();
@@ -255,6 +370,7 @@ class Database {
       relays: INITIAL_RELAYS,
       subscriptions: INITIAL_SUBSCRIPTIONS,
       config: DEFAULT_CONFIG,
+      latencyTasks: [...INITIAL_LATENCY_TASKS],
     };
   }
 
@@ -348,6 +464,174 @@ class Database {
     this.data.config = { ...this.data.config, ...updates };
     this.save();
     return this.data.config;
+  }
+
+  // Latency Tasks API
+  public getLatencyTasks(): LatencyTask[] {
+    return this.data.latencyTasks || [];
+  }
+
+  public getLatencyTaskById(id: string): LatencyTask | undefined {
+    return (this.data.latencyTasks || []).find(t => t.id === id);
+  }
+
+  public addLatencyTask(task: LatencyTask): LatencyTask {
+    if (!this.data.latencyTasks) this.data.latencyTasks = [];
+    this.data.latencyTasks.push(task);
+    this.save();
+    return task;
+  }
+
+  public updateLatencyTask(id: string, updates: Partial<LatencyTask>): LatencyTask | null {
+    if (!this.data.latencyTasks) this.data.latencyTasks = [];
+    const idx = this.data.latencyTasks.findIndex(t => t.id === id);
+    if (idx === -1) return null;
+    this.data.latencyTasks[idx] = { ...this.data.latencyTasks[idx], ...updates };
+    this.save();
+    return this.data.latencyTasks[idx];
+  }
+
+  public deleteLatencyTask(id: string): boolean {
+    if (!this.data.latencyTasks) return false;
+    const before = this.data.latencyTasks.length;
+    this.data.latencyTasks = this.data.latencyTasks.filter(t => t.id !== id);
+    this.save();
+    return this.data.latencyTasks.length < before;
+  }
+
+  public resetLatencyTasks(): LatencyTask[] {
+    this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
+    this.save();
+    return this.data.latencyTasks;
+  }
+
+  // Node Latency History Simulator / Provider
+  public getNodeLatencyHistory(nodeId: string, range = "1h"): NodeLatencyHistory[] {
+    const node = this.getNodeById(nodeId);
+    if (!node) return [];
+
+    const tasks = (this.data.latencyTasks || []).filter(
+      t => t.enabled && (t.nodeIds.length === 0 || t.nodeIds.includes(nodeId))
+    );
+
+    let pointsCount = 60;
+    let stepMs = 60 * 1000;
+    if (range === "6h") {
+      pointsCount = 72;
+      stepMs = 5 * 60 * 1000;
+    } else if (range === "12h") {
+      pointsCount = 72;
+      stepMs = 10 * 60 * 1000;
+    } else if (range === "1d") {
+      pointsCount = 96;
+      stepMs = 15 * 60 * 1000;
+    }
+
+    const now = Date.now();
+    const startTime = now - pointsCount * stepMs;
+
+    let nodeBase = node.latencyMs || 45;
+    if (node.country === "HK") nodeBase = 18;
+    else if (node.country === "JP") nodeBase = 58;
+    else if (node.country === "US") nodeBase = 145;
+
+    return tasks.map((task, tIdx) => {
+      let targetOffset = 0;
+      if (task.name.includes("广东")) targetOffset = 0;
+      else if (task.name.includes("湖北")) targetOffset = 15;
+      else if (task.name.includes("四川")) targetOffset = 25;
+      else targetOffset = 10;
+
+      if (task.name.includes("电信")) targetOffset -= 2;
+      else if (task.name.includes("联通")) targetOffset += 1;
+      else if (task.name.includes("移动")) targetOffset += 3;
+
+      const base = Math.max(10, nodeBase + targetOffset);
+      const color = TASK_DEFAULT_COLORS[task.name] || FALLBACK_PALETTE[tIdx % FALLBACK_PALETTE.length];
+
+      const history = [];
+      for (let i = 0; i < pointsCount; i++) {
+        const time = startTime + i * stepMs;
+        const wave = Math.sin((i / pointsCount) * Math.PI * 4 + tIdx) * 3;
+        const noise = Math.sin(i * 13 + tIdx * 7) * 1.5;
+        const spike = (i % 23 === 0) ? 4.5 : 0;
+        const lat = +(base + wave + noise + spike).toFixed(1);
+        history.push({
+          timestamp: time,
+          latencyMs: Math.max(5, lat),
+          lossRate: 0.0,
+          jitter: +(Math.abs(noise * 0.6) + 0.3).toFixed(1),
+        });
+      }
+
+      const latest = history[history.length - 1];
+      return {
+        nodeId,
+        taskId: task.id,
+        taskName: task.name,
+        color,
+        currentLatency: latest.latencyMs,
+        lossRate: 0.0,
+        jitter: latest.jitter,
+        history,
+      };
+    });
+  }
+
+  // Node Hardware Load History Simulator
+  public getNodeLoadHistory(nodeId: string, range = "1h") {
+    const node = this.getNodeById(nodeId);
+    if (!node) return null;
+
+    let pointsCount = 60;
+    let stepMs = 60 * 1000;
+    if (range === "6h") {
+      pointsCount = 72;
+      stepMs = 5 * 60 * 1000;
+    } else if (range === "12h") {
+      pointsCount = 72;
+      stepMs = 10 * 60 * 1000;
+    } else if (range === "1d") {
+      pointsCount = 96;
+      stepMs = 15 * 60 * 1000;
+    }
+
+    const now = Date.now();
+    const startTime = now - pointsCount * stepMs;
+
+    const timestamps: number[] = [];
+    const cpu: number[] = [];
+    const mem: number[] = [];
+    const disk: number[] = [];
+    const netIn: number[] = [];
+    const netOut: number[] = [];
+
+    const baseCpu = node.cpuUsage || 15;
+    const baseMem = node.memUsage || 25;
+    const baseDisk = node.diskUsage || 30;
+
+    for (let i = 0; i < pointsCount; i++) {
+      const t = startTime + i * stepMs;
+      timestamps.push(t);
+      const cpuWave = Math.sin((i / pointsCount) * Math.PI * 6) * 6 + (Math.sin(i * 17) * 3);
+      cpu.push(+(Math.min(99, Math.max(2, baseCpu + cpuWave))).toFixed(1));
+      const memWave = Math.sin((i / pointsCount) * Math.PI * 2) * 2 + (Math.sin(i * 7) * 1);
+      mem.push(+(Math.min(99, Math.max(5, baseMem + memWave))).toFixed(1));
+      disk.push(+baseDisk.toFixed(1));
+      const speedIn = Math.max(50, (node.downlinkSpeedBytes || 204800) + Math.sin(i * 5) * 80000);
+      const speedOut = Math.max(20, (node.uplinkSpeedBytes || 81920) + Math.sin(i * 3) * 30000);
+      netIn.push(Math.round(speedIn));
+      netOut.push(Math.round(speedOut));
+    }
+
+    return {
+      timestamps,
+      cpu,
+      mem,
+      disk,
+      netIn,
+      netOut,
+    };
   }
 }
 

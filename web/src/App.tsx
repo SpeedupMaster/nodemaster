@@ -12,6 +12,9 @@ import { TopologyCanvas } from "./components/topology/TopologyCanvas";
 import { SubscriptionView } from "./components/subscription/SubscriptionView";
 import { ScriptView } from "./components/dashboard/ScriptView";
 import { AddNodeModal } from "./components/nodes/AddNodeModal";
+import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
+import { NodeDetailModal } from "./components/probe/NodeDetailModal";
+import { NodeItem } from "./types";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
@@ -21,12 +24,14 @@ gsap.registerPlugin(useGSAP);
 export function App() {
   const [currentTab, setCurrentTab] = useState("dashboard");
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
+  const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   const {
     nodes,
     relays,
     subscriptions,
+    latencyTasks,
     loading,
     wsConnected,
     fetchData,
@@ -36,6 +41,10 @@ export function App() {
     resetTraffic,
     addRelay,
     deleteRelay,
+    addLatencyTask,
+    updateLatencyTask,
+    deleteLatencyTask,
+    resetLatencyTasks,
     totalUplinkSpeed: totalUpSpeed,
     totalDownlinkSpeed: totalDownSpeed,
     totalTrafficUsed,
@@ -88,7 +97,10 @@ export function App() {
                   totalCount={nodes.length}
                   relaysCount={relays.length}
                 />
-                <ProbeDashboard nodes={nodes} />
+                <ProbeDashboard
+                  nodes={nodes}
+                  onSelectNode={(node) => setSelectedNodeDetail(node)}
+                />
               </div>
             )}
 
@@ -98,6 +110,18 @@ export function App() {
                 onResetTraffic={resetTraffic}
                 onDelete={deleteNode}
                 onUpdate={updateNode}
+              />
+            )}
+
+            {currentTab === "ping" && (
+              <LatencyMonitorView
+                tasks={latencyTasks}
+                nodes={nodes}
+                onAddTask={addLatencyTask}
+                onUpdateTask={updateLatencyTask}
+                onDeleteTask={deleteLatencyTask}
+                onResetTasks={resetLatencyTasks}
+                onOpenNodeDetail={(node) => setSelectedNodeDetail(node)}
               />
             )}
 
@@ -129,6 +153,13 @@ export function App() {
         isOpen={isAddNodeOpen}
         onClose={() => setIsAddNodeOpen(false)}
         onSubmit={addNode}
+      />
+
+      {/* Global Node Detail & Latency Time Series Modal */}
+      <NodeDetailModal
+        node={selectedNodeDetail}
+        isOpen={!!selectedNodeDetail}
+        onClose={() => setSelectedNodeDetail(null)}
       />
     </div>
   );

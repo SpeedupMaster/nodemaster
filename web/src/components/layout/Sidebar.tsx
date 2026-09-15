@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Broadcast,
+  Pulse,
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
 
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: "dashboard", label: "实时仪表盘", icon: Gauge },
     { id: "nodes", label: "多节点管理", icon: HardDrives },
+    { id: "ping", label: "延迟监测", icon: Pulse },
     { id: "topology", label: "链式代理拓扑", icon: ShareNetwork },
     { id: "subscription", label: "订阅分享与导出", icon: LinkSimple },
     { id: "script", label: "一键部署与脚本", icon: TerminalWindow },

@@ -26,9 +26,10 @@ gsap.registerPlugin(useGSAP);
 
 interface ProbeDashboardProps {
   nodes: NodeItem[];
+  onSelectNode?: (node: NodeItem) => void;
 }
 
-export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
+export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectNode }) => {
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("all");
@@ -263,13 +264,15 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                   return (
                     <tr
                       key={node.id}
-                      className="probe-item-anim hover:bg-paper-hover transition-colors group"
+                      onClick={() => onSelectNode?.(node)}
+                      className="probe-item-anim hover:bg-paper-hover transition-colors group cursor-pointer"
+                      title="点击查看此节点的详细延迟监测与硬件时序图表"
                     >
                       {/* Node Name & IP */}
                       <td className="py-3.5 px-4 font-sans whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <span
-                            className="font-semibold text-ink text-xs tracking-tight group-hover:text-accent transition-colors max-w-[150px] truncate inline-block"
+                            className="font-semibold text-ink text-xs tracking-tight group-hover:text-accent group-hover:underline transition-colors max-w-[150px] truncate inline-block"
                             title={node.name}
                           >
                             {node.name}
@@ -452,10 +455,14 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                 className="probe-item-anim rounded-lg bg-paper-2 border border-rule hover:border-rule-active p-5 space-y-4 transition-all"
               >
                 {/* Header */}
-                <div className="flex items-start justify-between gap-3">
+                <div
+                  onClick={() => onSelectNode?.(node)}
+                  className="flex items-start justify-between gap-3 cursor-pointer group/header"
+                  title="点击查看此节点的详细延迟监测与硬件时序图表"
+                >
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-ink text-sm tracking-tight">
+                      <h4 className="font-semibold text-ink text-sm tracking-tight group-hover/header:text-accent group-hover/header:underline transition-colors">
                         {node.name}
                       </h4>
                       <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
@@ -560,14 +567,17 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 text-ink-muted text-[11px]">
+                  <div className="flex items-center gap-2.5 text-ink-muted text-[11px]">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {node.uptime || "28天"}
                     </span>
-                    <span className="text-accent font-semibold">
-                      {node.latencyMs} ms
-                    </span>
+                    <button
+                      onClick={() => onSelectNode?.(node)}
+                      className="px-2 py-0.5 rounded bg-accent/10 hover:bg-accent/20 text-accent font-medium text-[11px] border border-accent/25 transition-colors cursor-pointer"
+                    >
+                      详细监测 →
+                    </button>
                   </div>
                 </div>
               </div>

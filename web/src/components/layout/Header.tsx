@@ -24,6 +24,10 @@ export const Header: React.FC<HeaderProps> = ({
       title: "多 VPS 节点管理",
       desc: "支持 VLESS-Reality 免证书协议、Dokodemo 转发与实时指标统计",
     },
+    ping: {
+      title: "延迟监测",
+      desc: "多测速目标网络质量、丢包率与抖动时序监控",
+    },
     topology: {
       title: "链式代理与解锁拓扑",
       desc: "主力直连机与专属解锁机智能分流绑定与流向拓扑",
