@@ -118,6 +118,14 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
     );
   };
 
+  const toggleSelectAllNodes = () => {
+    if (formNodeIds.length === nodes.length) {
+      setFormNodeIds([]);
+    } else {
+      setFormNodeIds(nodes.map((n) => n.id));
+    }
+  };
+
   // Helper to format servers summary
   const renderServersSummary = (taskNodeIds: string[]) => {
     if (!taskNodeIds || taskNodeIds.length === 0) {
@@ -462,10 +470,46 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-ink-secondary mb-1">
-                  指派运行探针节点 (留空默认指派全部服务器)
-                </label>
-                <div className="max-h-36 overflow-y-auto p-2 bg-paper rounded-md border border-rule space-y-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-ink-secondary">
+                    指派运行探针节点 (留空默认指派全部服务器)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={toggleSelectAllNodes}
+                    className="text-xs text-accent hover:text-accent-hover font-medium cursor-pointer transition-colors"
+                  >
+                    {nodes.length > 0 && formNodeIds.length === nodes.length
+                      ? "取消全选"
+                      : "选择所有节点"}
+                  </button>
+                </div>
+
+                <div className="max-h-44 overflow-y-auto p-2 bg-paper rounded-md border border-rule space-y-1">
+                  {/* Master Select All Row */}
+                  <label className="flex items-center justify-between p-1.5 rounded hover:bg-paper-hover text-xs text-ink cursor-pointer transition-colors border-b border-rule/50 pb-2 mb-1 select-none">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={nodes.length > 0 && formNodeIds.length === nodes.length}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate =
+                              formNodeIds.length > 0 && formNodeIds.length < nodes.length;
+                          }
+                        }}
+                        onChange={toggleSelectAllNodes}
+                        className="rounded border-rule text-accent focus:ring-accent"
+                      />
+                      <span className="font-semibold text-accent">选择所有节点</span>
+                    </div>
+                    <span className="text-ink-muted text-[11px] font-mono">
+                      {formNodeIds.length === 0
+                        ? "默认全部"
+                        : `${formNodeIds.length}/${nodes.length} 已选`}
+                    </span>
+                  </label>
+
                   {nodes.map((node) => {
                     const isChecked = formNodeIds.includes(node.id);
                     return (
