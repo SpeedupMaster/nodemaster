@@ -46,18 +46,39 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const mainNodes = nodes.filter((n) => n.type === "direct" || n.type === "exit");
   const unlockNodes = nodes.filter((n) => n.type === "unlock");
 
-  const getCountryFlag = (country?: string) => {
-    if (!country) return "🌐";
-    const c = country.toUpperCase();
-    if (c === "HK") return "🇭🇰";
-    if (c === "JP") return "🇯🇵";
-    if (c === "US") return "🇺🇸";
-    if (c === "UK" || c === "GB") return "🇬🇧";
-    if (c === "SG") return "🇸🇬";
-    if (c === "TW") return "🇹🇼";
-    if (c === "KR") return "🇰🇷";
-    if (c === "DE") return "🇩🇪";
-    return "🌐";
+  // High-contrast, clean regional indicator badge that renders crisply across all OSes
+  const renderCountryBadge = (country?: string, size: "sm" | "md" = "md") => {
+    const code = (country || "UN").toUpperCase();
+    const colors: Record<string, { bg: string; text: string; border: string }> = {
+      HK: { bg: "bg-red-500/15", text: "text-red-400", border: "border-red-500/30" },
+      JP: { bg: "bg-rose-500/15", text: "text-rose-400", border: "border-rose-500/30" },
+      US: { bg: "bg-blue-500/15", text: "text-blue-400", border: "border-blue-500/30" },
+      UK: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30" },
+      GB: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30" },
+      SG: { bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/30" },
+      TW: { bg: "bg-sky-500/15", text: "text-sky-400", border: "border-sky-500/30" },
+      DE: { bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/30" },
+    };
+    const theme = colors[code] || { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" };
+    const displayCode = code === "GB" ? "UK" : code;
+
+    if (size === "sm") {
+      return (
+        <span
+          className={`px-1.5 py-0.2 rounded ${theme.bg} ${theme.text} border ${theme.border} font-mono text-[10px] font-bold shrink-0 select-none`}
+        >
+          {displayCode}
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className={`w-7 h-7 rounded-lg ${theme.bg} ${theme.text} border ${theme.border} flex items-center justify-center font-mono text-[11px] font-bold shrink-0 shadow-xs select-none`}
+      >
+        {displayCode}
+      </span>
+    );
   };
 
   const handleOpenAddModal = () => {
@@ -193,7 +214,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               </span>
             </div>
 
-            {/* Main Nodes List */}
+            {/* Main Nodes List - Strictly Unified Height & Symmetric Slots */}
             <div className="space-y-3">
               {mainNodes.map((mn) => {
                 const chainedRelays = relays.filter(
@@ -203,28 +224,28 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                 return (
                   <div
                     key={mn.id}
-                    className="p-4 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all space-y-3 group"
+                    className="h-[158px] p-3.5 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all flex flex-col justify-between group"
                   >
-                    {/* Node Header Row */}
+                    {/* Slot 1: Header */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-lg">{getCountryFlag(mn.country)}</span>
-                        <div>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {renderCountryBadge(mn.country)}
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-ink font-mono group-hover:text-accent transition-colors">
+                            <span className="text-xs font-bold text-ink font-mono group-hover:text-accent transition-colors truncate max-w-[130px] sm:max-w-[170px]">
                               {mn.name}
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans">
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
                               {mn.countryName}
                             </span>
                           </div>
-                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block">
+                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
                             {mn.ip}:{mn.port}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold">
                           {mn.protocol}
                         </span>
@@ -235,13 +256,26 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                       </div>
                     </div>
 
-                    {/* Chained Target Badges / Routing status */}
-                    <div className="pt-2.5 border-t border-rule/60 flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono">
+                    {/* Slot 2: Feature Tags (Normalized height) */}
+                    <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                        客户端直连
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                        千兆 BGP
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-mono">
+                        智能分流引擎
+                      </span>
+                    </div>
+
+                    {/* Slot 3: Bottom Status Footer (Normalized height & border) */}
+                    <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
                       {chainedRelays.length > 0 ? (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-ink-muted flex items-center gap-1 text-[10px]">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="text-ink-muted flex items-center gap-1 text-[10px] shrink-0">
                             <ArrowsLeftRight className="w-3 h-3 text-purple-400" />
-                            <span>已挂载解锁出站:</span>
+                            <span>已挂载出站:</span>
                           </span>
                           {chainedRelays.map((r) => {
                             const targetUnlock = nodes.find(
@@ -250,11 +284,11 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                             return (
                               <span
                                 key={r.id}
-                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1 font-medium"
+                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1 font-medium truncate"
                               >
-                                <span>{getCountryFlag(targetUnlock?.country)}</span>
-                                <span>{targetUnlock?.name || "解锁节点"}</span>
-                                <span className="text-[9px] text-purple-400/80">
+                                {renderCountryBadge(targetUnlock?.country, "sm")}
+                                <span className="truncate">{targetUnlock?.name || "解锁节点"}</span>
+                                <span className="text-[9px] text-purple-400/80 shrink-0">
                                   ({r.mode === "all" ? "全量" : "智能分流"})
                                 </span>
                               </span>
@@ -262,7 +296,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                           })}
                         </div>
                       ) : (
-                        <span className="text-[10px] text-ink-muted flex items-center gap-1">
+                        <span className="text-[10px] text-ink-muted flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
                           <span>未挂载解锁机 · 全部流量直连出站</span>
                         </span>
@@ -273,7 +307,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               })}
 
               {mainNodes.length === 0 && (
-                <div className="p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
+                <div className="h-[158px] flex items-center justify-center p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
                   暂无主力直连节点，请在节点管理中添加类型为「主力直连机」的 VPS。
                 </div>
               )}
@@ -299,7 +333,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               </span>
             </div>
 
-            {/* Unlock Nodes List */}
+            {/* Unlock Nodes List - Strictly Unified Height & Symmetric Slots */}
             <div className="space-y-3">
               {unlockNodes.map((un) => {
                 const incomingRelays = relays.filter(
@@ -309,28 +343,28 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                 return (
                   <div
                     key={un.id}
-                    className="p-4 rounded-xl bg-paper border border-purple-500/25 hover:border-purple-500/60 shadow-xs transition-all space-y-3 group"
+                    className="h-[158px] p-3.5 rounded-xl bg-paper border border-purple-500/25 hover:border-purple-500/60 shadow-xs transition-all flex flex-col justify-between group"
                   >
-                    {/* Node Header Row */}
+                    {/* Slot 1: Header */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-lg">{getCountryFlag(un.country)}</span>
-                        <div>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {renderCountryBadge(un.country)}
+                        <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-ink font-mono group-hover:text-purple-300 transition-colors">
+                            <span className="text-xs font-bold text-ink font-mono group-hover:text-purple-300 transition-colors truncate max-w-[130px] sm:max-w-[170px]">
                               {un.name}
                             </span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans">
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans shrink-0">
                               {un.countryName}
                             </span>
                           </div>
-                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block">
+                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
                             {un.ip}:{un.port}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
                           {un.protocol === "shadowsocks" ? "Shadowsocks (SS)" : un.protocol}
                         </span>
@@ -340,34 +374,35 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                       </div>
                     </div>
 
-                    {/* Characteristic Tags Row */}
-                    <div className="flex flex-wrap gap-1.5">
+                    {/* Slot 2: Feature Tags (Normalized height) */}
+                    <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
                       {un.tags && un.tags.length > 0 ? (
                         un.tags.map((t) => (
                           <span
                             key={t}
-                            className="text-[10px] px-2 py-0.5 rounded-md bg-paper-3 text-ink-secondary border border-rule font-mono"
+                            className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono"
                           >
                             {t}
                           </span>
                         ))
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-paper-3 text-ink-muted border border-rule font-mono">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
                           原生家宽住宅
                         </span>
                       )}
                     </div>
 
-                    {/* Incoming Relays Indicator */}
-                    <div className="pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono">
+                    {/* Slot 3: Bottom Status Footer (Normalized height & border) */}
+                    <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
                       {incomingRelays.length > 0 ? (
-                        <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                        <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-[10px]">
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                           <span>已为 {incomingRelays.length} 台主力机提供解锁出站</span>
                         </span>
                       ) : (
-                        <span className="text-ink-muted text-[10px]">
-                          空闲中 · 尚未指派给任何主力直连机
+                        <span className="text-ink-muted text-[10px] flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
+                          <span>空闲待命 · 尚未指派给任何主力直连机</span>
                         </span>
                       )}
                     </div>
@@ -376,7 +411,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               })}
 
               {unlockNodes.length === 0 && (
-                <div className="p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
+                <div className="h-[158px] flex items-center justify-center p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
                   暂无专属解锁节点。可在右上角“添加节点”中添加类型为「流媒体/AI 解锁机」的 VPS。
                 </div>
               )}
@@ -432,15 +467,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                         </span>
                       </div>
 
-                      {/* Path Visualization with Node Badges */}
+                      {/* Path Visualization with Country Badges */}
                       <div className="flex items-center gap-2 mt-2 text-xs font-mono">
-                        <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1 font-semibold">
-                          <span>{getCountryFlag(main?.country)}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1.5 font-semibold">
+                          {renderCountryBadge(main?.country, "sm")}
                           <span>{main?.name || "主力机"}</span>
                         </span>
                         <span className="text-ink-muted text-xs">➔</span>
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1 font-semibold">
-                          <span>{getCountryFlag(unlock?.country)}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1.5 font-semibold">
+                          {renderCountryBadge(unlock?.country, "sm")}
                           <span>{unlock?.name || "解锁机"}</span>
                         </span>
                       </div>
@@ -511,7 +546,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             <Select
               options={mainNodes.map((n) => ({
                 value: n.id,
-                label: `${getCountryFlag(n.country)} ${n.name} (${n.ip})`,
+                label: `[${(n.country || 'UN').toUpperCase()}] ${n.name} (${n.ip})`,
                 badge: n.countryName,
                 desc: `延迟: ${n.latencyMs}ms • 协议: ${n.protocol.toUpperCase()}`,
               }))}
@@ -528,7 +563,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             <Select
               options={unlockNodes.map((n) => ({
                 value: n.id,
-                label: `${getCountryFlag(n.country)} ${n.name} (${n.ip})`,
+                label: `[${(n.country || 'UN').toUpperCase()}] ${n.name} (${n.ip})`,
                 badge: n.countryName,
                 desc: `标签: ${n.tags?.join(", ") || "原生住宅"}`,
               }))}
