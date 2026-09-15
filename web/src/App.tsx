@@ -30,6 +30,7 @@ export function App() {
     wsConnected,
     fetchData,
     addNode,
+    updateNode,
     deleteNode,
     resetTraffic,
     addRelay,
@@ -90,6 +91,7 @@ export function App() {
                   nodes={nodes}
                   onResetTraffic={resetTraffic}
                   onDelete={deleteNode}
+                  onUpdate={updateNode}
                 />
               </div>
             )}
@@ -99,6 +101,7 @@ export function App() {
                 nodes={nodes}
                 onResetTraffic={resetTraffic}
                 onDelete={deleteNode}
+                onUpdate={updateNode}
               />
             )}
 

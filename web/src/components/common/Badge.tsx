@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 
 interface BadgeProps {
   variant?: "online" | "warning" | "danger" | "neutral" | "accent" | "transit" | "exit";
@@ -15,22 +15,22 @@ export const Badge: React.FC<BadgeProps> = ({
   size = "sm",
   className = "",
 }) => {
-  const sizeClasses = size === "sm" ? "text-xs px-2 py-0.5" : "text-sm px-2.5 py-1";
+  const sizeClasses = size === "sm" ? "text-[10px] px-2 py-0.5 leading-none" : "text-xs px-2.5 py-1 leading-none";
 
   const variantStyles = {
-    online: "bg-status-online-bg text-status-online border-status-online/30",
-    warning: "bg-status-warning-bg text-status-warning border-status-warning/30",
-    danger: "bg-status-danger-bg text-status-danger border-status-danger/30",
+    online: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    warning: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+    danger: "bg-rose-500/10 text-rose-400 border-rose-500/30",
     neutral: "bg-paper-3 text-ink-secondary border-rule",
-    accent: "bg-accent-subtle text-accent border-accent/30",
-    transit: "bg-sky-950/40 text-sky-400 border-sky-500/30",
-    exit: "bg-purple-950/40 text-purple-300 border-purple-500/30",
+    accent: "bg-accent/10 text-accent border-accent/30",
+    transit: "bg-sky-500/10 text-sky-400 border-sky-500/30",
+    exit: "bg-purple-500/10 text-purple-300 border-purple-500/30",
   }[variant];
 
   const dotColors = {
-    online: "bg-status-online",
-    warning: "bg-status-warning",
-    danger: "bg-status-danger",
+    online: "bg-emerald-400",
+    warning: "bg-amber-400",
+    danger: "bg-rose-400",
     neutral: "bg-ink-muted",
     accent: "bg-accent",
     transit: "bg-sky-400",
@@ -39,19 +39,19 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono font-medium rounded-full border ${sizeClasses} ${variantStyles} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-mono font-medium rounded-full border whitespace-nowrap shrink-0 select-none ${sizeClasses} ${variantStyles} ${className}`}
     >
       {pulse && (
-        <span className="relative flex h-2 w-2">
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
           <span
             className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${dotColors}`}
           />
           <span
-            className={`relative inline-flex rounded-full h-2 w-2 ${dotColors}`}
+            className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotColors}`}
           />
         </span>
       )}
-      {children}
+      <span>{children}</span>
     </span>
   );
 };

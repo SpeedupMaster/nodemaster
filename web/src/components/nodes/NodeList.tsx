@@ -5,6 +5,7 @@ import { NodeItem } from "../../types";
 import { NodeCard } from "./NodeCard";
 import { ConfigModal } from "./ConfigModal";
 import { InstallModal } from "./InstallModal";
+import { EditNodeModal } from "./EditNodeModal";
 import { Input } from "../common/Input";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 
@@ -14,17 +15,20 @@ interface NodeListProps {
   nodes: NodeItem[];
   onResetTraffic: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Partial<NodeItem>) => Promise<any> | any;
 }
 
 export const NodeList: React.FC<NodeListProps> = ({
   nodes,
   onResetTraffic,
   onDelete,
+  onUpdate,
 }) => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [activeConfigNode, setActiveConfigNode] = useState<NodeItem | null>(null);
   const [activeInstallNode, setActiveInstallNode] = useState<NodeItem | null>(null);
+  const [activeEditNode, setActiveEditNode] = useState<NodeItem | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredNodes = nodes.filter((node) => {
@@ -108,11 +112,12 @@ export const NodeList: React.FC<NodeListProps> = ({
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {filteredNodes.map((node) => (
-          <div key={node.id} className="node-card-wrap">
+          <div key={node.id} className="node-card-wrap h-full flex flex-col">
             <NodeCard
               node={node}
               onViewConfig={setActiveConfigNode}
               onViewInstall={setActiveInstallNode}
+              onEdit={setActiveEditNode}
               onResetTraffic={onResetTraffic}
               onDelete={onDelete}
               onCopyUrl={handleCopyUrl}
@@ -135,6 +140,12 @@ export const NodeList: React.FC<NodeListProps> = ({
       <InstallModal
         node={activeInstallNode}
         onClose={() => setActiveInstallNode(null)}
+      />
+      <EditNodeModal
+        node={activeEditNode}
+        isOpen={!!activeEditNode}
+        onClose={() => setActiveEditNode(null)}
+        onSubmit={onUpdate}
       />
     </div>
   );

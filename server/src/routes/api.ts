@@ -78,8 +78,74 @@ apiRouter.post("/nodes", (req, res) => {
 });
 
 apiRouter.put("/nodes/:id", (req, res) => {
-  const updated = db.updateNode(req.params.id, req.body);
-  if (!updated) return res.status(404).json({ success: false, message: "节点不存在" });
+  const existing = db.getNodeById(req.params.id);
+  if (!existing) return res.status(404).json({ success: false, message: "节点不存在" });
+
+  const {
+    name,
+    ip,
+    port,
+    country,
+    countryName,
+    trafficLimitBytes,
+    trafficLimitGB,
+    bandwidthMbps,
+    trafficResetDay,
+    tags,
+    sni,
+    ssMethod,
+    ssPassword,
+    status,
+  } = req.body;
+
+  const updates: Partial<NodeItem> = {};
+
+  if (name !== undefined) updates.name = name;
+  if (ip !== undefined) updates.ip = ip;
+  if (port !== undefined) updates.port = Number(port) || existing.port;
+  if (country !== undefined) updates.country = country;
+  if (countryName !== undefined) updates.countryName = countryName;
+  if (bandwidthMbps !== undefined) updates.bandwidthMbps = Number(bandwidthMbps) || existing.bandwidthMbps;
+  if (trafficResetDay !== undefined) {
+    updates.trafficResetDay = Math.min(31, Math.max(1, Number(trafficResetDay) || 1));
+  }
+  if (trafficLimitBytes !== undefined) {
+    updates.trafficLimitBytes = Number(trafficLimitBytes);
+  } else if (trafficLimitGB !== undefined) {
+    updates.trafficLimitBytes = Number(trafficLimitGB) * 1024 * 1024 * 1024;
+  }
+  if (tags !== undefined) {
+    updates.tags = Array.isArray(tags) ? tags : String(tags).split(/[,，]/).map(t => t.trim()).filter(Boolean);
+  }
+  if (status !== undefined) updates.status = status;
+
+  // Protocol specific updates
+  if (existing.protocol === "vless-reality" || existing.type === "direct") {
+    if (sni !== undefined) {
+      updates.sni = sni;
+      if (existing.reality) {
+        updates.reality = {
+          ...existing.reality,
+          serverName: sni,
+        };
+      }
+    }
+  } else if (existing.protocol === "shadowsocks" || existing.type === "unlock") {
+    if (req.body.shadowsocks) {
+      updates.shadowsocks = {
+        method: req.body.shadowsocks.method || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm",
+        password: req.body.shadowsocks.password || existing.shadowsocks?.password || "",
+      };
+    } else if (ssMethod !== undefined || ssPassword !== undefined) {
+      updates.shadowsocks = {
+        method: ssMethod || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm",
+        password: ssPassword || existing.shadowsocks?.password || "",
+      };
+    }
+  }
+
+  const updated = db.updateNode(req.params.id, updates);
+  if (!updated) return res.status(404).json({ success: false, message: "节点更新失败" });
   wsHub.broadcastNodeUpdate(updated.id);
   res.json({ success: true, data: updated });
 });

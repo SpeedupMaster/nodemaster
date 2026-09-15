@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ArrowDown,
   Check,
+  PencilSimple,
 } from "@phosphor-icons/react";
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
@@ -20,6 +21,7 @@ interface NodeCardProps {
   node: NodeItem;
   onViewConfig: (node: NodeItem) => void;
   onViewInstall: (node: NodeItem) => void;
+  onEdit: (node: NodeItem) => void;
   onResetTraffic: (id: string) => void;
   onDelete: (id: string) => void;
   onCopyUrl: (node: NodeItem) => void;
@@ -29,6 +31,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   node,
   onViewConfig,
   onViewInstall,
+  onEdit,
   onResetTraffic,
   onDelete,
   onCopyUrl,
@@ -57,24 +60,26 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   const down = formatSpeed(node.downlinkSpeedBytes);
 
   return (
-    <div className="rounded-lg bg-paper-2 border border-rule hover:border-rule-active transition-all p-5 flex flex-col justify-between group">
-      <div>
+    <div className="h-full rounded-lg bg-paper-2 border border-rule hover:border-rule-active transition-all p-5 flex flex-col justify-between group">
+      <div className="flex-1 flex flex-col justify-between">
         {/* Card Header: Node Title & Badges */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-ink text-sm tracking-tight">
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="min-w-0 flex-1 pr-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h4
+                className="font-semibold text-ink text-sm tracking-tight truncate"
+                title={node.name}
+              >
                 {node.name}
-              </span>
-              <span className="text-xs text-ink-muted font-mono">
-                {node.countryName}
-              </span>
+              </h4>
             </div>
-            <div className="text-xs font-mono text-ink-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
-              <span>{node.ip}:{node.port}</span>
-              <span>•</span>
+            <div className="text-xs font-mono text-ink-muted mt-1 flex items-center gap-1.5 flex-wrap">
+              <span className="text-ink-secondary font-medium shrink-0">{node.countryName}</span>
+              <span className="shrink-0">•</span>
+              <span className="shrink-0">{node.ip}:{node.port}</span>
+              <span className="shrink-0">•</span>
               <span
-                className={`uppercase text-[11px] font-medium font-mono ${
+                className={`uppercase text-[11px] font-medium font-mono shrink-0 ${
                   node.protocol === "shadowsocks" ? "text-purple-400" : "text-accent"
                 }`}
               >
@@ -82,8 +87,8 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               </span>
               {node.bandwidthMbps && (
                 <>
-                  <span>•</span>
-                  <span className="text-emerald-400/90 text-[11px] font-medium">
+                  <span className="shrink-0">•</span>
+                  <span className="text-emerald-400/90 text-[11px] font-medium shrink-0">
                     {node.bandwidthMbps >= 1000
                       ? `${node.bandwidthMbps / 1000} Gbps`
                       : `${node.bandwidthMbps} Mbps`}
@@ -93,7 +98,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
             {node.status === "online" && (
               <Badge variant="online" pulse size="sm">
                 在线
@@ -133,7 +138,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1 mt-3">
+        <div className="flex flex-wrap gap-1 mt-3 min-h-[24px]">
           {node.tags?.map((t) => (
             <span
               key={t}
@@ -274,8 +279,16 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
         <div className="flex items-center gap-1">
           <button
+            onClick={() => onEdit(node)}
+            className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
+            title="编辑节点配置"
+          >
+            <PencilSimple className="w-3.5 h-3.5" />
+          </button>
+
+          <button
             onClick={() => onResetTraffic(node.id)}
-            className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors"
+            className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer"
             title="重置当月流量统计"
           >
             <ArrowClockwise className="w-3.5 h-3.5" />
@@ -283,7 +296,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
           <button
             onClick={() => onDelete(node.id)}
-            className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors"
+            className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer"
             title="删除节点"
           >
             <Trash className="w-3.5 h-3.5" />
