@@ -99,8 +99,8 @@ export function useData() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nodeData),
     }).then((r) => r.json());
-    if (res.success) {
-      setNodes((prev) => [...prev, res.data]);
+    if (res.success && res.data) {
+      setNodes((prev) => (prev.some((n) => n.id === res.data.id) ? prev : [...prev, res.data]));
     }
     return res;
   };
@@ -144,8 +144,8 @@ export function useData() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(relayData),
     }).then((r) => r.json());
-    if (res.success) {
-      setRelays((prev) => [...prev, res.data]);
+    if (res.success && res.data) {
+      setRelays((prev) => (prev.some((r) => r.id === res.data.id) ? prev : [...prev, res.data]));
     }
     return res;
   };
@@ -167,8 +167,8 @@ export function useData() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskData),
     }).then((r) => r.json());
-    if (res.success) {
-      setLatencyTasks((prev) => [...prev, res.data]);
+    if (res.success && res.data) {
+      setLatencyTasks((prev) => (prev.some((t) => t.id === res.data.id) ? prev : [...prev, res.data]));
     }
     return res;
   };

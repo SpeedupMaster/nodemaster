@@ -20,6 +20,7 @@ import {
   CaretRight,
   Shuffle,
   Laptop,
+  Warning,
 } from "@phosphor-icons/react";
 
 interface TopologyCanvasProps {
@@ -41,6 +42,12 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const [unlockId, setUnlockId] = useState("");
   const [mode, setMode] = useState<"ai_media" | "all">("ai_media");
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deletingRelay, setDeletingRelay] = useState<RelayLink | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Defensive deduplication for relays list by ID
+  const uniqueRelays = Array.from(new Map(relays.map((r) => [r.id, r])).values());
 
   // Group nodes: Main connection nodes vs Dedicated unlock nodes
   const mainNodes = nodes.filter((n) => n.type === "direct" || n.type === "exit");
@@ -90,16 +97,18 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         ? `${mainNodes[0].name.split("-")[0]}主力 ➔ ${unlockNodes[0].name.split("-")[0]}解锁`
         : "链式解锁代理"
     );
+    setErrorMessage(null);
     setIsAddModalOpen(true);
   };
 
   const handleCreateRelay = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mainId || !unlockId) return;
+    if (!mainId || !unlockId || submitting) return;
 
     setSubmitting(true);
+    setErrorMessage(null);
     try {
-      await onAddRelay({
+      const res = await onAddRelay({
         name: name || "链式解锁代理",
         mainNodeId: mainId,
         unlockNodeId: unlockId,
@@ -108,10 +117,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         exitNodeId: unlockId,
         transitPort: 443,
       });
+      if (res && res.success === false) {
+        setErrorMessage(res.message || "创建失败，请检查是否已存在相同链路");
+        return;
+      }
       setIsAddModalOpen(false);
       setName("");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setErrorMessage(e.message || "网络异常或服务不可用");
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +149,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   Xray 智能路由分流
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-ink-muted border border-rule">
-                  {relays.length} 条活跃链路
+                  {uniqueRelays.length} 条活跃链路
                 </span>
               </div>
               <p className="text-xs text-ink-muted mt-1.5 max-w-2xl leading-relaxed">
@@ -217,7 +231,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             {/* Main Nodes List - Strictly Unified Height & Symmetric Slots */}
             <div className="space-y-3">
               {mainNodes.map((mn) => {
-                const chainedRelays = relays.filter(
+                const chainedRelays = uniqueRelays.filter(
                   (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
                 );
 
@@ -336,7 +350,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             {/* Unlock Nodes List - Strictly Unified Height & Symmetric Slots */}
             <div className="space-y-3">
               {unlockNodes.map((un) => {
-                const incomingRelays = relays.filter(
+                const incomingRelays = uniqueRelays.filter(
                   (r) => r.unlockNodeId === un.id || r.exitNodeId === un.id
                 );
 
@@ -426,13 +440,13 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               <Lightning weight="fill" className="w-3.5 h-3.5 text-accent" />
               <span className="font-semibold text-ink">当前活跃链式解锁链路</span>
               <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-paper-3 text-ink-muted border border-rule">
-                {relays.length} 条已生效
+                {uniqueRelays.length} 条已生效
               </span>
             </div>
           </div>
 
           <div className="space-y-3">
-            {relays.map((r) => {
+            {uniqueRelays.map((r) => {
               const main = nodes.find(
                 (n) => n.id === (r.mainNodeId || r.transitNodeId)
               );
@@ -492,13 +506,9 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </div>
 
                     <button
-                      onClick={() => {
-                        if (window.confirm(`确定删除链路「${r.name}」吗？`)) {
-                          onDeleteRelay(r.id);
-                        }
-                      }}
+                      onClick={() => setDeletingRelay(r)}
                       className="p-2 rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
-                      title="删除该链式代理"
+                      title="解除该链式代理"
                     >
                       <Trash className="w-4 h-4" />
                     </button>
@@ -507,7 +517,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               );
             })}
 
-            {relays.length === 0 && (
+            {uniqueRelays.length === 0 && (
               <div className="text-center py-8 text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/30">
                 暂无配置的链式解锁代理。点击上方“创建链式解锁代理”即可将主力 VPS 与专属解锁机绑定。
               </div>
@@ -608,6 +618,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             </p>
           </div>
 
+          {/* Inline Error Message */}
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-center gap-2">
+              <Warning weight="bold" className="w-4 h-4 shrink-0 text-rose-400" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="pt-4 border-t border-rule flex items-center justify-end gap-3">
             <Button
@@ -629,6 +647,86 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Custom Delete Confirmation Modal (Native Confirm Replacement) */}
+      <Modal
+        isOpen={!!deletingRelay}
+        onClose={() => {
+          if (!isDeleting) setDeletingRelay(null);
+        }}
+        title="解除链式解锁代理"
+        subtitle="从主控撤销该链路配置并恢复直连出站"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300">
+            <Warning weight="bold" className="w-5 h-5 shrink-0 mt-0.5 text-rose-400" />
+            <div className="text-xs space-y-1">
+              <p className="font-semibold text-rose-200">
+                确定要删除链路「{deletingRelay?.name}」吗？
+              </p>
+              <p className="text-rose-300/80 leading-relaxed">
+                解除后，主控将撤销该主力节点上的 <code className="text-rose-200 font-mono">UNLOCK_OUT</code> 出站及对应 AI/流媒体分流规则。客户端经由该主力节点将自动恢复为纯直连出站。
+              </p>
+            </div>
+          </div>
+
+          {deletingRelay && (
+            <div className="p-3.5 rounded-xl bg-paper-3/70 border border-rule text-xs font-mono space-y-2">
+              <div className="flex items-center justify-between text-ink-muted">
+                <span>主力节点:</span>
+                <span className="text-ink font-semibold">
+                  {nodes.find((n) => n.id === deletingRelay.mainNodeId || n.id === deletingRelay.transitNodeId)?.name || deletingRelay.mainNodeId}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-ink-muted">
+                <span>解锁节点:</span>
+                <span className="text-purple-300 font-semibold">
+                  {nodes.find((n) => n.id === deletingRelay.unlockNodeId || n.id === deletingRelay.exitNodeId)?.name || deletingRelay.unlockNodeId}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-ink-muted">
+                <span>分流策略:</span>
+                <span className="text-accent font-semibold">
+                  {deletingRelay.mode === "all" ? "全量链式出站" : "智能分流模式 (AI & 流媒体)"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="pt-3 border-t border-rule flex items-center justify-end gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => setDeletingRelay(null)}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              loading={isDeleting}
+              onClick={async () => {
+                if (!deletingRelay) return;
+                setIsDeleting(true);
+                try {
+                  await onDeleteRelay(deletingRelay.id);
+                  setDeletingRelay(null);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+            >
+              确认删除链路
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

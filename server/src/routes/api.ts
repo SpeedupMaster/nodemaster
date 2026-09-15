@@ -210,6 +210,19 @@ apiRouter.post("/relays", (req, res) => {
     return res.status(400).json({ success: false, message: "主力连接节点与目标解锁机为必选项" });
   }
 
+  const existingRelays = db.getRelays();
+  const duplicate = existingRelays.find(
+    (r) =>
+      (r.mainNodeId === mainId || r.transitNodeId === mainId) &&
+      (r.unlockNodeId === unlockId || r.exitNodeId === unlockId)
+  );
+  if (duplicate) {
+    return res.status(400).json({
+      success: false,
+      message: `该主力机与解锁机之间已存在链路「${duplicate.name}」，无需重复创建`,
+    });
+  }
+
   const newRelay: RelayLink = {
     id: `relay-${Date.now().toString(36)}`,
     name: name || "链式解锁代理",
