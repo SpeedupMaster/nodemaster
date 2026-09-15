@@ -245,7 +245,6 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                   <th className="py-3 px-3 font-medium min-w-[115px] whitespace-nowrap">硬盘存储</th>
                   <th className="py-3 px-3 font-medium min-w-[110px] whitespace-nowrap">实时网速</th>
                   <th className="py-3 px-3 font-medium min-w-[130px] whitespace-nowrap">月度流量</th>
-                  <th className="py-3 px-3 font-medium min-w-[80px] text-center whitespace-nowrap">延迟</th>
                   <th className="py-3 px-4 font-medium min-w-[80px] text-right whitespace-nowrap">状态</th>
                 </tr>
               </thead>
@@ -401,14 +400,6 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes }) => {
                         </div>
                         <div className="text-[10px] text-ink-muted mt-0.5 whitespace-nowrap">
                           每月{node.trafficResetDay || 1}日重置
-                        </div>
-                      </td>
-
-                      {/* Latency */}
-                      <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-paper-3 border border-rule text-xs font-semibold text-accent whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                          <span>{node.latencyMs} ms</span>
                         </div>
                       </td>
 
