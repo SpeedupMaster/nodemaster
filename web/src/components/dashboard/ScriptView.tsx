@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "../common/Button";
 import { Terminal, Copy, Check, ShieldCheck, Cpu } from "@phosphor-icons/react";
 
@@ -36,12 +36,12 @@ export const ScriptView: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <Terminal weight="bold" className="w-5 h-5 text-accent" />
           <h2 className="text-base font-semibold text-ink">
-            VPS 节点一键纳管与部署机制
+            VPS 代理节点与系统探针联合部署机制
           </h2>
         </div>
 
         <p className="text-xs text-ink-muted leading-relaxed max-w-3xl">
-          NodeMaster 采用 Master-Agent 架构。当您在面板添加节点后，复制专属安装命令至 VPS 运行，脚本将在 30 秒内完成 Xray-core 官方内核部署、systemd 守护进程注册，并自动通过安全 WebSocket 建立与主控的保活长连接。
+          NodeMaster 采用 Master-Agent 架构。当您在面板添加节点后，复制专属安装命令至目标 VPS 运行，脚本将在 30 秒内同时完成代理服务内核（Xray-core / Shadowsocks）部署与 NodeMaster 探针守护进程注册，并自动建立安全长连接向主控端回传 CPU、内存、磁盘、实时吞吐等硬件与系统指标。
         </p>
 
         <div>

@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { NodeItem } from "../../types";
@@ -27,15 +27,15 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
     <Modal
       isOpen={!!node}
       onClose={onClose}
-      title={`${node.name} - VPS 一键上线命令`}
-      subtitle="在目标 VPS 的 root SSH 终端执行下方命令，将自动安装 Xray-core 及 Agent"
+      title={`${node.name} - VPS 一键上线与探针部署`}
+      subtitle="在目标 VPS 的 root SSH 终端执行下方命令，将同时纳管代理节点与系统探针守护进程"
       maxWidth="lg"
     >
       <div className="space-y-4">
         <div className="p-3 rounded-md bg-paper-3/60 border border-rule flex items-start gap-2.5 text-xs text-ink-secondary">
           <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" />
           <div>
-            <span>安装脚本将自动检测 VPS 架构 (x86_64 / aarch64)，拉取官方 Xray-core 二进制，注册 systemd 守护服务并通过 WebSocket 双向对接主控。</span>
+            <span>安装脚本将自动检测 VPS 架构 (x86_64 / aarch64)，同时部署代理服务内核（Xray-core / Shadowsocks）与 NodeMaster 探针守护进程，实现免维护代理中继与实时硬件监控回传。</span>
           </div>
         </div>
 

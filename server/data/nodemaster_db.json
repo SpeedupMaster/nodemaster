@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 21.2,
+      "cpuUsage": 30.5,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,10 +35,24 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789470543067,
+      "lastSeen": 1789471982197,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
-      "trafficResetDay": 1
+      "trafficResetDay": 1,
+      "os": "Debian 12.5 (bookworm)",
+      "arch": "x86_64",
+      "uptime": "28天 14小时",
+      "loadAvg": [
+        0.43,
+        0.21,
+        0.18
+      ],
+      "memTotalBytes": 2147483648,
+      "memUsedBytes": 605590388,
+      "diskTotalBytes": 42949672960,
+      "diskUsedBytes": 15073280000,
+      "tcpCount": 124,
+      "udpCount": 16
     },
     {
       "id": "node-jp-02",
@@ -51,11 +65,11 @@
       "country": "JP",
       "countryName": "日本东京",
       "token": "token_jp_8848",
-      "trafficUsedBytes": 318804452457,
+      "trafficUsedBytes": 318805443579,
       "trafficLimitBytes": 1073741824000,
-      "uplinkSpeedBytes": 525,
-      "downlinkSpeedBytes": 2333,
-      "cpuUsage": 91.2,
+      "uplinkSpeedBytes": 0,
+      "downlinkSpeedBytes": 0,
+      "cpuUsage": 56.4,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -75,10 +89,24 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789470543068,
+      "lastSeen": 1789471982197,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
-      "trafficResetDay": 1
+      "trafficResetDay": 1,
+      "os": "Ubuntu 22.04.4 LTS",
+      "arch": "x86_64",
+      "uptime": "42天 8小时",
+      "loadAvg": [
+        0.86,
+        0.49,
+        0.45
+      ],
+      "memTotalBytes": 4294967296,
+      "memUsedBytes": 1331439861,
+      "diskTotalBytes": 64424509440,
+      "diskUsedBytes": 19005230284,
+      "tcpCount": 218,
+      "udpCount": 34
     },
     {
       "id": "node-us-unlock-01",
@@ -95,7 +123,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 42.1,
+      "cpuUsage": 65.3,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -109,10 +137,24 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789470543068,
+      "lastSeen": 1789471982198,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
-      "trafficResetDay": 15
+      "trafficResetDay": 15,
+      "os": "Debian 12.5 (bookworm)",
+      "arch": "x86_64",
+      "uptime": "15天 2小时",
+      "loadAvg": [
+        1,
+        0.14,
+        0.1
+      ],
+      "memTotalBytes": 1073741824,
+      "memUsedBytes": 240518168,
+      "diskTotalBytes": 26843545600,
+      "diskUsedBytes": 11005853696,
+      "tcpCount": 88,
+      "udpCount": 12
     },
     {
       "id": "node-uk-unlock-02",
@@ -129,7 +171,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 38,
+      "cpuUsage": 88.2,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -143,10 +185,24 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789470543068,
+      "lastSeen": 1789471982198,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
-      "trafficResetDay": 28
+      "trafficResetDay": 28,
+      "os": "Alpine Linux 3.19",
+      "arch": "aarch64",
+      "uptime": "33天 19小时",
+      "loadAvg": [
+        1.33,
+        0.16,
+        0.14
+      ],
+      "memTotalBytes": 2147483648,
+      "memUsedBytes": 408021893,
+      "diskTotalBytes": 34359738368,
+      "diskUsedBytes": 8589934592,
+      "tcpCount": 96,
+      "udpCount": 14
     }
   ],
   "relays": [

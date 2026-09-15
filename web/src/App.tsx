@@ -7,6 +7,7 @@ import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { OverviewCards } from "./components/dashboard/OverviewCards";
 import { NodeList } from "./components/nodes/NodeList";
+import { ProbeDashboard } from "./components/probe/ProbeDashboard";
 import { TopologyCanvas } from "./components/topology/TopologyCanvas";
 import { SubscriptionView } from "./components/subscription/SubscriptionView";
 import { ScriptView } from "./components/dashboard/ScriptView";
@@ -87,12 +88,7 @@ export function App() {
                   totalCount={nodes.length}
                   relaysCount={relays.length}
                 />
-                <NodeList
-                  nodes={nodes}
-                  onResetTraffic={resetTraffic}
-                  onDelete={deleteNode}
-                  onUpdate={updateNode}
-                />
+                <ProbeDashboard nodes={nodes} />
               </div>
             )}
 

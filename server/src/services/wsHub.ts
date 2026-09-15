@@ -116,12 +116,21 @@ export class WsHub {
             }
           }
 
+          const memTotal = node.memTotalBytes || 2147483648;
+          const memUsed = Math.floor(memTotal * (node.memUsage / 100));
+          const load1 = +(Math.max(0.01, (node.cpuUsage / 100) * 1.5 + (Math.random() - 0.5) * 0.05)).toFixed(2);
+          const load5 = +(Math.max(0.01, (node.loadAvg ? node.loadAvg[1] : 0.2) + (Math.random() - 0.5) * 0.02)).toFixed(2);
+          const load15 = +(Math.max(0.01, (node.loadAvg ? node.loadAvg[2] : 0.18) + (Math.random() - 0.5) * 0.01)).toFixed(2);
+
           db.updateNode(node.id, {
             cpuUsage: newCpu,
             uplinkSpeedBytes: upSpeed,
             downlinkSpeedBytes: downSpeed,
             trafficUsedBytes: newTotalTraffic,
             status: newStatus,
+            loadAvg: [load1, load5, load15],
+            memTotalBytes: memTotal,
+            memUsedBytes: memUsed,
             lastSeen: Date.now(),
           });
         }

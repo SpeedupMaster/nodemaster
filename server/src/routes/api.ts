@@ -1,10 +1,16 @@
 import { Router } from "express";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { db } from "../db/index.js";
 import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
 import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig } from "../types/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const apiRouter = Router();
 
@@ -301,104 +307,61 @@ apiRouter.get("/sub/:token", (req, res) => {
   }
 
   // Default: Base64 URI list for Shadowrocket / v2rayN / Quantumult X
-  res.setHeader("Content-Type", "text/plain; charset=utf-8");
   return res.send(renderBase64(proxies));
 });
 
 // -------------------------------------------------------------
-// 5. One-Liner Agent Install Script (Bash)
+// 5. Node Query by Token & Telemetry Ingestion API
+// -------------------------------------------------------------
+apiRouter.get("/nodes/by-token/:token", (req, res) => {
+  const node = db.getNodeByToken(req.params.token);
+  if (!node) return res.status(404).json({ success: false, message: "Token 无效" });
+  res.json({ success: true, data: node });
+});
+
+apiRouter.post("/nodes/telemetry", (req, res) => {
+  const { token, ...telemetry } = req.body;
+  if (!token) return res.status(400).json({ success: false, message: "缺少 token" });
+  const node = db.getNodeByToken(token);
+  if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
+
+  const updates: Partial<NodeItem> = {
+    lastSeen: Date.now(),
+    status: "online",
+  };
+
+  if (typeof telemetry.cpuUsage === "number") updates.cpuUsage = +telemetry.cpuUsage.toFixed(1);
+  if (typeof telemetry.memUsage === "number") updates.memUsage = +telemetry.memUsage.toFixed(1);
+  if (typeof telemetry.diskUsage === "number") updates.diskUsage = +telemetry.diskUsage.toFixed(1);
+  if (typeof telemetry.memTotalBytes === "number") updates.memTotalBytes = telemetry.memTotalBytes;
+  if (typeof telemetry.memUsedBytes === "number") updates.memUsedBytes = telemetry.memUsedBytes;
+  if (typeof telemetry.diskTotalBytes === "number") updates.diskTotalBytes = telemetry.diskTotalBytes;
+  if (typeof telemetry.diskUsedBytes === "number") updates.diskUsedBytes = telemetry.diskUsedBytes;
+  if (typeof telemetry.uplinkSpeedBytes === "number") updates.uplinkSpeedBytes = telemetry.uplinkSpeedBytes;
+  if (typeof telemetry.downlinkSpeedBytes === "number") updates.downlinkSpeedBytes = telemetry.downlinkSpeedBytes;
+  if (telemetry.loadAvg) updates.loadAvg = telemetry.loadAvg;
+  if (telemetry.uptime) updates.uptime = telemetry.uptime;
+  if (telemetry.os) updates.os = telemetry.os;
+  if (telemetry.arch) updates.arch = telemetry.arch;
+  if (typeof telemetry.tcpCount === "number") updates.tcpCount = telemetry.tcpCount;
+  if (typeof telemetry.udpCount === "number") updates.udpCount = telemetry.udpCount;
+
+  db.updateNode(node.id, updates);
+  wsHub.broadcastNodeUpdate(node.id);
+  res.json({ success: true, message: "Telemetry updated" });
+});
+
+// -------------------------------------------------------------
+// 6. Dual Deployment Installer Script (Proxy Node + Probe Agent)
 // -------------------------------------------------------------
 apiRouter.get("/install.sh", (req, res) => {
   const panelUrl = `${req.protocol}://${req.get("host")}`;
-  const script = `#!/usr/bin/env bash
-# ==============================================================================
-# NodeMaster VPS Agent Installer & Xray-core Deployer
-# ==============================================================================
-set -e
-
-PANEL_URL=""
-TOKEN=""
-
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --panel) PANEL_URL="$2"; shift ;;
-    --token) TOKEN="$2"; shift ;;
-  esac
-  shift
-done
-
-if [ -z "$PANEL_URL" ]; then
-  PANEL_URL="${panelUrl}"
-fi
-
-if [ -z "$TOKEN" ]; then
-  echo "Error: --token is required."
-  echo "Usage: curl -fsSL \${PANEL_URL}/api/install.sh | bash -s -- --panel \${PANEL_URL} --token <YOUR_TOKEN>"
-  exit 1
-fi
-
-echo "========================================================="
-echo "       Installing NodeMaster Agent on VPS                "
-echo "========================================================="
-echo "Panel URL : \${PANEL_URL}"
-echo "Node Token: \${TOKEN}"
-
-ARCH=$(uname -m)
-case $ARCH in
-  x86_64) XRAY_ARCH="64" ;;
-  aarch64|arm64) XRAY_ARCH="arm64-v8a" ;;
-  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
-esac
-
-echo "[1/4] Installing system dependencies (curl, unzip, jq)..."
-if command -v apt-get >/dev/null 2>&1; then
-  apt-get update -qq && apt-get install -y -qq curl unzip jq >/dev/null 2>&1
-elif command -v yum >/dev/null 2>&1; then
-  yum install -y -q curl unzip jq >/dev/null 2>&1
-fi
-
-echo "[2/4] Setting up directories..."
-mkdir -p /etc/nodemaster /usr/local/bin /var/log/nodemaster
-
-echo "[3/4] Downloading latest official Xray-core..."
-XRAY_LATEST_VER="v1.8.24"
-XRAY_ZIP="/tmp/xray.zip"
-curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/\${XRAY_LATEST_VER}/Xray-linux-\${XRAY_ARCH}.zip" -o \${XRAY_ZIP} || true
-if [ -f "\${XRAY_ZIP}" ]; then
-  unzip -qo \${XRAY_ZIP} xray -d /usr/local/bin/
-  chmod +x /usr/local/bin/xray
-  rm -f \${XRAY_ZIP}
-fi
-
-echo "[4/4] Registering NodeMaster Agent Service..."
-cat <<EOF > /etc/systemd/system/nodemaster-agent.service
-[Unit]
-Description=NodeMaster VPS Telemetry and Xray Agent
-After=network.target
-
-[Service]
-Type=simple
-Environment=PANEL_URL=\${PANEL_URL}
-Environment=TOKEN=\${TOKEN}
-ExecStart=/bin/bash -c "while true; do echo 'Agent active and connected to \${PANEL_URL}'; sleep 5; done"
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable nodemaster-agent >/dev/null 2>&1 || true
-systemctl restart nodemaster-agent >/dev/null 2>&1 || true
-
-echo "========================================================="
-echo "✓ NodeMaster Agent installed & started successfully!"
-echo "Node status will show ONLINE in your NodeMaster dashboard."
-echo "========================================================="
-`;
-
-  res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
-  res.send(script);
+  const scriptPath = path.resolve(__dirname, "../../data/install.sh");
+  if (fs.existsSync(scriptPath)) {
+    const raw = fs.readFileSync(scriptPath, "utf-8");
+    res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
+    return res.send(raw.replaceAll("{{DEFAULT_PANEL_URL}}", panelUrl));
+  }
+  res.status(500).send("# Error: install.sh template missing");
 });
 

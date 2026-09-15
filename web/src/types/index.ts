@@ -41,6 +41,17 @@ export interface NodeItem {
   sni?: string;
   bandwidthMbps?: number;
   trafficResetDay?: number;
+  // Probe & System Telemetry
+  os?: string;
+  arch?: string;
+  uptime?: string;
+  loadAvg?: [number, number, number];
+  memTotalBytes?: number;
+  memUsedBytes?: number;
+  diskTotalBytes?: number;
+  diskUsedBytes?: number;
+  tcpCount?: number;
+  udpCount?: number;
 }
 
 export interface RelayLink {
