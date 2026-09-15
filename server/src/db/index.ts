@@ -525,6 +525,12 @@ class Database {
     } else if (range === "1d") {
       pointsCount = 96;
       stepMs = 15 * 60 * 1000;
+    } else if (range === "3d") {
+      pointsCount = 108;
+      stepMs = 40 * 60 * 1000;
+    } else if (range === "7d") {
+      pointsCount = 112;
+      stepMs = 90 * 60 * 1000;
     }
 
     const now = Date.now();
@@ -594,6 +600,12 @@ class Database {
     } else if (range === "1d") {
       pointsCount = 96;
       stepMs = 15 * 60 * 1000;
+    } else if (range === "3d") {
+      pointsCount = 108;
+      stepMs = 40 * 60 * 1000;
+    } else if (range === "7d") {
+      pointsCount = 112;
+      stepMs = 90 * 60 * 1000;
     }
 
     const now = Date.now();

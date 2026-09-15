@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 83.7,
+      "cpuUsage": 74.8,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789479635576,
+      "lastSeen": 1789480613212,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -43,8 +43,8 @@
       "arch": "x86_64",
       "uptime": "28天 14小时",
       "loadAvg": [
-        1.22,
-        0.51,
+        1.13,
+        0.55,
         0.18
       ],
       "memTotalBytes": 2147483648,
@@ -89,7 +89,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789479635576,
+      "lastSeen": 1789480613213,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -97,8 +97,8 @@
       "arch": "x86_64",
       "uptime": "42天 8小时",
       "loadAvg": [
-        1,
         0.94,
+        0.85,
         0.45
       ],
       "memTotalBytes": 4294967296,
@@ -123,7 +123,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 83.2,
+      "cpuUsage": 59.8,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -137,7 +137,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789479635577,
+      "lastSeen": 1789480613214,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
       "trafficResetDay": 15,
@@ -145,8 +145,8 @@
       "arch": "x86_64",
       "uptime": "15天 2小时",
       "loadAvg": [
-        1.24,
-        0.16,
+        0.9,
+        0.25,
         0.1
       ],
       "memTotalBytes": 1073741824,
@@ -171,7 +171,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 7.7,
+      "cpuUsage": 9,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -185,7 +185,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789479635577,
+      "lastSeen": 1789480613214,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
       "trafficResetDay": 28,
@@ -193,8 +193,8 @@
       "arch": "aarch64",
       "uptime": "33天 19小时",
       "loadAvg": [
-        0.12,
-        0.42,
+        0.14,
+        0.5,
         0.14
       ],
       "memTotalBytes": 2147483648,

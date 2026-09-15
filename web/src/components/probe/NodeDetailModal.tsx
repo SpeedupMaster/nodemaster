@@ -29,7 +29,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<"latency" | "load">("latency");
-  const [timeRange, setTimeRange] = useState<"1h" | "6h" | "12h" | "1d">("1h");
+  const [timeRange, setTimeRange] = useState<"1h" | "6h" | "12h" | "1d" | "3d" | "7d">("1h");
   const [isSmooth, setIsSmooth] = useState(true);
   const [hiddenTargets, setHiddenTargets] = useState<string[]>([]);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -111,7 +111,15 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
   const pointsCount =
     visibleSeries[0]?.history.length ||
-    (timeRange === "1h" ? 60 : timeRange === "1d" ? 96 : 72);
+    (timeRange === "1h"
+      ? 60
+      : timeRange === "7d"
+      ? 112
+      : timeRange === "3d"
+      ? 108
+      : timeRange === "1d"
+      ? 96
+      : 72);
 
   const getX = (index: number) => {
     return padding.left + (index / (pointsCount - 1 || 1)) * innerWidth;
@@ -167,9 +175,14 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   const formatTimeTick = (timestamp?: number) => {
     if (!timestamp) return "";
     const d = new Date(timestamp);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${hh}:${mm}`;
+    const min = String(d.getMinutes()).padStart(2, "0");
+    if (timeRange === "3d" || timeRange === "7d") {
+      return `${mm}/${dd} ${hh}:${min}`;
+    }
+    return `${hh}:${min}`;
   };
 
   const sampleTimestamps =
@@ -274,7 +287,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
             </button>
           </div>
 
-          {/* Time Range Selector (Matches Screenshot: 1小时 | 6小时 | 12小时 | 1天) */}
+          {/* Time Range Selector */}
           <div className="flex items-center gap-1 bg-paper p-0.5 rounded-lg border border-rule">
             {(
               [
@@ -282,6 +295,8 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 { id: "6h", label: "6 小时" },
                 { id: "12h", label: "12 小时" },
                 { id: "1d", label: "1 天" },
+                { id: "3d", label: "3 天" },
+                { id: "7d", label: "7 天" },
               ] as const
             ).map((t) => (
               <button

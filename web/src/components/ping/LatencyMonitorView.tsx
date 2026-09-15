@@ -311,11 +311,11 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
             </div>
           </div>
 
-          {/* Bottom Storage Footprint Notice (Exact match from screenshot) */}
+          {/* Bottom Storage Footprint Notice (7-day retention) */}
           <div className="flex items-center gap-2 text-xs text-ink-muted px-1">
             <Info className="w-3.5 h-3.5 shrink-0 text-accent" />
             <span>
-              预计需要磁盘空间: {(tasks.length * 2.02).toFixed(2)} MB/天, 根据设置的 24 小时保存时间, 需要使用 {(tasks.length * 2.02).toFixed(2)} MB 磁盘空间.
+              预计需要磁盘空间: {(tasks.length * 2.02).toFixed(2)} MB/天, 根据设置的 7 天保存时间, 需要使用 {(tasks.length * 2.02 * 7).toFixed(2)} MB 磁盘空间.
             </span>
           </div>
         </div>
