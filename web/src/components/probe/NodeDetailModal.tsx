@@ -514,21 +514,28 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 {/* Bottom Chart Toolbar (Matches Screenshot: 平滑开关 & 隐藏全部) */}
                 <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
                   <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isSmooth}
+                      onClick={() => setIsSmooth((prev) => !prev)}
+                      className="flex items-center gap-2 cursor-pointer select-none group focus:outline-hidden"
+                    >
                       <div
-                        onClick={() => setIsSmooth(!isSmooth)}
-                        className={`w-8 h-4 rounded-full transition-colors relative cursor-pointer ${
+                        className={`relative inline-flex h-4 w-8 shrink-0 items-center p-0.5 rounded-full transition-colors duration-200 ease-in-out ${
                           isSmooth ? "bg-accent" : "bg-paper-3 border border-rule"
                         }`}
                       >
-                        <div
-                          className={`w-3 h-3 rounded-full bg-paper absolute top-0.5 transition-transform ${
-                            isSmooth ? "left-4.5" : "left-0.5"
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
+                            isSmooth ? "translate-x-4" : "translate-x-0"
                           }`}
                         />
                       </div>
-                      <span className="text-xs text-ink-secondary">平滑</span>
-                    </label>
+                      <span className="text-xs text-ink-secondary group-hover:text-ink transition-colors">
+                        平滑
+                      </span>
+                    </button>
                     <span title="开启贝塞尔曲线平滑展示，关闭则展示直连折线">
                       <Info className="w-3.5 h-3.5 text-ink-muted cursor-help" />
                     </span>
