@@ -21,6 +21,7 @@ import {
   Shuffle,
   Laptop,
   Warning,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
 
 interface TopologyCanvasProps {
@@ -45,6 +46,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deletingRelay, setDeletingRelay] = useState<RelayLink | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Search & Filter state for Direct Fleet
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeUnlockFilter, setActiveUnlockFilter] = useState("all");
 
   // Defensive deduplication for relays list by ID
   const uniqueRelays = Array.from(new Map(relays.map((r) => [r.id, r])).values());
@@ -131,6 +136,45 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
     }
   };
 
+  const handleQuickAttach = (directNodeId: string) => {
+    setMainId(directNodeId);
+    if (unlockNodes.length > 0) setUnlockId(unlockNodes[0].id);
+    const mn = mainNodes.find((n) => n.id === directNodeId);
+    const un = unlockNodes[0];
+    setName(
+      mn && un
+        ? `${mn.name.split("-")[0]}主力 ➔ ${un.name.split("-")[0]}解锁`
+        : "链式解锁代理"
+    );
+    setMode("ai_media");
+    setErrorMessage(null);
+    setIsAddModalOpen(true);
+  };
+
+  // Filtered direct nodes by search query and active unlock gateway filter
+  const filteredMainNodes = mainNodes.filter((mn) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchQuery =
+      !q ||
+      mn.name.toLowerCase().includes(q) ||
+      mn.ip.includes(q) ||
+      (mn.countryName && mn.countryName.toLowerCase().includes(q)) ||
+      (mn.country && mn.country.toLowerCase().includes(q));
+
+    if (!matchQuery) return false;
+
+    const chained = uniqueRelays.filter(
+      (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
+    );
+
+    if (activeUnlockFilter === "all") return true;
+    if (activeUnlockFilter === "bound") return chained.length > 0;
+    if (activeUnlockFilter === "unbound") return chained.length === 0;
+    return chained.some(
+      (r) => r.unlockNodeId === activeUnlockFilter || r.exitNodeId === activeUnlockFilter
+    );
+  });
+
   return (
     <div className="space-y-6">
       {/* 1. Header Bar with Architecture Summary */}
@@ -205,324 +249,400 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         </div>
       </div>
 
-      {/* 2. Topology Dual Stage */}
-      <div className="relative bg-paper-2 rounded-2xl border border-rule p-5 sm:p-7 overflow-hidden shadow-xs space-y-6">
-        {/* Stage Columns Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          {/* Left Column: 主力直连入口 (Direct / Main VPS) */}
-          <div className="space-y-4">
-            {/* Column Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-rule">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
-                <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
-                  主力直连节点 (Direct / Main VPS)
-                </h3>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule">
-                  {mainNodes.length} 台
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-ink-muted flex items-center gap-1">
-                <Globe className="w-3 h-3 text-accent" />
-                <span>低延迟首跳</span>
-              </span>
-            </div>
+      {/* 2. Top Tier: Dedicated Unlock Exit Gateways Deck */}
+      <div className="bg-paper-2 rounded-2xl border border-purple-500/25 p-5 sm:p-6 shadow-xs space-y-4">
+        {/* Gateway Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-rule">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
+            <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider font-mono">
+              流媒体 / AI 专属落地网关池 (Unlock Gateways)
+            </h3>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 font-semibold">
+              {unlockNodes.length} 台落地网关
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-purple-400/90 flex items-center gap-1.5">
+            <Sparkle className="w-3.5 h-3.5 text-purple-400" />
+            <span>原生纯净双ISP · 共享高信誉出口</span>
+          </span>
+        </div>
 
-            {/* Main Nodes List - Strictly Unified Height & Symmetric Slots */}
-            <div className="space-y-3">
-              {mainNodes.map((mn) => {
-                const chainedRelays = uniqueRelays.filter(
-                  (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
-                );
+        {/* Gateway Cards Grid (1~3 per row) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {unlockNodes.map((un) => {
+            const incomingRelays = uniqueRelays.filter(
+              (r) => r.unlockNodeId === un.id || r.exitNodeId === un.id
+            );
+            const isCurrentFilter = activeUnlockFilter === un.id;
 
-                return (
-                  <div
-                    key={mn.id}
-                    className="h-[158px] p-3.5 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all flex flex-col justify-between group"
-                  >
-                    {/* Slot 1: Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {renderCountryBadge(mn.country)}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-ink font-mono group-hover:text-accent transition-colors truncate max-w-[130px] sm:max-w-[170px]">
-                              {mn.name}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
-                              {mn.countryName}
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
-                            {mn.ip}:{mn.port}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold">
-                          {mn.protocol}
+            return (
+              <div
+                key={un.id}
+                className={`p-4 rounded-xl bg-paper border transition-all flex flex-col justify-between group space-y-3 shadow-xs ${
+                  isCurrentFilter
+                    ? "border-purple-400 ring-2 ring-purple-500/20 bg-paper-3"
+                    : "border-purple-500/25 hover:border-purple-500/60"
+                }`}
+              >
+                {/* Gateway Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {renderCountryBadge(un.country)}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-ink font-mono group-hover:text-purple-300 transition-colors truncate max-w-[140px]">
+                          {un.name}
                         </span>
-                        <span className="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          {mn.latencyMs} ms
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans shrink-0">
+                          {un.countryName}
                         </span>
                       </div>
-                    </div>
-
-                    {/* Slot 2: Feature Tags (Normalized height) */}
-                    <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
-                        客户端直连
+                      <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
+                        {un.ip}:{un.port}
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
-                        千兆 BGP
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-mono">
-                        智能分流引擎
-                      </span>
-                    </div>
-
-                    {/* Slot 3: Bottom Status Footer (Normalized height & border) */}
-                    <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
-                      {chainedRelays.length > 0 ? (
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span className="text-ink-muted flex items-center gap-1 text-[10px] shrink-0">
-                            <ArrowsLeftRight className="w-3 h-3 text-purple-400" />
-                            <span>已挂载出站:</span>
-                          </span>
-                          {chainedRelays.map((r) => {
-                            const targetUnlock = nodes.find(
-                              (n) => n.id === (r.unlockNodeId || r.exitNodeId)
-                            );
-                            return (
-                              <span
-                                key={r.id}
-                                className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1 font-medium truncate"
-                              >
-                                {renderCountryBadge(targetUnlock?.country, "sm")}
-                                <span className="truncate">{targetUnlock?.name || "解锁节点"}</span>
-                                <span className="text-[9px] text-purple-400/80 shrink-0">
-                                  ({r.mode === "all" ? "全量" : "智能分流"})
-                                </span>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-ink-muted flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
-                          <span>未挂载解锁机 · 全部流量直连出站</span>
-                        </span>
-                      )}
                     </div>
                   </div>
-                );
-              })}
 
-              {mainNodes.length === 0 && (
-                <div className="h-[158px] flex items-center justify-center p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
-                  暂无主力直连节点，请在节点管理中添加类型为「主力直连机」的 VPS。
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
+                      {un.protocol === "shadowsocks" ? "Shadowsocks (SS)" : un.protocol}
+                    </span>
+                    <span className="text-xs font-mono text-ink-secondary font-bold">
+                      {un.latencyMs} ms
+                    </span>
+                  </div>
                 </div>
-              )}
+
+                {/* Characteristic Tags */}
+                <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
+                  {un.tags && un.tags.length > 0 ? (
+                    un.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono"
+                      >
+                        {t}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                      原生家宽住宅
+                    </span>
+                  )}
+                </div>
+
+                {/* Gateway Service Status Bar & Filter Action */}
+                <div className="pt-2.5 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono">
+                  {incomingRelays.length > 0 ? (
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-emerald-400 font-medium text-[10px] truncate">
+                        已为 {incomingRelays.length} 台主力机提供解锁
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-ink-muted text-[10px] flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
+                      <span>待命中 · 尚未指派主力机</span>
+                    </span>
+                  )}
+
+                  <button
+                    onClick={() =>
+                      setActiveUnlockFilter((prev) => (prev === un.id ? "all" : un.id))
+                    }
+                    className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer shrink-0 font-mono ${
+                      isCurrentFilter
+                        ? "bg-purple-500/25 text-purple-200 border-purple-500/50 font-bold"
+                        : "bg-paper-3 text-ink-muted hover:text-ink hover:border-rule-active border-rule"
+                    }`}
+                  >
+                    {isCurrentFilter ? "取消高亮" : "查看关联主力机"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {unlockNodes.length === 0 && (
+            <div className="p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50 col-span-full">
+              暂无专属解锁落地机。可在右上角“添加节点”中添加类型为「流媒体/AI 解锁机」的 VPS。
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* Visual Pipeline Flow Connector */}
+      <div className="flex items-center justify-center -my-2 relative z-10">
+        <div className="px-4 py-1.5 rounded-full bg-paper-2 border border-rule shadow-sm flex items-center gap-2 text-[11px] font-mono text-ink-muted">
+          <ArrowsLeftRight weight="bold" className="w-3.5 h-3.5 text-accent animate-pulse" />
+          <span>Xray 智能路由分流层 · 规则流量出站至上方落地网关 · 常规流量全直连</span>
+        </div>
+      </div>
+
+      {/* 3. Direct Inbound Fleet (Multi-column Responsive Grid) */}
+      <div className="bg-paper-2 rounded-2xl border border-rule p-5 sm:p-7 shadow-xs space-y-5">
+        {/* Section Header with Search & Filter Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-rule">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+            <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
+              主力直连节点集群 (Direct Inbound Fleet)
+            </h3>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-ink-muted border border-rule">
+              共 {mainNodes.length} 台{filteredMainNodes.length !== mainNodes.length ? ` · 筛选显示 ${filteredMainNodes.length} 台` : ""}
+            </span>
           </div>
 
-          {/* Right Column: 专属解锁落地 (Unlock / Exit VPS) */}
-          <div className="space-y-4">
-            {/* Column Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-rule">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse" />
-                <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider font-mono">
-                  流媒体 / AI 专属解锁节点 (Unlock VPS)
-                </h3>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule">
-                  {unlockNodes.length} 台
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-purple-400 flex items-center gap-1">
-                <Sparkle className="w-3 h-3 text-purple-400" />
-                <span>原生纯净双ISP</span>
-              </span>
+          {/* Search & Filter Controls */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Search Input */}
+            <div className="relative w-44 sm:w-56">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索名称 / IP / 地区..."
+                className="text-xs pl-8 py-1 h-8"
+              />
+              <MagnifyingGlass className="w-3.5 h-3.5 text-ink-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
             </div>
 
-            {/* Unlock Nodes List - Strictly Unified Height & Symmetric Slots */}
-            <div className="space-y-3">
-              {unlockNodes.map((un) => {
-                const incomingRelays = uniqueRelays.filter(
-                  (r) => r.unlockNodeId === un.id || r.exitNodeId === un.id
-                );
-
-                return (
-                  <div
-                    key={un.id}
-                    className="h-[158px] p-3.5 rounded-xl bg-paper border border-purple-500/25 hover:border-purple-500/60 shadow-xs transition-all flex flex-col justify-between group"
-                  >
-                    {/* Slot 1: Header */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {renderCountryBadge(un.country)}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-ink font-mono group-hover:text-purple-300 transition-colors truncate max-w-[130px] sm:max-w-[170px]">
-                              {un.name}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans shrink-0">
-                              {un.countryName}
-                            </span>
-                          </div>
-                          <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
-                            {un.ip}:{un.port}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
-                          {un.protocol === "shadowsocks" ? "Shadowsocks (SS)" : un.protocol}
-                        </span>
-                        <span className="text-xs font-mono text-ink-secondary font-bold">
-                          {un.latencyMs} ms
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Slot 2: Feature Tags (Normalized height) */}
-                    <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
-                      {un.tags && un.tags.length > 0 ? (
-                        un.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono"
-                          >
-                            {t}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
-                          原生家宽住宅
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Slot 3: Bottom Status Footer (Normalized height & border) */}
-                    <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
-                      {incomingRelays.length > 0 ? (
-                        <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-[10px]">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>已为 {incomingRelays.length} 台主力机提供解锁出站</span>
-                        </span>
-                      ) : (
-                        <span className="text-ink-muted text-[10px] flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
-                          <span>空闲待命 · 尚未指派给任何主力直连机</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {unlockNodes.length === 0 && (
-                <div className="h-[158px] flex items-center justify-center p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50">
-                  暂无专属解锁节点。可在右上角“添加节点”中添加类型为「流媒体/AI 解锁机」的 VPS。
-                </div>
-              )}
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1 bg-paper p-1 rounded-lg border border-rule text-[11px] font-mono">
+              <button
+                onClick={() => setActiveUnlockFilter("all")}
+                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  activeUnlockFilter === "all"
+                    ? "bg-accent text-paper font-semibold shadow-xs"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                全部 ({mainNodes.length})
+              </button>
+              <button
+                onClick={() => setActiveUnlockFilter("bound")}
+                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  activeUnlockFilter === "bound"
+                    ? "bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                已挂载解锁 ({mainNodes.filter((mn) => uniqueRelays.some((r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id)).length})
+              </button>
+              <button
+                onClick={() => setActiveUnlockFilter("unbound")}
+                className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                  activeUnlockFilter === "unbound"
+                    ? "bg-paper-3 text-ink font-semibold border border-rule"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                纯直连 ({mainNodes.filter((mn) => !uniqueRelays.some((r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id)).length})
+              </button>
             </div>
           </div>
         </div>
 
-        {/* 3. Active Chained Proxy Pipeline List */}
-        <div className="border-t border-rule pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-mono uppercase tracking-wider text-ink-muted flex items-center gap-2">
-              <Lightning weight="fill" className="w-3.5 h-3.5 text-accent" />
-              <span className="font-semibold text-ink">当前活跃链式解锁链路</span>
-              <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-paper-3 text-ink-muted border border-rule">
-                {uniqueRelays.length} 条已生效
-              </span>
-            </div>
-          </div>
+        {/* Direct Nodes Multi-Column Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filteredMainNodes.map((mn) => {
+            const chainedRelays = uniqueRelays.filter(
+              (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
+            );
 
-          <div className="space-y-3">
-            {uniqueRelays.map((r) => {
-              const main = nodes.find(
-                (n) => n.id === (r.mainNodeId || r.transitNodeId)
-              );
-              const unlock = nodes.find(
-                (n) => n.id === (r.unlockNodeId || r.exitNodeId)
-              );
-              const isAiMediaMode = r.mode !== "all";
-
-              return (
-                <div
-                  key={r.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-paper border border-rule hover:border-rule-active transition-all shadow-xs gap-4"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
-                      <ArrowsLeftRight weight="bold" className="w-4 h-4" />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-xs font-bold text-ink font-sans">
-                          {r.name}
+            return (
+              <div
+                key={mn.id}
+                className="h-[160px] p-3.5 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all flex flex-col justify-between group"
+              >
+                {/* Slot 1: Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {renderCountryBadge(mn.country)}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-ink font-mono group-hover:text-accent transition-colors truncate max-w-[120px] sm:max-w-[150px]">
+                          {mn.name}
                         </span>
-                        <span
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-medium ${
-                            isAiMediaMode
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : "bg-sky-500/10 text-sky-400 border-sky-500/30"
-                          }`}
-                        >
-                          {isAiMediaMode ? "AI & 流媒体专属解锁" : "全量链式出站"}
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
+                          {mn.countryName}
                         </span>
                       </div>
-
-                      {/* Path Visualization with Country Badges */}
-                      <div className="flex items-center gap-2 mt-2 text-xs font-mono">
-                        <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1.5 font-semibold">
-                          {renderCountryBadge(main?.country, "sm")}
-                          <span>{main?.name || "主力机"}</span>
-                        </span>
-                        <span className="text-ink-muted text-xs">➔</span>
-                        <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1.5 font-semibold">
-                          {renderCountryBadge(unlock?.country, "sm")}
-                          <span>{unlock?.name || "解锁机"}</span>
-                        </span>
-                      </div>
+                      <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
+                        {mn.ip}:{mn.port}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-rule/50">
-                    <div className="text-left sm:text-right">
-                      <span className="text-[11px] text-ink-muted block">综合链路时延</span>
-                      <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        {r.latencyMs} ms
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold">
+                      {mn.protocol}
+                    </span>
+                    <span className="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      {mn.latencyMs} ms
+                    </span>
+                  </div>
+                </div>
+
+                {/* Slot 2: Tags */}
+                <div className="flex items-center gap-1.5 flex-wrap overflow-hidden h-6">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                    客户端直连
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
+                    千兆 BGP
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-mono">
+                    智能分流引擎
+                  </span>
+                </div>
+
+                {/* Slot 3: Bottom Status Footer with Outbound Route Pills or Quick Link */}
+                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
+                  {chainedRelays.length > 0 ? (
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="text-ink-muted flex items-center gap-1 text-[10px] shrink-0">
+                        <ArrowsLeftRight className="w-3 h-3 text-purple-400" />
+                        <span>已挂载出站:</span>
+                      </span>
+                      <div className="flex items-center gap-1 truncate">
+                        {chainedRelays.map((r) => {
+                          const targetUnlock = nodes.find(
+                            (n) => n.id === (r.unlockNodeId || r.exitNodeId)
+                          );
+                          return (
+                            <span
+                              key={r.id}
+                              className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/30 flex items-center gap-1 font-medium truncate"
+                              title={`${r.name} (${r.mode === "all" ? "全量" : "智能分流"})`}
+                            >
+                              {renderCountryBadge(targetUnlock?.country, "sm")}
+                              <span className="truncate max-w-[80px] sm:max-w-[100px]">{targetUnlock?.name || "解锁节点"}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] text-ink-muted flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
+                        <span>未挂载解锁机 · 流量全直连</span>
+                      </span>
+                      <button
+                        onClick={() => handleQuickAttach(mn.id)}
+                        className="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30 transition-all font-mono cursor-pointer"
+                      >
+                        + 挂载解锁
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredMainNodes.length === 0 && (
+            <div className="p-8 text-center text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/50 col-span-full">
+              {searchQuery || activeUnlockFilter !== "all"
+                ? "没有找到符合筛选条件的主力直连节点。"
+                : "暂无主力直连节点，请在节点管理中添加类型为「主力直连机」的 VPS。"}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 4. Active Chained Proxy Pipeline List */}
+      <div className="bg-paper-2 rounded-2xl border border-rule p-5 sm:p-7 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-rule">
+          <div className="text-xs font-mono uppercase tracking-wider text-ink-muted flex items-center gap-2">
+            <Lightning weight="fill" className="w-3.5 h-3.5 text-accent" />
+            <span className="font-semibold text-ink">当前活跃链式解锁链路</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-ink-muted border border-rule">
+              {uniqueRelays.length} 条已生效
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {uniqueRelays.map((r) => {
+            const main = nodes.find(
+              (n) => n.id === (r.mainNodeId || r.transitNodeId)
+            );
+            const unlock = nodes.find(
+              (n) => n.id === (r.unlockNodeId || r.exitNodeId)
+            );
+            const isAiMediaMode = r.mode !== "all";
+
+            return (
+              <div
+                key={r.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-paper border border-rule hover:border-rule-active transition-all shadow-xs gap-4"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+                    <ArrowsLeftRight weight="bold" className="w-4 h-4" />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-bold text-ink font-sans">
+                        {r.name}
+                      </span>
+                      <span
+                        className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-medium ${
+                          isAiMediaMode
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                        }`}
+                      >
+                        {isAiMediaMode ? "AI & 流媒体专属解锁" : "全量链式出站"}
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => setDeletingRelay(r)}
-                      className="p-2 rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
-                      title="解除该链式代理"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
+                    {/* Path Visualization with Country Badges */}
+                    <div className="flex items-center gap-2 mt-2 text-xs font-mono">
+                      <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1.5 font-semibold">
+                        {renderCountryBadge(main?.country, "sm")}
+                        <span>{main?.name || "主力机"}</span>
+                      </span>
+                      <span className="text-ink-muted text-xs">➔</span>
+                      <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1.5 font-semibold">
+                        {renderCountryBadge(unlock?.country, "sm")}
+                        <span>{unlock?.name || "解锁机"}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
-              );
-            })}
 
-            {uniqueRelays.length === 0 && (
-              <div className="text-center py-8 text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/30">
-                暂无配置的链式解锁代理。点击上方“创建链式解锁代理”即可将主力 VPS 与专属解锁机绑定。
+                <div className="flex items-center gap-5 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-rule/50">
+                  <div className="text-left sm:text-right">
+                    <span className="text-[11px] text-ink-muted block">综合链路时延</span>
+                    <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      {r.latencyMs} ms
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setDeletingRelay(r)}
+                    className="p-2 rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                    title="解除该链式代理"
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
+
+          {uniqueRelays.length === 0 && (
+            <div className="text-center py-8 text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/30">
+              暂无配置的链式解锁代理。点击上方“创建链式解锁代理”即可将主力 VPS 与专属解锁机绑定。
+            </div>
+          )}
         </div>
       </div>
 
