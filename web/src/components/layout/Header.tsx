@@ -32,6 +32,10 @@ export const Header: React.FC<HeaderProps> = ({
       title: "链式代理与解锁拓扑",
       desc: "主力直连机与专属解锁机智能分流绑定与流向拓扑",
     },
+    routing: {
+      title: "分流规则编排",
+      desc: "可视化出站规则管理、预设模板一键导入、优先级调序与多客户端配置联动",
+    },
     subscription: {
       title: "订阅分享与客户端导出",
       desc: "自动识别客户端输出 Clash Meta / Sing-box / Shadowrocket",

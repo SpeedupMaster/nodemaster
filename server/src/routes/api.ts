@@ -4,10 +4,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "../db/index.js";
-import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig } from "../services/xrayConfig.js";
+import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig, compileRuleForPreview } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
-import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask } from "../types/index.js";
+import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule } from "../types/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -449,6 +449,332 @@ apiRouter.get("/nodes/:id/history", (req, res) => {
   const history = db.getNodeLoadHistory(req.params.id, range);
   if (!history) return res.status(404).json({ success: false, message: "节点不存在" });
   res.json({ success: true, data: history });
+});
+
+// -------------------------------------------------------------
+// 8. Visual Routing Rules Management & Simulation API
+// -------------------------------------------------------------
+apiRouter.get("/routing/rules", (req, res) => {
+  res.json({ success: true, data: db.getRoutingRules() });
+});
+
+apiRouter.post("/routing/rules", (req, res) => {
+  const {
+    name,
+    description,
+    enabled,
+    priority,
+    targetOutbound,
+    targetNodeId,
+    domains,
+    geosite,
+    ips,
+    geoip,
+    protocol,
+    port,
+    inboundNodeIds,
+    builtInPresetId,
+  } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ success: false, message: "规则名称为必填项" });
+  }
+
+  const existing = db.getRoutingRules();
+  const maxPriority = existing.reduce((max, r) => Math.max(max, r.priority || 0), 0);
+
+  const newRule: RoutingRule = {
+    id: `rule-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+    name: name.trim(),
+    description: (description || "").trim(),
+    enabled: enabled !== false,
+    priority: Number(priority) || maxPriority + 1,
+    targetOutbound: targetOutbound || "DIRECT",
+    targetNodeId: targetNodeId || undefined,
+    domains: Array.isArray(domains) ? domains.filter(Boolean).map((d: string) => d.trim()) : [],
+    geosite: Array.isArray(geosite) ? geosite.filter(Boolean).map((g: string) => g.trim()) : [],
+    ips: Array.isArray(ips) ? ips.filter(Boolean).map((ip: string) => ip.trim()) : [],
+    geoip: Array.isArray(geoip) ? geoip.filter(Boolean).map((g: string) => g.trim()) : [],
+    protocol: Array.isArray(protocol) ? protocol.filter(Boolean).map((p: string) => p.trim()) : [],
+    port: (port || "").trim(),
+    inboundNodeIds: Array.isArray(inboundNodeIds) ? inboundNodeIds : [],
+    builtInPresetId: builtInPresetId || undefined,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  const created = db.addRoutingRule(newRule);
+  wsHub.broadcastToWeb({ type: "ROUTING_RULES_UPDATE", rules: db.getRoutingRules() });
+  res.json({ success: true, data: created });
+});
+
+apiRouter.put("/routing/rules/:id", (req, res) => {
+  const existing = db.getRoutingRuleById(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ success: false, message: "分流规则不存在" });
+  }
+
+  const updates: Partial<RoutingRule> = {};
+  if (req.body.name !== undefined) updates.name = String(req.body.name).trim();
+  if (req.body.description !== undefined) updates.description = String(req.body.description).trim();
+  if (req.body.enabled !== undefined) updates.enabled = Boolean(req.body.enabled);
+  if (req.body.priority !== undefined) updates.priority = Number(req.body.priority);
+  if (req.body.targetOutbound !== undefined) updates.targetOutbound = req.body.targetOutbound;
+  if (req.body.targetNodeId !== undefined) updates.targetNodeId = req.body.targetNodeId;
+  if (req.body.domains !== undefined) updates.domains = Array.isArray(req.body.domains) ? req.body.domains.filter(Boolean) : [];
+  if (req.body.geosite !== undefined) updates.geosite = Array.isArray(req.body.geosite) ? req.body.geosite.filter(Boolean) : [];
+  if (req.body.ips !== undefined) updates.ips = Array.isArray(req.body.ips) ? req.body.ips.filter(Boolean) : [];
+  if (req.body.geoip !== undefined) updates.geoip = Array.isArray(req.body.geoip) ? req.body.geoip.filter(Boolean) : [];
+  if (req.body.protocol !== undefined) updates.protocol = Array.isArray(req.body.protocol) ? req.body.protocol.filter(Boolean) : [];
+  if (req.body.port !== undefined) updates.port = String(req.body.port).trim();
+  if (req.body.inboundNodeIds !== undefined) updates.inboundNodeIds = Array.isArray(req.body.inboundNodeIds) ? req.body.inboundNodeIds : [];
+
+  const updated = db.updateRoutingRule(req.params.id, updates);
+  wsHub.broadcastToWeb({ type: "ROUTING_RULES_UPDATE", rules: db.getRoutingRules() });
+  res.json({ success: true, data: updated });
+});
+
+apiRouter.delete("/routing/rules/:id", (req, res) => {
+  const ok = db.deleteRoutingRule(req.params.id);
+  if (!ok) return res.status(404).json({ success: false, message: "分流规则不存在" });
+  wsHub.broadcastToWeb({ type: "ROUTING_RULES_UPDATE", rules: db.getRoutingRules() });
+  res.json({ success: true, message: "分流规则已删除" });
+});
+
+apiRouter.post("/routing/rules/reorder", (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ success: false, message: "参数错误: ids 必须为数组" });
+  }
+
+  const reordered = db.reorderRoutingRules(ids);
+  wsHub.broadcastToWeb({ type: "ROUTING_RULES_UPDATE", rules: reordered });
+  res.json({ success: true, data: reordered });
+});
+
+apiRouter.post("/routing/rules/presets", (req, res) => {
+  const resetRules = db.resetRoutingRules();
+  wsHub.broadcastToWeb({ type: "ROUTING_RULES_UPDATE", rules: resetRules });
+  res.json({ success: true, data: resetRules });
+});
+
+apiRouter.post("/routing/rules/preview", (req, res) => {
+  const preview = compileRuleForPreview(req.body);
+  res.json({ success: true, data: preview });
+});
+
+apiRouter.post("/routing/rules/simulate", (req, res) => {
+  const { target, protocol } = req.body;
+  if (!target || !target.trim()) {
+    return res.status(400).json({ success: false, message: "请输入待测试的域名或 IP 地址" });
+  }
+
+  const rules = db.getRoutingRules().filter((r) => r.enabled);
+  const testTarget = target.trim().toLowerCase();
+  const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(testTarget) || testTarget.includes(":");
+
+  let matchedRule: RoutingRule | null = null;
+  let matchReason = "";
+
+  for (const r of rules) {
+    // 1. Protocol match
+    if (protocol && r.protocol && r.protocol.includes(protocol)) {
+      matchedRule = r;
+      matchReason = `匹配协议: ${protocol}`;
+      break;
+    }
+
+    // 2. IP / GeoIP match
+    if (isIp) {
+      if (
+        r.ips &&
+        r.ips.some(
+          (ip) =>
+            ip === testTarget ||
+            testTarget.startsWith(ip.replace(/\/\d+$/, "")) ||
+            ip.includes(testTarget)
+        )
+      ) {
+        matchedRule = r;
+        matchReason = `命中自定义 IP / CIDR 网段规则`;
+        break;
+      }
+
+      if (r.geoip) {
+        if (
+          r.geoip.includes("cn") &&
+          (testTarget.startsWith("223.") ||
+            testTarget.startsWith("114.") ||
+            testTarget.startsWith("119.") ||
+            testTarget.startsWith("180."))
+        ) {
+          matchedRule = r;
+          matchReason = `命中 GeoIP: CN (中国大陆 IP 网段)`;
+          break;
+        }
+
+        if (
+          r.geoip.includes("private") &&
+          (testTarget.startsWith("192.168.") ||
+            testTarget.startsWith("10.") ||
+            testTarget.startsWith("127.") ||
+            testTarget.startsWith("172.16."))
+        ) {
+          matchedRule = r;
+          matchReason = `命中 GeoIP: Private (内网私有地址)`;
+          break;
+        }
+
+        if (
+          r.geoip.includes("telegram") &&
+          (testTarget.startsWith("149.154.") || testTarget.startsWith("91.108."))
+        ) {
+          matchedRule = r;
+          matchReason = `命中 GeoIP: Telegram 专属网段`;
+          break;
+        }
+      }
+    } else {
+      // 3. Domain match
+      if (
+        r.domains &&
+        r.domains.some((d) => {
+          const clean = d.replace(/^domain:/, "").replace(/^\*\./, "").toLowerCase();
+          return testTarget === clean || testTarget.endsWith("." + clean);
+        })
+      ) {
+        matchedRule = r;
+        matchReason = `命中自定义域名规则 (*.${testTarget})`;
+        break;
+      }
+
+      // 4. Geosite match
+      if (r.geosite) {
+        for (const g of r.geosite) {
+          const clean = g.replace(/^geosite:/, "").toLowerCase();
+          if (
+            (clean === "openai" || clean === "category-ai-chat-!cn") &&
+            (testTarget.includes("openai") ||
+              testTarget.includes("chatgpt") ||
+              testTarget.includes("oaistatic") ||
+              testTarget.includes("oaiusercontent"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: openai (ChatGPT/OpenAI)`;
+            break;
+          }
+          if (
+            clean === "anthropic" &&
+            (testTarget.includes("anthropic") || testTarget.includes("claude"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: anthropic (Claude)`;
+            break;
+          }
+          if (clean === "netflix" && testTarget.includes("netflix")) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: netflix (奈飞流媒体)`;
+            break;
+          }
+          if (
+            clean === "youtube" &&
+            (testTarget.includes("youtube") ||
+              testTarget.includes("googlevideo") ||
+              testTarget.includes("ytimg"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: youtube (油管视频)`;
+            break;
+          }
+          if (
+            clean === "disney" &&
+            (testTarget.includes("disney") || testTarget.includes("bamgrid"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: disney (迪士尼+)`;
+            break;
+          }
+          if (
+            clean === "telegram" &&
+            (testTarget.includes("telegram") || testTarget.includes("t.me"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: telegram (电报通讯)`;
+            break;
+          }
+          if (
+            clean === "cn" &&
+            (testTarget.endsWith(".cn") ||
+              testTarget.includes("baidu") ||
+              testTarget.includes("qq.com") ||
+              testTarget.includes("alipay") ||
+              testTarget.includes("taobao") ||
+              testTarget.includes("bilibili") ||
+              testTarget.includes("jd.com"))
+          ) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: cn (中国大陆主流站点)`;
+            break;
+          }
+          if (clean === "google" && testTarget.includes("google")) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: google`;
+            break;
+          }
+          if (clean === "github" && testTarget.includes("github")) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: github`;
+            break;
+          }
+          if (clean === "steam" && testTarget.includes("steam")) {
+            matchedRule = r;
+            matchReason = `命中 Geosite: steam (游戏分发平台)`;
+            break;
+          }
+        }
+        if (matchedRule) break;
+      }
+    }
+
+    // 5. Fallback rule
+    if (
+      r.builtInPresetId === "preset_fallback" ||
+      r.name.includes("兜底") ||
+      r.name.includes("Fallback")
+    ) {
+      matchedRule = r;
+      matchReason = `未命中前置特征规则，匹配漏网之鱼兜底分流`;
+      break;
+    }
+  }
+
+  if (!matchedRule) {
+    return res.json({
+      success: true,
+      data: {
+        matched: false,
+        target,
+        ruleId: null,
+        ruleName: "未命中任何规则",
+        priority: 999,
+        action: "DIRECT",
+        reason: "未配置对应规则或已禁用，默认直连出站",
+      },
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      matched: true,
+      target,
+      ruleId: matchedRule.id,
+      ruleName: matchedRule.name,
+      priority: matchedRule.priority,
+      action: matchedRule.targetOutbound,
+      reason: matchReason,
+    },
+  });
 });
 
 

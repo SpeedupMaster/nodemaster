@@ -109,3 +109,23 @@ export interface NodeLatencyHistory {
   history: LatencyPoint[];
 }
 
+export interface RoutingRule {
+  id: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  priority: number;
+  targetOutbound: "DIRECT" | "BLOCK" | "UNLOCK_OUT" | "PROXY";
+  targetNodeId?: string;
+  domains?: string[];
+  geosite?: string[];
+  ips?: string[];
+  geoip?: string[];
+  protocol?: string[];
+  port?: string;
+  inboundNodeIds?: string[]; // empty array means all nodes
+  builtInPresetId?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+

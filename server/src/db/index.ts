@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { NodeItem, RelayLink, SubscriptionToken, SystemConfig, LatencyTask, NodeLatencyHistory } from "../types/index.js";
+import { NodeItem, RelayLink, SubscriptionToken, SystemConfig, LatencyTask, NodeLatencyHistory, RoutingRule } from "../types/index.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,6 +14,7 @@ export interface DatabaseSchema {
   subscriptions: SubscriptionToken[];
   config: SystemConfig;
   latencyTasks: LatencyTask[];
+  routingRules: RoutingRule[];
 }
 
 const DEFAULT_CONFIG: SystemConfig = {
@@ -337,6 +338,105 @@ const FALLBACK_PALETTE = [
   "#14b8a6", "#f59e0b", "#06b6d4", "#64748b"
 ];
 
+export const INITIAL_ROUTING_RULES: RoutingRule[] = [
+  {
+    id: "rule-private-lan",
+    name: "私有局域网与回环",
+    description: "局域网及私有 IP 地址直连互通，避免内部网络请求走代理",
+    enabled: true,
+    priority: 1,
+    targetOutbound: "DIRECT",
+    geosite: ["private"],
+    geoip: ["private"],
+    ips: ["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_lan",
+    createdAt: Date.now() - 86400000 * 30,
+    updatedAt: Date.now() - 86400000 * 30,
+  },
+  {
+    id: "rule-block-p2p",
+    name: "BitTorrent / P2P 防封拦截",
+    description: "阻断 BT/PT 下载流量，防止 VPS 被版权投诉或机房直接封机",
+    enabled: true,
+    priority: 2,
+    targetOutbound: "BLOCK",
+    protocol: ["bittorrent"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_p2p",
+    createdAt: Date.now() - 86400000 * 30,
+    updatedAt: Date.now() - 86400000 * 30,
+  },
+  {
+    id: "rule-ai-services",
+    name: "AI 办公全家桶 (OpenAI / Claude / Gemini)",
+    description: "自动导向落地解锁机出口，保障 ChatGPT、Claude 与 Gemini 稳定防封号",
+    enabled: true,
+    priority: 3,
+    targetOutbound: "UNLOCK_OUT",
+    geosite: ["openai", "anthropic", "category-ai-chat-!cn"],
+    domains: ["openai.com", "chatgpt.com", "oaistatic.com", "oaiusercontent.com", "claude.ai", "anthropic.com", "gemini.google.com"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_ai",
+    createdAt: Date.now() - 86400000 * 20,
+    updatedAt: Date.now() - 86400000 * 20,
+  },
+  {
+    id: "rule-global-streaming",
+    name: "全球主流流媒体解锁",
+    description: "Netflix / Disney+ / YouTube / TikTok 自动路由至流媒体原生解锁落地机",
+    enabled: true,
+    priority: 4,
+    targetOutbound: "UNLOCK_OUT",
+    geosite: ["netflix", "disney", "youtube", "tiktok", "spotify"],
+    domains: ["netflix.com", "disneyplus.com", "youtube.com", "tiktok.com"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_streaming",
+    createdAt: Date.now() - 86400000 * 20,
+    updatedAt: Date.now() - 86400000 * 20,
+  },
+  {
+    id: "rule-telegram",
+    name: "Telegram 海外即时通讯",
+    description: "Telegram 专属 IP 与域名通过代理出口极速分流直达",
+    enabled: true,
+    priority: 5,
+    targetOutbound: "PROXY",
+    geosite: ["telegram"],
+    geoip: ["telegram"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_telegram",
+    createdAt: Date.now() - 86400000 * 15,
+    updatedAt: Date.now() - 86400000 * 15,
+  },
+  {
+    id: "rule-cn-direct",
+    name: "中国大陆流量直连",
+    description: "国内域名与 IP 直连，降低访问延迟并节省 VPS 宝贵带宽流量",
+    enabled: true,
+    priority: 6,
+    targetOutbound: "DIRECT",
+    geosite: ["cn"],
+    geoip: ["cn"],
+    inboundNodeIds: [],
+    builtInPresetId: "preset_cn",
+    createdAt: Date.now() - 86400000 * 30,
+    updatedAt: Date.now() - 86400000 * 30,
+  },
+  {
+    id: "rule-fallback",
+    name: "漏网之鱼兜底 (Final Match)",
+    description: "未命中上述规则的境外网络流量，默认通过代理节点中继转发",
+    enabled: true,
+    priority: 7,
+    targetOutbound: "PROXY",
+    inboundNodeIds: [],
+    builtInPresetId: "preset_fallback",
+    createdAt: Date.now() - 86400000 * 30,
+    updatedAt: Date.now() - 86400000 * 30,
+  },
+];
+
 class Database {
   private data: DatabaseSchema;
 
@@ -349,8 +449,16 @@ class Database {
       try {
         const raw = fs.readFileSync(DATA_FILE, "utf-8");
         this.data = JSON.parse(raw);
+        let changed = false;
         if (!this.data.latencyTasks || this.data.latencyTasks.length === 0) {
           this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
+          changed = true;
+        }
+        if (!this.data.routingRules || this.data.routingRules.length === 0) {
+          this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
+          changed = true;
+        }
+        if (changed) {
           this.save();
         }
       } catch (err) {
@@ -371,6 +479,7 @@ class Database {
       subscriptions: INITIAL_SUBSCRIPTIONS,
       config: DEFAULT_CONFIG,
       latencyTasks: [...INITIAL_LATENCY_TASKS],
+      routingRules: JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES)),
     };
   }
 
@@ -644,6 +753,88 @@ class Database {
       netIn,
       netOut,
     };
+  }
+
+  // Routing Rules API
+  public getRoutingRules(): RoutingRule[] {
+    if (!this.data.routingRules || this.data.routingRules.length === 0) {
+      this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
+      this.save();
+    }
+    return [...this.data.routingRules].sort((a, b) => a.priority - b.priority);
+  }
+
+  public getRoutingRuleById(id: string): RoutingRule | undefined {
+    return this.getRoutingRules().find(r => r.id === id);
+  }
+
+  public addRoutingRule(rule: RoutingRule): RoutingRule {
+    if (!this.data.routingRules) this.data.routingRules = [];
+    if (!rule.priority) {
+      const maxPriority = this.data.routingRules.reduce((max, r) => Math.max(max, r.priority || 0), 0);
+      rule.priority = maxPriority + 1;
+    }
+    this.data.routingRules.push(rule);
+    this.save();
+    return rule;
+  }
+
+  public updateRoutingRule(id: string, updates: Partial<RoutingRule>): RoutingRule | null {
+    if (!this.data.routingRules) return null;
+    const idx = this.data.routingRules.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    this.data.routingRules[idx] = {
+      ...this.data.routingRules[idx],
+      ...updates,
+      updatedAt: Date.now(),
+    };
+    this.save();
+    return this.data.routingRules[idx];
+  }
+
+  public deleteRoutingRule(id: string): boolean {
+    if (!this.data.routingRules) return false;
+    const before = this.data.routingRules.length;
+    this.data.routingRules = this.data.routingRules.filter(r => r.id !== id);
+    this.data.routingRules.sort((a, b) => a.priority - b.priority);
+    this.data.routingRules.forEach((r, idx) => {
+      r.priority = idx + 1;
+    });
+    this.save();
+    return this.data.routingRules.length < before;
+  }
+
+  public reorderRoutingRules(orderedIds: string[]): RoutingRule[] {
+    if (!this.data.routingRules) this.data.routingRules = [];
+    const ruleMap = new Map<string, RoutingRule>();
+    this.data.routingRules.forEach(r => ruleMap.set(r.id, r));
+
+    const reordered: RoutingRule[] = [];
+    orderedIds.forEach((id, index) => {
+      const rule = ruleMap.get(id);
+      if (rule) {
+        rule.priority = index + 1;
+        rule.updatedAt = Date.now();
+        reordered.push(rule);
+        ruleMap.delete(id);
+      }
+    });
+
+    let nextPriority = reordered.length + 1;
+    ruleMap.forEach(remainingRule => {
+      remainingRule.priority = nextPriority++;
+      reordered.push(remainingRule);
+    });
+
+    this.data.routingRules = reordered;
+    this.save();
+    return this.getRoutingRules();
+  }
+
+  public resetRoutingRules(): RoutingRule[] {
+    this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
+    this.save();
+    return this.getRoutingRules();
   }
 }
 

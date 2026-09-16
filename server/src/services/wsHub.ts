@@ -52,6 +52,7 @@ export class WsHub {
           nodes: db.getNodes(),
           relays: db.getRelays(),
           subscriptions: db.getSubscriptions(),
+          routingRules: db.getRoutingRules(),
         }));
 
         ws.on("close", () => {

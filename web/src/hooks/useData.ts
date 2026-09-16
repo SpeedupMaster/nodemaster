@@ -1,28 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
-import { NodeItem, RelayLink, SubscriptionToken, LatencyTask } from "../types";
+import { NodeItem, RelayLink, SubscriptionToken, LatencyTask, RoutingRule } from "../types";
 
 export function useData() {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [relays, setRelays] = useState<RelayLink[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionToken[]>([]);
   const [latencyTasks, setLatencyTasks] = useState<LatencyTask[]>([]);
+  const [routingRules, setRoutingRules] = useState<RoutingRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
 
   // Initial Fetch
   const fetchData = useCallback(async () => {
     try {
-      const [resNodes, resRelays, resSubs, resTasks] = await Promise.all([
+      const [resNodes, resRelays, resSubs, resTasks, resRules] = await Promise.all([
         fetch("/api/nodes").then((r) => r.json()),
         fetch("/api/relays").then((r) => r.json()),
         fetch("/api/subscriptions").then((r) => r.json()),
         fetch("/api/ping/tasks").then((r) => r.json()),
+        fetch("/api/routing/rules").then((r) => r.json()),
       ]);
 
       if (resNodes.success) setNodes(resNodes.data);
       if (resRelays.success) setRelays(resRelays.data);
       if (resSubs.success) setSubscriptions(resSubs.data);
       if (resTasks.success) setLatencyTasks(resTasks.data);
+      if (resRules?.success) setRoutingRules(resRules.data);
     } catch (err) {
       console.error("[useData] fetch error:", err);
     } finally {
@@ -55,6 +58,7 @@ export function useData() {
             if (msg.nodes) setNodes(msg.nodes);
             if (msg.relays) setRelays(msg.relays);
             if (msg.subscriptions) setSubscriptions(msg.subscriptions);
+            if (msg.routingRules) setRoutingRules(msg.routingRules);
           } else if (msg.type === "TELEMETRY_BATCH") {
             if (msg.nodes) setNodes(msg.nodes);
           } else if (msg.type === "NODE_UPDATE" && msg.node) {
@@ -65,6 +69,8 @@ export function useData() {
             setNodes((prev) => prev.filter((n) => n.id !== msg.id));
           } else if (msg.type === "RELAYS_UPDATE" && msg.relays) {
             setRelays(msg.relays);
+          } else if (msg.type === "ROUTING_RULES_UPDATE" && msg.rules) {
+            setRoutingRules(msg.rules);
           }
         } catch (e) {
           console.error("[useData] WS message parse error:", e);
@@ -205,6 +211,65 @@ export function useData() {
     return res;
   };
 
+  // Routing Rules actions
+  const addRoutingRule = async (ruleData: Partial<RoutingRule>) => {
+    const res = await fetch("/api/routing/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ruleData),
+    }).then((r) => r.json());
+    if (res.success) {
+      setRoutingRules((prev) => [...prev, res.data].sort((a, b) => a.priority - b.priority));
+    }
+    return res;
+  };
+
+  const updateRoutingRule = async (id: string, updates: Partial<RoutingRule>) => {
+    const res = await fetch(`/api/routing/rules/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).then((r) => r.json());
+    if (res.success) {
+      setRoutingRules((prev) =>
+        prev.map((r) => (r.id === id ? res.data : r)).sort((a, b) => a.priority - b.priority)
+      );
+    }
+    return res;
+  };
+
+  const deleteRoutingRule = async (id: string) => {
+    const res = await fetch(`/api/routing/rules/${id}`, {
+      method: "DELETE",
+    }).then((r) => r.json());
+    if (res.success) {
+      setRoutingRules((prev) => prev.filter((r) => r.id !== id));
+    }
+    return res;
+  };
+
+  const reorderRoutingRules = async (orderedIds: string[]) => {
+    const res = await fetch("/api/routing/rules/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: orderedIds }),
+    }).then((r) => r.json());
+    if (res.success) {
+      setRoutingRules(res.data);
+    }
+    return res;
+  };
+
+  const resetRoutingRules = async () => {
+    const res = await fetch("/api/routing/rules/presets", {
+      method: "POST",
+    }).then((r) => r.json());
+    if (res.success) {
+      setRoutingRules(res.data);
+    }
+    return res;
+  };
+
   // Aggregated Telemetry
   const totalUplinkSpeed = nodes.reduce((acc, n) => acc + (n.uplinkSpeedBytes || 0), 0);
   const totalDownlinkSpeed = nodes.reduce((acc, n) => acc + (n.downlinkSpeedBytes || 0), 0);
@@ -217,6 +282,7 @@ export function useData() {
     relays,
     subscriptions,
     latencyTasks,
+    routingRules,
     loading,
     wsConnected,
     fetchData,
@@ -230,6 +296,11 @@ export function useData() {
     updateLatencyTask,
     deleteLatencyTask,
     resetLatencyTasks,
+    addRoutingRule,
+    updateRoutingRule,
+    deleteRoutingRule,
+    reorderRoutingRules,
+    resetRoutingRules,
     totalUplinkSpeed,
     totalDownlinkSpeed,
     totalTrafficUsed,
@@ -237,3 +308,4 @@ export function useData() {
     onlineNodesCount,
   };
 }
+

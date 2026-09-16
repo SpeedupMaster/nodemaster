@@ -1,5 +1,6 @@
 import YAML from "yaml";
 import { NodeItem, RelayLink } from "../types/index.js";
+import { db } from "../db/index.js";
 
 // Helper to construct VLESS URL
 export function toVlessUrl(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string): string {
@@ -202,21 +203,58 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         proxies: ["🚀 节点选择", "DIRECT"],
       },
     ],
-    rules: [
-      "DOMAIN-SUFFIX,openai.com,🤖 AI Service",
-      "DOMAIN-SUFFIX,anthropic.com,🤖 AI Service",
-      "DOMAIN-SUFFIX,claude.ai,🤖 AI Service",
-      "DOMAIN-SUFFIX,chatgpt.com,🤖 AI Service",
-      "DOMAIN-SUFFIX,youtube.com,📺 流媒体视频",
-      "DOMAIN-SUFFIX,netflix.com,📺 流媒体视频",
-      "GEOSITE,category-ai-chat-!cn,🤖 AI Service",
-      "GEOSITE,netflix,📺 流媒体视频",
-      "GEOSITE,youtube,📺 流媒体视频",
-      "GEOIP,private,🎯 全球直连,no-resolve",
-      "GEOSITE,cn,🎯 全球直连",
-      "GEOIP,CN,🎯 全球直连",
-      "MATCH,🐟 漏网之鱼",
-    ],
+    rules: (() => {
+      const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+      const clashRules: string[] = [];
+
+      for (const rule of activeRules) {
+        let target = "🚀 节点选择";
+        if (rule.targetOutbound === "DIRECT") target = "🎯 全球直连";
+        else if (rule.targetOutbound === "BLOCK") target = "REJECT";
+        else if (rule.targetOutbound === "UNLOCK_OUT") {
+          target = rule.name.includes("AI") ? "🤖 AI Service" : "📺 流媒体视频";
+        }
+
+        if (rule.domains) {
+          rule.domains.forEach((d) => {
+            const cleanDomain = d.replace(/^domain:/, "").replace(/^\*\./, "");
+            clashRules.push(`DOMAIN-SUFFIX,${cleanDomain},${target}`);
+          });
+        }
+        if (rule.geosite) {
+          rule.geosite.forEach((g) => {
+            const cleanGeo = g.replace(/^geosite:/, "");
+            clashRules.push(`GEOSITE,${cleanGeo},${target}`);
+          });
+        }
+        if (rule.geoip) {
+          rule.geoip.forEach((g) => {
+            const cleanGeo = g.replace(/^geoip:/, "").toUpperCase();
+            clashRules.push(`GEOIP,${cleanGeo},${target}${cleanGeo === "PRIVATE" ? ",no-resolve" : ""}`);
+          });
+        }
+        if (rule.ips) {
+          rule.ips.forEach((ip) => {
+            clashRules.push(`IP-CIDR,${ip},${target},no-resolve`);
+          });
+        }
+        if (rule.protocol?.includes("bittorrent")) {
+          clashRules.push(`PROCESS-NAME,BitTorrent,REJECT`);
+        }
+      }
+
+      if (clashRules.length === 0) {
+        clashRules.push(
+          "GEOSITE,category-ai-chat-!cn,🤖 AI Service",
+          "GEOSITE,netflix,📺 流媒体视频",
+          "GEOIP,private,🎯 全球直连,no-resolve",
+          "GEOSITE,cn,🎯 全球直连",
+          "GEOIP,CN,🎯 全球直连"
+        );
+      }
+      clashRules.push("MATCH,🐟 漏网之鱼");
+      return clashRules;
+    })(),
   };
 
   return YAML.stringify(config);
@@ -225,10 +263,34 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
 // Render Sing-box JSON Configuration
 export function renderSingboxJson(proxiesData: ReturnType<typeof assembleProxies>): string {
   const outbounds = proxiesData
-    .map(p => toSingboxOutbound(p.node, p.host, p.port, p.name))
+    .map((p) => toSingboxOutbound(p.node, p.host, p.port, p.name))
     .filter(Boolean);
 
   const tags = outbounds.map((o: any) => o.tag);
+
+  // Generate singbox route rules
+  const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+  const routeRules: any[] = [];
+
+  for (const rule of activeRules) {
+    let outbound = "select";
+    if (rule.targetOutbound === "DIRECT") outbound = "direct";
+    else if (rule.targetOutbound === "BLOCK") outbound = "block";
+    else if (rule.targetOutbound === "UNLOCK_OUT") outbound = "auto";
+
+    const sRule: any = { outbound };
+    if (rule.geosite && rule.geosite.length > 0) sRule.geosite = rule.geosite;
+    if (rule.domains && rule.domains.length > 0) {
+      sRule.domain_suffix = rule.domains.map((d) => d.replace(/^domain:/, "").replace(/^\*\./, ""));
+    }
+    if (rule.geoip && rule.geoip.length > 0) sRule.geoip = rule.geoip;
+    if (rule.ips && rule.ips.length > 0) sRule.ip_cidr = rule.ips;
+    if (rule.port) sRule.port = rule.port;
+
+    if (sRule.geosite || sRule.domain_suffix || sRule.geoip || sRule.ip_cidr || sRule.port) {
+      routeRules.push(sRule);
+    }
+  }
 
   const singboxConfig = {
     dns: {
@@ -253,6 +315,10 @@ export function renderSingboxJson(proxiesData: ReturnType<typeof assembleProxies
       { type: "direct", tag: "direct" },
       { type: "block", tag: "block" },
     ],
+    route: {
+      rules: routeRules,
+      auto_detect_interface: true,
+    },
   };
 
   return JSON.stringify(singboxConfig, null, 2);
