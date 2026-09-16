@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { X } from "@phosphor-icons/react";
@@ -66,37 +67,43 @@ export const Modal: React.FC<ModalProps> = ({
     "2xl": "max-w-2xl",
   }[maxWidth];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {/* Full Viewport Backdrop */}
       <div
         ref={overlayRef}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Dialog Body */}
       <div
         ref={modalRef}
-        className={`relative w-full ${widthClasses} bg-paper-2 border border-rule rounded-lg shadow-2xl overflow-hidden z-10`}
+        className={`relative w-full ${widthClasses} my-auto bg-paper-2 border border-rule rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[calc(100vh-3rem)]`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-rule">
+        {/* Pinned Sticky Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-rule bg-paper-2/95 backdrop-blur flex-shrink-0">
           <div>
-            <h3 className="text-base font-semibold text-ink">{title}</h3>
+            <h3 className="text-base font-semibold text-ink leading-tight">{title}</h3>
             {subtitle && (
               <p className="text-xs text-ink-muted mt-0.5">{subtitle}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors"
+            className="p-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-5 max-h-[80vh] overflow-y-auto">{children}</div>
+        {/* Scrollable Children Body */}
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+
