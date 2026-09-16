@@ -279,37 +279,42 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             return (
               <div
                 key={un.id}
-                className={`p-4 rounded-xl bg-paper border transition-all flex flex-col justify-between group space-y-3 shadow-xs ${
+                className={`h-[170px] p-4 rounded-xl bg-paper border transition-all flex flex-col justify-between group shadow-xs ${
                   isCurrentFilter
                     ? "border-purple-400 ring-2 ring-purple-500/20 bg-paper-3"
                     : "border-purple-500/25 hover:border-purple-500/60"
                 }`}
               >
-                {/* Gateway Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {renderCountryBadge(un.country)}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-ink font-mono group-hover:text-purple-300 transition-colors truncate max-w-[140px]">
-                          {un.name}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans shrink-0">
-                          {un.countryName}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
-                        {un.ip}:{un.port}
+                {/* Gateway Header: 2 Sub-rows for Zero Truncation & Visual Balance */}
+                <div className="space-y-1.5">
+                  {/* Sub-row 1: Country Badge + Full Node Name + Latency */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      {renderCountryBadge(un.country)}
+                      <span
+                        className="text-xs sm:text-sm font-bold text-ink font-mono group-hover:text-purple-300 transition-colors truncate"
+                        title={un.name}
+                      >
+                        {un.name}
                       </span>
                     </div>
+                    <span className="text-xs font-mono text-purple-300 font-bold shrink-0 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                      {un.latencyMs} ms
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
+                  {/* Sub-row 2: IP:Port · Region Name (Left) + Protocol Badge (Right) */}
+                  <div className="flex items-center justify-between text-[11px] font-mono gap-2 pt-0.5">
+                    <div className="flex items-center gap-1.5 text-ink-muted truncate min-w-0">
+                      <span className="truncate">{un.ip}:{un.port}</span>
+                      <span className="text-rule-active shrink-0">·</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-sans shrink-0">
+                        {un.countryName}
+                      </span>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold shrink-0">
                       {un.protocol === "shadowsocks" ? "Shadowsocks (SS)" : un.protocol}
-                    </span>
-                    <span className="text-xs font-mono text-ink-secondary font-bold">
-                      {un.latencyMs} ms
                     </span>
                   </div>
                 </div>
@@ -454,34 +459,38 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             return (
               <div
                 key={mn.id}
-                className="h-[160px] p-3.5 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all flex flex-col justify-between group"
+                className="h-[170px] p-4 rounded-xl bg-paper border border-rule hover:border-accent/50 shadow-xs transition-all flex flex-col justify-between group"
               >
-                {/* Slot 1: Header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {renderCountryBadge(mn.country)}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-ink font-mono group-hover:text-accent transition-colors truncate max-w-[120px] sm:max-w-[150px]">
-                          {mn.name}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
-                          {mn.countryName}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-ink-muted mt-0.5 block truncate">
-                        {mn.ip}:{mn.port}
+                {/* Direct Node Header: 2 Sub-rows for Zero Truncation & Visual Balance */}
+                <div className="space-y-1.5">
+                  {/* Sub-row 1: Country Badge + Full Node Name + Latency */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      {renderCountryBadge(mn.country)}
+                      <span
+                        className="text-xs sm:text-sm font-bold text-ink font-mono group-hover:text-accent transition-colors truncate"
+                        title={mn.name}
+                      >
+                        {mn.name}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold">
-                      {mn.protocol}
-                    </span>
-                    <span className="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="text-xs font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       {mn.latencyMs} ms
+                    </span>
+                  </div>
+
+                  {/* Sub-row 2: IP:Port · Region Name (Left) + Protocol Badge (Right) */}
+                  <div className="flex items-center justify-between text-[11px] font-mono gap-2 pt-0.5">
+                    <div className="flex items-center gap-1.5 text-ink-muted truncate min-w-0">
+                      <span className="truncate">{mn.ip}:{mn.port}</span>
+                      <span className="text-rule-active shrink-0">·</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
+                        {mn.countryName}
+                      </span>
+                    </div>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold shrink-0">
+                      {mn.protocol}
                     </span>
                   </div>
                 </div>
@@ -519,7 +528,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                               title={`${r.name} (${r.mode === "all" ? "全量" : "智能分流"})`}
                             >
                               {renderCountryBadge(targetUnlock?.country, "sm")}
-                              <span className="truncate max-w-[80px] sm:max-w-[100px]">{targetUnlock?.name || "解锁节点"}</span>
+                              <span className="truncate max-w-[100px] sm:max-w-[140px]">{targetUnlock?.name || "解锁节点"}</span>
                             </span>
                           );
                         })}
