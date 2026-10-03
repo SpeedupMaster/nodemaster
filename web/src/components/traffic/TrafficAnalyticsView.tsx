@@ -285,16 +285,18 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
               <button
                 onClick={() => setChartMode("stacked")}
                 className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
-                  chartMode === "stacked" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted"
+                  chartMode === "stacked" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted hover:text-ink"
                 }`}
+                title="各业务分类堆叠展示"
               >
                 分类堆叠
               </button>
               <button
                 onClick={() => setChartMode("total")}
                 className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
-                  chartMode === "total" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted"
+                  chartMode === "total" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted hover:text-ink"
                 }`}
+                title="按时序流量展示单色总量走势"
               >
                 总量趋势
               </button>
@@ -302,26 +304,48 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
           </div>
 
           {/* 交互图表容器 */}
-          <div className="h-56 relative flex items-end gap-1 sm:gap-1.5 pt-6 pb-2 border-b border-rule-subtle">
+          <div className="h-52 relative flex items-end gap-1 sm:gap-1.5 pt-6 border-b border-rule mb-8">
+            {/* 背景横向参考标线（提供视觉基准，明确高度对齐） */}
+            <div className="absolute inset-x-0 top-6 bottom-0 pointer-events-none flex flex-col justify-between z-0">
+              <div className="border-b border-rule/50 border-dashed w-full relative">
+                <span className="absolute -top-3.5 right-0 text-[9px] font-mono text-ink-muted/70">
+                  {formatBytes(maxChartValue)}
+                </span>
+              </div>
+              <div className="border-b border-rule/30 border-dashed w-full relative">
+                <span className="absolute -top-3.5 right-0 text-[9px] font-mono text-ink-muted/50">
+                  {formatBytes(maxChartValue * 0.5)}
+                </span>
+              </div>
+              <div className="w-full" />
+            </div>
+
             {data?.timeSeries.map((p, idx) => {
               const heightPct = Math.max(8, (p.totalBytes / maxChartValue) * 100);
               const isHovered = hoveredPointIdx === idx;
+              const isTick =
+                timeRange === "today"
+                  ? idx % 3 === 0
+                  : timeRange === "7d"
+                  ? true
+                  : idx % 5 === 0 || idx === data.timeSeries.length - 1;
 
-              const streamingRatio = p.totalBytes > 0 ? p.streamingBytes / p.totalBytes : 0.58;
-              const aiRatio = p.totalBytes > 0 ? p.aiBytes / p.totalBytes : 0.20;
-              const socialRatio = p.totalBytes > 0 ? p.socialBytes / p.totalBytes : 0.11;
-              const devRatio = p.totalBytes > 0 ? p.devBytes / p.totalBytes : 0.08;
+              const sumB = (p.streamingBytes + p.aiBytes + p.socialBytes + p.devBytes) || p.totalBytes || 1;
+              const streamPct = Math.round((p.streamingBytes / sumB) * 100);
+              const aiPct = Math.round((p.aiBytes / sumB) * 100);
+              const socPct = Math.round((p.socialBytes / sumB) * 100);
+              const devPct = Math.max(0, 100 - streamPct - aiPct - socPct);
 
               return (
                 <div
-                  key={p.time}
-                  className="flex-1 h-full flex flex-col justify-end items-center relative group cursor-pointer"
+                  key={`${p.time}-${idx}`}
+                  className="flex-1 h-full flex flex-col justify-end items-center relative group cursor-pointer z-10"
                   onMouseEnter={() => setHoveredPointIdx(idx)}
                   onMouseLeave={() => setHoveredPointIdx(null)}
                 >
                   {/* Tooltip 浮动框 */}
                   {isHovered && (
-                    <div className="absolute bottom-[calc(100%+8px)] z-30 p-2.5 rounded-lg bg-paper-3 border border-rule shadow-xl text-xs font-mono space-y-1 pointer-events-none min-w-[150px] left-1/2 -translate-x-1/2">
+                    <div className="absolute bottom-[calc(100%+8px)] z-30 p-2.5 rounded-lg bg-paper-3 border border-rule shadow-xl text-xs font-mono space-y-1 pointer-events-none min-w-[170px] left-1/2 -translate-x-1/2">
                       <div className="font-semibold text-ink border-b border-rule-subtle pb-1 flex items-center justify-between">
                         <span>{p.time}</span>
                         <span className="text-accent">{formatBytes(p.totalBytes)}</span>
@@ -329,48 +353,55 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                       <div className="text-[11px] space-y-0.5 pt-0.5">
                         <div className="flex justify-between text-rose-400">
                           <span>流媒体:</span>
-                          <span>{formatBytes(p.streamingBytes)}</span>
+                          <span>{formatBytes(p.streamingBytes)} ({streamPct}%)</span>
                         </div>
                         <div className="flex justify-between text-emerald-400">
                           <span>AI 应用:</span>
-                          <span>{formatBytes(p.aiBytes)}</span>
+                          <span>{formatBytes(p.aiBytes)} ({aiPct}%)</span>
                         </div>
                         <div className="flex justify-between text-sky-400">
                           <span>社交:</span>
-                          <span>{formatBytes(p.socialBytes)}</span>
+                          <span>{formatBytes(p.socialBytes)} ({socPct}%)</span>
                         </div>
                         <div className="flex justify-between text-purple-400">
                           <span>开发:</span>
-                          <span>{formatBytes(p.devBytes)}</span>
+                          <span>{formatBytes(p.devBytes)} ({devPct}%)</span>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* 柱子主体 */}
+                  {/* 柱子主体：严格直角矩形柱身 + 连续垂直外边框 + 内部色块清晰分隔线，彻底消除视错觉 */}
                   <div
                     style={{ height: `${heightPct}%` }}
-                    className={`w-full max-w-[20px] rounded-t-sm overflow-hidden flex flex-col justify-end transition-all ${
-                      isHovered ? "brightness-125 scale-y-[1.02]" : "opacity-90"
+                    className={`w-4 rounded-none border border-rule-subtle/80 overflow-hidden flex flex-col justify-end divide-y divide-paper-2/60 transition-all shrink-0 ${
+                      isHovered ? "brightness-125 ring-2 ring-accent/80 z-20" : "opacity-95"
                     }`}
                   >
-                    {chartMode === "stacked" ? (
+                    {chartMode !== "total" ? (
                       <>
-                        <div style={{ height: `${streamingRatio * 100}%` }} className="bg-rose-500 w-full" />
-                        <div style={{ height: `${aiRatio * 100}%` }} className="bg-emerald-500 w-full" />
-                        <div style={{ height: `${socialRatio * 100}%` }} className="bg-sky-500 w-full" />
-                        <div style={{ height: `${devRatio * 100}%` }} className="bg-purple-500 w-full" />
+                        <div style={{ flex: `${p.streamingBytes || 55} 1 0px` }} className="bg-rose-500 w-full min-h-[1px]" />
+                        <div style={{ flex: `${p.aiBytes || 22} 1 0px` }} className="bg-emerald-500 w-full min-h-[1px]" />
+                        <div style={{ flex: `${p.socialBytes || 13} 1 0px` }} className="bg-sky-500 w-full min-h-[1px]" />
+                        <div style={{ flex: `${p.devBytes || 10} 1 0px` }} className="bg-purple-500 w-full min-h-[1px]" />
                       </>
                     ) : (
                       <div className="bg-accent w-full h-full" />
                     )}
                   </div>
 
-                  {/* X 轴刻度标签 */}
-                  {(idx % (timeRange === "today" ? 3 : 2) === 0 || idx === data.timeSeries.length - 1) && (
-                    <span className="absolute -bottom-5 text-[10px] font-mono text-ink-muted whitespace-nowrap">
-                      {p.time}
-                    </span>
+                  {/* X 轴刻度指示与正下方绝对居中文本 */}
+                  {isTick ? (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none pt-1">
+                      <div className="w-[1.5px] h-1 bg-rule-active mb-1.5" />
+                      <span className="text-[10px] font-mono text-ink-muted whitespace-nowrap text-center leading-none">
+                        {p.time}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none pt-1">
+                      <div className="w-[1px] h-0.5 bg-rule/50 mb-1.5" />
+                    </div>
                   )}
                 </div>
               );

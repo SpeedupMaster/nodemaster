@@ -405,34 +405,57 @@ export class TrafficService {
     const now = Date.now();
 
     if (timeRange === "today") {
-      // 24 hours of today
-      const currentHour = new Date().getHours();
-      for (let i = 23; i >= 0; i--) {
-        const h = (currentHour - i + 24) % 24;
+      // 24 hours of today: 00:00 to 23:00 with smooth continuous diurnal curve
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      // Smooth human activity profile throughout 24 hours (strictly continuous, zero random jitter):
+      // - 00:00~05:00: Midnight winding down (0.80 -> 0.55 -> 0.38 -> 0.22 -> 0.16 -> 0.18)
+      // - 06:00~11:00: Morning rise (0.28 -> 0.50 -> 0.85 -> 1.15 -> 1.30 -> 1.40)
+      // - 12:00~17:00: Afternoon work (1.25 -> 1.35 -> 1.50 -> 1.55 -> 1.50 -> 1.45)
+      // - 18:00~23:00: Evening prime (1.70 -> 2.05 -> 2.40 -> 2.35 -> 2.00 -> 1.30)
+      const hourlyFactors = [
+        0.80, 0.55, 0.38, 0.22, 0.16, 0.18,
+        0.28, 0.50, 0.85, 1.15, 1.30, 1.40,
+        1.25, 1.35, 1.50, 1.55, 1.50, 1.45,
+        1.70, 2.05, 2.40, 2.35, 2.00, 1.30,
+      ];
+      const sumFactor = hourlyFactors.reduce((a, b) => a + b, 0);
+
+      for (let h = 0; h < 24; h++) {
         const timeStr = `${String(h).padStart(2, "0")}:00`;
-        const timestamp = now - i * 3600 * 1000;
+        const timestamp = startOfDay.getTime() + h * 3600 * 1000;
+        const hourBase = totalBytes * (hourlyFactors[h] / sumFactor);
 
-        // Daily human curve factor: peaks between 20:00 - 23:00, valleys at 04:00 - 07:00
-        let hourFactor = 1.0;
-        if (h >= 20 && h <= 23) hourFactor = 2.4;
-        else if (h >= 14 && h < 20) hourFactor = 1.5;
-        else if (h >= 0 && h <= 2) hourFactor = 1.6;
-        else if (h >= 3 && h <= 7) hourFactor = 0.25;
-        else hourFactor = 0.85;
+        // Category breakdown smoothly attuned to time of day
+        let streamR = 0.55;
+        let aiR = 0.22;
+        let socR = 0.13;
+        let devR = 0.10;
 
-        // Random jitter
-        hourFactor += (Math.random() - 0.5) * 0.2;
-        const hourBase = (totalBytes / 24) * (hourFactor / 1.15);
+        if (h >= 9 && h <= 17) {
+          // Work hours: higher Dev & AI
+          streamR = 0.35;
+          aiR = 0.32;
+          socR = 0.15;
+          devR = 0.18;
+        } else if (h >= 19 && h <= 23) {
+          // Evening leisure: higher Streaming
+          streamR = 0.65;
+          aiR = 0.15;
+          socR = 0.13;
+          devR = 0.07;
+        }
 
         points.push({
           time: timeStr,
           timestamp,
           totalBytes: Math.floor(hourBase),
-          streamingBytes: Math.floor(hourBase * 0.58),
-          aiBytes: Math.floor(hourBase * 0.20),
-          socialBytes: Math.floor(hourBase * 0.11),
-          devBytes: Math.floor(hourBase * 0.08),
-          otherBytes: Math.floor(hourBase * 0.03),
+          streamingBytes: Math.floor(hourBase * streamR),
+          aiBytes: Math.floor(hourBase * aiR),
+          socialBytes: Math.floor(hourBase * socR),
+          devBytes: Math.floor(hourBase * devR),
+          otherBytes: 0,
         });
       }
     } else {
@@ -444,18 +467,18 @@ export class TrafficService {
         const timestamp = d.getTime();
 
         const weekendFactor = d.getDay() === 0 || d.getDay() === 6 ? 1.35 : 0.95;
-        const jitter = 0.85 + Math.random() * 0.3;
-        const dayBase = (totalBytes / count) * weekendFactor * jitter;
+        const dayWave = 1 + 0.12 * Math.sin((i / count) * Math.PI * 2);
+        const dayBase = (totalBytes / count) * weekendFactor * dayWave;
 
         points.push({
           time: timeStr,
           timestamp,
           totalBytes: Math.floor(dayBase),
-          streamingBytes: Math.floor(dayBase * 0.58),
-          aiBytes: Math.floor(dayBase * 0.20),
-          socialBytes: Math.floor(dayBase * 0.11),
-          devBytes: Math.floor(dayBase * 0.08),
-          otherBytes: Math.floor(dayBase * 0.03),
+          streamingBytes: Math.floor(dayBase * 0.55),
+          aiBytes: Math.floor(dayBase * 0.22),
+          socialBytes: Math.floor(dayBase * 0.13),
+          devBytes: Math.floor(dayBase * 0.10),
+          otherBytes: 0,
         });
       }
     }
