@@ -33,6 +33,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   const [hoveredTarget, setHoveredTarget] = useState<string | null>(null);
   const [latencyHoverIdx, setLatencyHoverIdx] = useState<number | null>(null);
   const [loadHoverIdx, setLoadHoverIdx] = useState<number | null>(null);
+  const [netHoverIdx, setNetHoverIdx] = useState<number | null>(null);
 
   // Latency & Load Data State
   const [latencyData, setLatencyData] = useState<NodeLatencyHistory[]>([]);
@@ -48,6 +49,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
   const latencySvgRef = useRef<SVGSVGElement>(null);
   const loadSvgRef = useRef<SVGSVGElement>(null);
+  const netSvgRef = useRef<SVGSVGElement>(null);
 
   // Fetch latency history or load history
   useEffect(() => {
@@ -292,10 +294,21 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   }
 
   // Network I/O Sub-track calculations
-  const netChartHeight = 140;
-  const netPadding = { top: 20, right: 30, bottom: 28, left: 55 };
+  const netChartHeight = 112;
+  const netPadding = { top: 16, right: 30, bottom: 22, left: 55 };
+  const netInnerWidth = chartWidth - netPadding.left - netPadding.right;
   const netInnerHeight = netChartHeight - netPadding.top - netPadding.bottom;
   const netBaseY = netChartHeight - netPadding.bottom;
+
+  const handleNetMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!netSvgRef.current || loadPointsCount <= 0) return;
+    const rect = netSvgRef.current.getBoundingClientRect();
+    const svgX = ((e.clientX - rect.left) / rect.width) * chartWidth;
+    const relX = svgX - netPadding.left;
+    const frac = Math.max(0, Math.min(1, relX / netInnerWidth));
+    const idx = Math.round(frac * (loadPointsCount - 1));
+    setNetHoverIdx(idx);
+  };
 
   let maxNetBytes = 102400; // 100 KB/s min floor
   if (loadData) {
@@ -920,6 +933,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     <svg
                       ref={loadSvgRef}
                       viewBox={`0 0 ${chartWidth} ${loadChartHeight}`}
+                      preserveAspectRatio="none"
                       className="w-full h-56 select-none cursor-crosshair block"
                       onMouseMove={handleLoadMouseMove}
                     >
@@ -1149,7 +1163,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     {/* Hover Floating Tooltip */}
                     {loadHoverIdx !== null && loadTimestamps[loadHoverIdx] && (
                       <div
-                        className={`absolute top-2 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono backdrop-blur-md transition-all duration-150 pointer-events-auto min-w-[190px] space-y-2 ${
+                        className={`absolute top-2 z-30 p-3 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono backdrop-blur-md transition-all duration-150 pointer-events-none min-w-[180px] space-y-2 ${
                           loadHoverIdx >= loadPointsCount / 2
                             ? "left-16 right-auto"
                             : "right-4 left-auto"
@@ -1192,16 +1206,6 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               {loadData.disk[loadHoverIdx]}%
                             </span>
                           </div>
-                          {loadData.netIn && (
-                            <div className="pt-1 mt-1 border-t border-rule/50 flex items-center justify-between text-[10px] text-ink-muted">
-                              <span className="text-emerald-400">
-                                ↓ {formatNetSpeed(loadData.netIn[loadHoverIdx])}
-                              </span>
-                              <span className="text-sky-400">
-                                ↑ {formatNetSpeed(loadData.netOut[loadHoverIdx])}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -1234,10 +1238,16 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                       </div>
                     </div>
 
-                    <div className="w-full overflow-x-auto relative">
+                    <div
+                      className="w-full overflow-x-auto relative"
+                      onMouseLeave={() => setNetHoverIdx(null)}
+                    >
                       <svg
+                        ref={netSvgRef}
                         viewBox={`0 0 ${chartWidth} ${netChartHeight}`}
-                        className="w-full h-28 select-none block"
+                        preserveAspectRatio="none"
+                        className="w-full h-28 select-none cursor-crosshair block"
+                        onMouseMove={handleNetMouseMove}
                       >
                         <defs>
                           <linearGradient id="netin-grad" x1="0" y1="0" x2="0" y2="1">
@@ -1336,7 +1346,82 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                         >
                           0
                         </text>
+
+                        {/* Interactive Crosshair & Cursor */}
+                        {netHoverIdx !== null && netHoverIdx >= 0 && (
+                          <g className="pointer-events-none">
+                            <line
+                              x1={getLoadX(netHoverIdx)}
+                              y1={netPadding.top}
+                              x2={getLoadX(netHoverIdx)}
+                              y2={netBaseY}
+                              stroke="currentColor"
+                              className="text-accent/80"
+                              strokeWidth="1"
+                              strokeDasharray="2 3"
+                            />
+                            {/* Downlink bead (Rx) */}
+                            <circle
+                              cx={getLoadX(netHoverIdx)}
+                              cy={getNetY(loadData.netIn[netHoverIdx])}
+                              r="4"
+                              fill="#10b981"
+                              stroke="var(--color-paper-2)"
+                              strokeWidth="2"
+                            />
+                            {/* Uplink bead (Tx) */}
+                            <circle
+                              cx={getLoadX(netHoverIdx)}
+                              cy={getNetY(loadData.netOut[netHoverIdx])}
+                              r="3.5"
+                              fill="#06b6d4"
+                              stroke="var(--color-paper-2)"
+                              strokeWidth="2"
+                            />
+                          </g>
+                        )}
                       </svg>
+
+                      {/* Net Hover Floating Tooltip */}
+                      {netHoverIdx !== null && loadTimestamps[netHoverIdx] && (
+                        <div
+                          className={`absolute top-2 z-30 p-2.5 rounded-xl bg-paper-2/95 border border-rule shadow-2xl text-xs font-mono backdrop-blur-md transition-all duration-150 pointer-events-none min-w-[170px] space-y-1.5 ${
+                            netHoverIdx >= loadPointsCount / 2
+                              ? "left-16 right-auto"
+                              : "right-4 left-auto"
+                          }`}
+                        >
+                          <div className="text-[11px] text-ink-muted border-b border-rule pb-1 flex items-center justify-between">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-ink-muted" />
+                              <span>采样时刻</span>
+                            </span>
+                            <span className="font-semibold text-ink">
+                              {formatTimeTick(loadTimestamps[netHoverIdx])}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="flex items-center gap-1.5 text-emerald-400">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                                <span>下行 (Rx)</span>
+                              </span>
+                              <span className="font-bold text-ink">
+                                {formatNetSpeed(loadData.netIn[netHoverIdx])}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="flex items-center gap-1.5 text-sky-400">
+                                <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+                                <span>上行 (Tx)</span>
+                              </span>
+                              <span className="font-bold text-ink">
+                                {formatNetSpeed(loadData.netOut[netHoverIdx])}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
