@@ -186,3 +186,87 @@ export interface TelegramAlertLog {
   error?: string;
 }
 
+// -------------------------------------------------------------
+// 8. Service Traffic Analytics Types
+// -------------------------------------------------------------
+export type TrafficCategory =
+  | "streaming"
+  | "ai"
+  | "social"
+  | "developer"
+  | "system"
+  | "direct"
+  | "other";
+
+export interface ServiceTrafficItem {
+  id: string;
+  name: string;
+  category: TrafficCategory;
+  categoryName: string;
+  color: string;
+  icon: string;
+  domains: string[];
+  downlinkBytes: number;
+  uplinkBytes: number;
+  totalBytes: number;
+  percentage: number;
+  activeConnections: number;
+  requestsCount: number;
+  nodeDistribution: {
+    nodeId: string;
+    nodeName: string;
+    bytes: number;
+    percentage: number;
+  }[];
+}
+
+export interface CategoryTrafficSummary {
+  category: TrafficCategory;
+  categoryName: string;
+  color: string;
+  totalBytes: number;
+  percentage: number;
+  servicesCount: number;
+}
+
+export interface NodeTrafficDistribution {
+  nodeId: string;
+  nodeName: string;
+  country: string;
+  countryName: string;
+  totalBytes: number;
+  percentage: number;
+  topServices: {
+    serviceId: string;
+    serviceName: string;
+    bytes: number;
+    color: string;
+  }[];
+}
+
+export interface TrafficTimeSeriesPoint {
+  time: string;
+  timestamp: number;
+  totalBytes: number;
+  streamingBytes: number;
+  aiBytes: number;
+  socialBytes: number;
+  devBytes: number;
+  otherBytes: number;
+}
+
+export interface TrafficAnalyticsSummary {
+  timeRange: "today" | "7d" | "30d" | "month" | "all";
+  totalRecordedBytes: number;
+  totalUplinkBytes: number;
+  totalDownlinkBytes: number;
+  totalRequests: number;
+  activeStreams: number;
+  services: ServiceTrafficItem[];
+  categories: CategoryTrafficSummary[];
+  nodeDistributions: NodeTrafficDistribution[];
+  timeSeries: TrafficTimeSeriesPoint[];
+  updatedAt: number;
+}
+
+

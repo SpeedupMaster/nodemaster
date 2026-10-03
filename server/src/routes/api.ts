@@ -15,6 +15,7 @@ import {
   batchUpgradeXray,
   generateUpgradeScript,
 } from "../services/xrayVersionService.js";
+import { trafficService } from "../services/trafficService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -579,6 +580,33 @@ apiRouter.get("/nodes/:id/history", (req, res) => {
   const history = db.getNodeLoadHistory(req.params.id, range);
   if (!history) return res.status(404).json({ success: false, message: "节点不存在" });
   res.json({ success: true, data: history });
+});
+
+// -------------------------------------------------------------
+// 7.2 Service Traffic Analytics & Insights API
+// -------------------------------------------------------------
+apiRouter.get("/traffic/analytics", (req, res) => {
+  const range = (req.query.range as any) || "today";
+  const validRanges = ["today", "7d", "30d", "month", "all"];
+  const selectedRange = validRanges.includes(range) ? range : "today";
+  const summary = trafficService.getTrafficAnalytics(selectedRange);
+  res.json({ success: true, data: summary });
+});
+
+apiRouter.get("/traffic/services", (req, res) => {
+  const summary = trafficService.getTrafficAnalytics("today");
+  res.json({ success: true, data: summary.services });
+});
+
+apiRouter.get("/traffic/export", (req, res) => {
+  const range = (req.query.range as any) || "month";
+  const summary = trafficService.getTrafficAnalytics(range);
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="nodemaster-traffic-${range}-${Date.now()}.json"`
+  );
+  res.setHeader("Content-Type", "application/json");
+  res.send(JSON.stringify(summary, null, 2));
 });
 
 // -------------------------------------------------------------

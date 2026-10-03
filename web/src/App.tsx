@@ -16,6 +16,7 @@ import { AddNodeModal } from "./components/nodes/AddNodeModal";
 import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
 import { NodeDetailModal } from "./components/probe/NodeDetailModal";
 import { GlobalTooltip } from "./components/common/Tooltip";
+import { TrafficAnalyticsView } from "./components/traffic/TrafficAnalyticsView";
 import { NodeItem } from "./types";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
@@ -26,6 +27,7 @@ gsap.registerPlugin(useGSAP);
 const VALID_TABS = [
   "dashboard",
   "nodes",
+  "traffic",
   "ping",
   "topology",
   "subscription",
@@ -36,6 +38,7 @@ const VALID_TABS = [
 const TAB_TITLES: Record<string, string> = {
   dashboard: "实时仪表盘",
   nodes: "多 VPS 节点管理",
+  traffic: "业务流量统计与服务分析",
   ping: "延迟监测",
   topology: "链式代理与解锁拓扑",
   subscription: "订阅分享与客户端导出",
@@ -176,6 +179,10 @@ export function App() {
                 onUpdate={updateNode}
                 onRefreshData={fetchData}
               />
+            )}
+
+            {currentTab === "traffic" && (
+              <TrafficAnalyticsView nodes={nodes} />
             )}
 
             {currentTab === "ping" && (

@@ -21,6 +21,7 @@ import {
   FloppyDisk,
   X,
 } from "@phosphor-icons/react";
+import { renderOfficialServiceLogo, hasOfficialLogo } from "../traffic/BrandIcons";
 
 interface SubscriptionViewProps {
   subscriptions: SubscriptionToken[];
@@ -980,14 +981,20 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                       >
                         {/* Left: Icon, Title & Type */}
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img
-                            src={group.icon}
-                            alt={group.name}
-                            className="w-5 h-5 rounded-full object-contain shrink-0 bg-paper-2 p-0.5 border border-rule/60"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = "none";
-                            }}
-                          />
+                          {hasOfficialLogo(group.id) ? (
+                            <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-paper-2 p-0.5 border border-rule/60 overflow-hidden">
+                              {renderOfficialServiceLogo(group.id, group.id, "#38bdf8", "w-3.5 h-3.5")}
+                            </div>
+                          ) : (
+                            <img
+                              src={group.icon}
+                              alt={group.name}
+                              className="w-5 h-5 rounded-full object-contain shrink-0 bg-paper-2 p-0.5 border border-rule/60"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          )}
                           <div className="flex items-baseline gap-1.5 truncate">
                             <span className="text-xs font-semibold text-ink group-hover/hdr:text-accent transition-colors truncate">
                               {group.name}
