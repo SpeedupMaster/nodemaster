@@ -6,8 +6,10 @@ import { NodeCard } from "./NodeCard";
 import { ConfigModal } from "./ConfigModal";
 import { InstallModal } from "./InstallModal";
 import { EditNodeModal } from "./EditNodeModal";
+import { XrayVersionModal } from "./XrayVersionModal";
 import { Input } from "../common/Input";
-import { MagnifyingGlass } from "@phosphor-icons/react";
+import { Button } from "../common/Button";
+import { MagnifyingGlass, ShieldCheck } from "@phosphor-icons/react";
 
 gsap.registerPlugin(useGSAP);
 
@@ -16,6 +18,7 @@ interface NodeListProps {
   onResetTraffic: (id: string) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<NodeItem>) => Promise<any> | any;
+  onRefreshData?: () => void;
 }
 
 export const NodeList: React.FC<NodeListProps> = ({
@@ -23,12 +26,14 @@ export const NodeList: React.FC<NodeListProps> = ({
   onResetTraffic,
   onDelete,
   onUpdate,
+  onRefreshData,
 }) => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [activeConfigNode, setActiveConfigNode] = useState<NodeItem | null>(null);
   const [activeInstallNode, setActiveInstallNode] = useState<NodeItem | null>(null);
   const [activeEditNode, setActiveEditNode] = useState<NodeItem | null>(null);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredNodes = nodes.filter((node) => {
@@ -96,13 +101,25 @@ export const NodeList: React.FC<NodeListProps> = ({
           ))}
         </div>
 
-        <div className="w-full sm:w-64">
-          <Input
-            prefixIcon={<MagnifyingGlass className="w-3.5 h-3.5" />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索节点名称、IP 或标签..."
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsVersionModalOpen(true)}
+            icon={<ShieldCheck className="w-3.5 h-3.5 text-purple-400" />}
+            className="shrink-0"
+          >
+            Xray 内核版本管理
+          </Button>
+
+          <div className="w-full sm:w-64">
+            <Input
+              prefixIcon={<MagnifyingGlass className="w-3.5 h-3.5" />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="搜索节点名称、IP 或标签..."
+            />
+          </div>
         </div>
       </div>
 
@@ -121,6 +138,7 @@ export const NodeList: React.FC<NodeListProps> = ({
               onResetTraffic={onResetTraffic}
               onDelete={onDelete}
               onCopyUrl={handleCopyUrl}
+              onViewVersion={() => setIsVersionModalOpen(true)}
             />
           </div>
         ))}
@@ -146,6 +164,12 @@ export const NodeList: React.FC<NodeListProps> = ({
         isOpen={!!activeEditNode}
         onClose={() => setActiveEditNode(null)}
         onSubmit={onUpdate}
+      />
+      <XrayVersionModal
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+        nodes={nodes}
+        onRefreshData={onRefreshData}
       />
     </div>
   );

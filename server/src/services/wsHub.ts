@@ -181,6 +181,18 @@ export class WsHub {
     }
     return false;
   }
+
+  public pushUpgradeToAgent(nodeId: string, targetVersion: string): boolean {
+    const ws = this.agentClients.get(nodeId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: "XRAY_UPGRADE",
+        version: targetVersion,
+      }));
+      return true;
+    }
+    return false;
+  }
 }
 
 export const wsHub = new WsHub();

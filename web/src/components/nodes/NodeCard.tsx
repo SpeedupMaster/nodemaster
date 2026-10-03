@@ -13,6 +13,7 @@ import {
   Check,
   PencilSimple,
   CalendarBlank,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
@@ -27,6 +28,7 @@ interface NodeCardProps {
   onResetTraffic: (id: string) => void;
   onDelete: (id: string) => void;
   onCopyUrl: (node: NodeItem) => void;
+  onViewVersion?: () => void;
 }
 
 const getExpiryInfo = (expiresAt?: string) => {
@@ -51,6 +53,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   onResetTraffic,
   onDelete,
   onCopyUrl,
+  onViewVersion,
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -100,6 +103,14 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               >
                 {node.protocol === "shadowsocks" ? "Shadowsocks" : node.protocol}
               </span>
+              {node.xrayVersion && (
+                <>
+                  <span className="shrink-0">•</span>
+                  <span className="text-purple-400/90 text-[11px] font-medium font-mono shrink-0">
+                    Xray {node.xrayVersion}
+                  </span>
+                </>
+              )}
               {node.bandwidthMbps && (
                 <>
                   <span className="shrink-0">•</span>
@@ -362,6 +373,18 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               <span className="text-[11px] font-mono">命令</span>
             </button>
           </Tooltip>
+
+          {onViewVersion && (
+            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "v1.8.24"})`}>
+              <button
+                onClick={onViewVersion}
+                className="p-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                <span className="text-[11px] font-mono">{node.xrayVersion || "内核"}</span>
+              </button>
+            </Tooltip>
+          )}
         </div>
 
         <div className="flex items-center gap-1">

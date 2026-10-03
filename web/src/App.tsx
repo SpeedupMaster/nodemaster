@@ -173,6 +173,7 @@ export function App() {
                 onResetTraffic={resetTraffic}
                 onDelete={deleteNode}
                 onUpdate={updateNode}
+                onRefreshData={fetchData}
               />
             )}
 

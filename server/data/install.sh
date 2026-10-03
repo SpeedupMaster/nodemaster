@@ -198,6 +198,13 @@ while true; do
   TCP_CNT=$(ss -ant 2>/dev/null | grep -v 'State' | wc -l || echo 0)
   UDP_CNT=$(ss -anu 2>/dev/null | grep -v 'State' | wc -l || echo 0)
 
+  # 7. Xray Version
+  XRAY_VER=""
+  if [ -x /usr/local/bin/xray ]; then
+    XRAY_RAW=$(/usr/local/bin/xray version 2>/dev/null | head -n 1 | awk '{print $2}')
+    [ -n "$XRAY_RAW" ] && XRAY_VER="v${XRAY_RAW#v}"
+  fi
+
   # Report to Panel
   PAYLOAD=$(cat <<JSON_PAYLOAD
 {
@@ -216,7 +223,8 @@ while true; do
   "os": "${OS_NAME}",
   "arch": "${ARCH_NAME}",
   "tcpCount": ${TCP_CNT},
-  "udpCount": ${UDP_CNT}
+  "udpCount": ${UDP_CNT},
+  "xrayVersion": "${XRAY_VER}"
 }
 JSON_PAYLOAD
 )

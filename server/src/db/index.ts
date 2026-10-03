@@ -514,6 +514,14 @@ class Database {
           this.data.telegramLogs = [];
           changed = true;
         }
+        if (this.data.nodes) {
+          for (const n of this.data.nodes) {
+            if (!n.xrayVersion) {
+              n.xrayVersion = "v1.8.24";
+              changed = true;
+            }
+          }
+        }
         if (changed) {
           this.save();
         }

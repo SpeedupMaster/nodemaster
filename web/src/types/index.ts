@@ -57,6 +57,24 @@ export interface NodeItem {
   diskUsedBytes?: number;
   tcpCount?: number;
   udpCount?: number;
+  xrayVersion?: string;
+}
+
+export interface XrayVersionNodeStatus {
+  nodeId: string;
+  nodeName: string;
+  currentVersion?: string;
+  status: "up_to_date" | "outdated" | "unknown";
+  arch?: string;
+  os?: string;
+}
+
+export interface XrayVersionInfo {
+  latestVersion: string;
+  releaseUrl: string;
+  publishedAt: string;
+  checkedAt: number;
+  nodes: XrayVersionNodeStatus[];
 }
 
 export interface RelayLink {

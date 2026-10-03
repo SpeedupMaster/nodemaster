@@ -9,6 +9,12 @@ import { assembleProxies, renderClashYaml, renderSingboxJson, renderEgernYaml, r
 import { wsHub } from "../services/wsHub.js";
 import { telegramService } from "../services/telegramService.js";
 import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule, TelegramConfig, SubscriptionToken } from "../types/index.js";
+import {
+  getXrayVersionMatrix,
+  upgradeNodeXray,
+  batchUpgradeXray,
+  generateUpgradeScript,
+} from "../services/xrayVersionService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -113,9 +119,12 @@ apiRouter.put("/nodes/:id", (req, res) => {
     ssMethod,
     ssPassword,
     status,
+    xrayVersion,
   } = req.body;
 
   const updates: Partial<NodeItem> = {};
+
+  if (xrayVersion !== undefined) updates.xrayVersion = xrayVersion;
 
   if (name !== undefined) updates.name = name;
   if (ip !== undefined) updates.ip = ip;
@@ -418,10 +427,51 @@ apiRouter.post("/nodes/telemetry", (req, res) => {
   if (telemetry.arch) updates.arch = telemetry.arch;
   if (typeof telemetry.tcpCount === "number") updates.tcpCount = telemetry.tcpCount;
   if (typeof telemetry.udpCount === "number") updates.udpCount = telemetry.udpCount;
+  if (telemetry.xrayVersion) updates.xrayVersion = telemetry.xrayVersion;
 
   db.updateNode(node.id, updates);
   wsHub.broadcastNodeUpdate(node.id);
   res.json({ success: true, message: "Telemetry updated" });
+});
+
+// -------------------------------------------------------------
+// 5.1 Xray-core Version Inspection & Automated Upgrades
+// -------------------------------------------------------------
+apiRouter.get("/xray/version", async (req, res) => {
+  try {
+    const forceRefresh = req.query.refresh === "true";
+    const matrix = await getXrayVersionMatrix(forceRefresh);
+    res.json({ success: true, data: matrix });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || "Failed to inspect Xray version" });
+  }
+});
+
+apiRouter.post("/nodes/:id/upgrade-xray", async (req, res) => {
+  try {
+    const result = await upgradeNodeXray(req.params.id, req.body.version);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message || "Upgrade failed" });
+  }
+});
+
+apiRouter.post("/nodes/batch-upgrade-xray", async (req, res) => {
+  try {
+    const result = await batchUpgradeXray(req.body.version);
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || "Batch upgrade failed" });
+  }
+});
+
+apiRouter.get("/xray/upgrade.sh", async (req, res) => {
+  const panelUrl = `${req.protocol}://${req.get("host")}`;
+  const matrix = await getXrayVersionMatrix();
+  const targetVer = (req.query.version as string) || matrix.latestVersion;
+  const script = generateUpgradeScript(panelUrl, targetVer);
+  res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
+  res.send(script);
 });
 
 // -------------------------------------------------------------
