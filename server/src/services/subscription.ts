@@ -1,6 +1,13 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import YAML from "yaml";
 import { NodeItem, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CLASH_TEMPLATE_PATH = path.resolve(__dirname, "../../data/clash-template.yaml");
 
 // Helper to construct VLESS URL
 export function toVlessUrl(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string): string {
@@ -134,13 +141,117 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
   return result;
 }
 
-// Render Clash / Mihomo YAML Configuration
+// Render Clash / Mihomo YAML Configuration (Service-Categorized High-Spec Template)
 export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>): string {
   const proxies = proxiesData
     .map(p => toClashProxy(p.node, p.host, p.port, p.name))
     .filter(Boolean);
 
   const proxyNames = proxies.map((p: any) => p.name);
+
+  // If clash-template.yaml exists, use the full service-single-provider.yaml template
+  if (fs.existsSync(CLASH_TEMPLATE_PATH)) {
+    try {
+      const templateStr = fs.readFileSync(CLASH_TEMPLATE_PATH, "utf-8");
+      const doc = YAML.parseDocument(templateStr);
+
+      // 1. Inject all proxies
+      doc.set("proxies", doc.createNode(proxies));
+
+      // 2. Remove empty Primary-VPS provider to avoid "url can not be empty" errors
+      const providers = doc.get("proxy-providers") as any;
+      if (providers && providers.get && providers.get("Primary-VPS")) {
+        const p = providers.get("Primary-VPS");
+        if (!p.get("url")) {
+          doc.delete("proxy-providers");
+        }
+      }
+
+      // 3. Update proxy groups to include explicit node names for universal compatibility
+      const groups = doc.get("proxy-groups") as any;
+      if (groups && groups.items) {
+        for (let i = 0; i < groups.items.length; i++) {
+          const g = groups.items[i];
+          const name = g.get("name");
+
+          if (name === "手动选择" || name === "🌎 Global-Manual") {
+            g.set("proxies", doc.createNode([...proxyNames, "DIRECT"]));
+          }
+
+          const filter = g.get("filter");
+          if (filter) {
+            try {
+              const reg = new RegExp(String(filter).replace(/^\(\?i\)/, ""), "i");
+              const matched = proxyNames.filter((pName: string) => reg.test(pName));
+              g.set("proxies", doc.createNode(matched.length > 0 ? [...matched, "DIRECT"] : ["DIRECT"]));
+            } catch (e) {
+              // Ignore regex errors
+            }
+          }
+        }
+      }
+
+      // 4. Inject active custom routing rules from panel
+      const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+      const allNodes = db.getNodes();
+      const customClashRules: string[] = [];
+
+      for (const rule of activeRules) {
+        let target = "PROXY-Gate";
+        if (rule.targetOutbound === "DIRECT") target = "DIRECT";
+        else if (rule.targetOutbound === "BLOCK") target = "REJECT";
+        else if (rule.targetOutbound === "PROXY") {
+          if (rule.targetNodeId) {
+            const tgtNode = allNodes.find((n) => n.id === rule.targetNodeId);
+            if (tgtNode) target = tgtNode.name;
+          }
+        }
+
+        if (rule.domains) {
+          rule.domains.forEach((d) => {
+            const cleanDomain = d.replace(/^domain:/, "").replace(/^\*\./, "");
+            customClashRules.push(`DOMAIN-SUFFIX,${cleanDomain},${target}`);
+          });
+        }
+        if (rule.geosite) {
+          rule.geosite.forEach((g) => {
+            const cleanGeo = g.replace(/^geosite:/, "");
+            customClashRules.push(`GEOSITE,${cleanGeo},${target}`);
+          });
+        }
+        if (rule.geoip) {
+          rule.geoip.forEach((g) => {
+            const cleanGeo = g.replace(/^geoip:/, "").toUpperCase();
+            customClashRules.push(`GEOIP,${cleanGeo},${target}${cleanGeo === "PRIVATE" ? ",no-resolve" : ""}`);
+          });
+        }
+        if (rule.ips) {
+          rule.ips.forEach((ip) => {
+            customClashRules.push(`IP-CIDR,${ip},${target},no-resolve`);
+          });
+        }
+        if (rule.protocol?.includes("bittorrent")) {
+          customClashRules.push(`PROCESS-NAME,BitTorrent,REJECT`);
+        }
+      }
+
+      if (customClashRules.length > 0) {
+        const rulesSeq = doc.get("rules") as any;
+        if (rulesSeq && rulesSeq.items) {
+          const lanIdx = rulesSeq.items.findIndex((item: any) => String(item).includes("GEOIP,LAN"));
+          const insertPos = lanIdx >= 0 ? lanIdx + 1 : 0;
+          const customNodes = customClashRules.map((r) => doc.createNode(r));
+          rulesSeq.items.splice(insertPos, 0, ...customNodes);
+        }
+      }
+
+      return doc.toString();
+    } catch (err) {
+      console.error("Failed to render custom Clash template, falling back to minimal:", err);
+    }
+  }
+
+  // Fallback simplified configuration
   const hkProxies = proxyNames.filter(n => /HK|香港/i.test(n));
   const jpProxies = proxyNames.filter(n => /JP|日本/i.test(n));
   const usProxies = proxyNames.filter(n => /US|美国/i.test(n));
