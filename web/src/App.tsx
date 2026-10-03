@@ -54,6 +54,7 @@ export function App() {
     deleteRoutingRule,
     reorderRoutingRules,
     resetRoutingRules,
+    updateSubscription,
     totalUplinkSpeed: totalUpSpeed,
     totalDownlinkSpeed: totalDownSpeed,
     totalTrafficUsed,
@@ -159,6 +160,7 @@ export function App() {
               <SubscriptionView
                 subscriptions={subscriptions}
                 nodes={nodes}
+                onUpdateSubscription={updateSubscription}
               />
             )}
 

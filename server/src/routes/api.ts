@@ -8,7 +8,7 @@ import { generateRealityCredentials, generateShadowsocksCredentials, generateXra
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderEgernYaml, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
 import { telegramService } from "../services/telegramService.js";
-import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule, TelegramConfig } from "../types/index.js";
+import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule, TelegramConfig, SubscriptionToken } from "../types/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -294,6 +294,37 @@ apiRouter.post("/subscriptions", (req, res) => {
   };
   db.addSubscription(newSub);
   res.json({ success: true, data: newSub });
+});
+
+apiRouter.put("/subscriptions/:id", (req, res) => {
+  const { name, token, nodeIds, trafficLimitBytes, expireAt, customHost } = req.body;
+  try {
+    const updates: Partial<SubscriptionToken> = {};
+    if (name !== undefined) updates.name = String(name).trim();
+    if (token !== undefined) {
+      const cleanToken = String(token).trim();
+      if (!cleanToken) {
+        return res.status(400).json({ success: false, message: "Token 不能为空" });
+      }
+      // 校验 token 字符合法性（字母、数字、下划线、中划线）
+      if (!/^[a-zA-Z0-9_-]+$/.test(cleanToken)) {
+        return res.status(400).json({ success: false, message: "Token 仅支持字母、数字、下划线和连字符(-)" });
+      }
+      updates.token = cleanToken;
+    }
+    if (nodeIds !== undefined) updates.nodeIds = Array.isArray(nodeIds) ? nodeIds : [];
+    if (trafficLimitBytes !== undefined) updates.trafficLimitBytes = Number(trafficLimitBytes);
+    if (expireAt !== undefined) updates.expireAt = Number(expireAt);
+    if (customHost !== undefined) {
+      updates.customHost = customHost ? String(customHost).trim().replace(/\/+$/, "") : "";
+    }
+
+    const updated = db.updateSubscription(req.params.id, updates);
+    if (!updated) return res.status(404).json({ success: false, message: "订阅不存在" });
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: err.message || "更新失败" });
+  }
 });
 
 apiRouter.delete("/subscriptions/:id", (req, res) => {

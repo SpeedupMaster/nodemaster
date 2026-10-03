@@ -14,11 +14,18 @@ import {
   MagnifyingGlass,
   ArrowsIn,
   ArrowsOut,
+  PencilSimple,
+  Globe,
+  Key,
+  ArrowsClockwise,
+  FloppyDisk,
+  X,
 } from "@phosphor-icons/react";
 
 interface SubscriptionViewProps {
   subscriptions: SubscriptionToken[];
   nodes: NodeItem[];
+  onUpdateSubscription?: (id: string, updates: Partial<SubscriptionToken>) => Promise<any>;
 }
 
 interface PolicyGroupCardData {
@@ -280,6 +287,7 @@ const isEUNode = (n: NodeItem) => {
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   subscriptions,
   nodes,
+  onUpdateSubscription,
 }) => {
   const [selectedSubToken, setSelectedSubToken] = useState<string>("");
   const [format, setFormat] = useState<"clash" | "singbox" | "egern" | "base64">("clash");
@@ -290,6 +298,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const [copiedContent, setCopiedContent] = useState(false);
   const [activeCategory, setActiveCategory] = useState<"all" | "core" | "ai" | "media" | "social">("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Custom subscription URL editing state
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [customHostInput, setCustomHostInput] = useState("");
+  const [customTokenInput, setCustomTokenInput] = useState("");
+  const [customNameInput, setCustomNameInput] = useState("");
+  const [isSavingUrl, setIsSavingUrl] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   // Store user-selected proxy for each group
   const [selectedMap, setSelectedMap] = useState<Record<string, string>>(() => {
@@ -313,20 +329,93 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
   }, [subscriptions, selectedSubToken]);
 
+  // Sync inputs when activeSub changes
+  useEffect(() => {
+    if (activeSub) {
+      setCustomHostInput(activeSub.customHost || "");
+      setCustomTokenInput(activeSub.token || "");
+      setCustomNameInput(activeSub.name || "");
+      setUrlError(null);
+    }
+  }, [activeSub?.id, activeSub?.token, activeSub?.customHost, activeSub?.name]);
+
+  const baseUrl = (activeSub?.customHost || window.location.origin).replace(/\/+$/, "");
   const subUrl = activeSub
-    ? `${window.location.origin}/api/sub/${activeSub.token}`
+    ? `${baseUrl}/api/sub/${activeSub.token}`
     : "";
 
   // Fetch preview when activeSub or format changes
   useEffect(() => {
-    if (!activeSub) return;
+    if (!activeSub?.token) return;
     setLoadingPreview(true);
     fetch(`/api/sub/${activeSub.token}?format=${format}`)
       .then((r) => r.text())
       .then((txt) => setPreviewContent(txt))
       .catch((e) => console.error(e))
       .finally(() => setLoadingPreview(false));
-  }, [activeSub, format]);
+  }, [activeSub?.token, format]);
+
+  const handleOpenEdit = () => {
+    if (activeSub) {
+      setCustomHostInput(activeSub.customHost || "");
+      setCustomTokenInput(activeSub.token || "");
+      setCustomNameInput(activeSub.name || "");
+      setUrlError(null);
+      setIsEditingUrl(true);
+    }
+  };
+
+  const handleGenerateRandomToken = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let rand = "";
+    for (let i = 0; i < 24; i++) {
+      rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCustomTokenInput(`sub_${rand}`);
+  };
+
+  const handleSaveCustomUrl = async () => {
+    if (!activeSub) return;
+    const cleanToken = customTokenInput.trim();
+    if (!cleanToken) {
+      setUrlError("订阅 Token 标识不能为空");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(cleanToken)) {
+      setUrlError("Token 仅支持英文字母、数字、下划线(_)与中划线(-)");
+      return;
+    }
+
+    let cleanHost = customHostInput.trim();
+    if (cleanHost) {
+      if (!cleanHost.startsWith("http://") && !cleanHost.startsWith("https://")) {
+        cleanHost = `https://${cleanHost}`;
+      }
+      cleanHost = cleanHost.replace(/\/+$/, "");
+    }
+
+    setIsSavingUrl(true);
+    setUrlError(null);
+    try {
+      if (onUpdateSubscription) {
+        const res = await onUpdateSubscription(activeSub.id, {
+          name: customNameInput.trim() || activeSub.name,
+          token: cleanToken,
+          customHost: cleanHost,
+        });
+        if (res && !res.success) {
+          setUrlError(res.message || "保存失败");
+          return;
+        }
+      }
+      setSelectedSubToken(cleanToken);
+      setIsEditingUrl(false);
+    } catch (err: any) {
+      setUrlError(err.message || "网络请求异常，保存失败");
+    } finally {
+      setIsSavingUrl(false);
+    }
+  };
 
   const handleCopyLink = () => {
     if (!subUrl) return;
@@ -514,23 +603,154 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </div>
         </div>
 
-        {/* URL Box */}
-        <div className="mt-4 p-3 rounded-lg bg-paper border border-rule flex items-center justify-between gap-3">
-          <span className="text-xs font-mono text-ink-secondary truncate select-all">
-            {subUrl || "加载中..."}
-          </span>
+        {/* URL Box & Custom Editor */}
+        {!isEditingUrl ? (
+          <div className="mt-4 p-3 rounded-lg bg-paper border border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-xs font-mono text-ink-secondary truncate select-all">
+                {subUrl || "加载中..."}
+              </span>
+              {activeSub?.customHost && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent/10 text-accent border border-accent/20 flex-shrink-0" title={`已指定域名/前缀: ${activeSub.customHost}`}>
+                  自定义域名
+                </span>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyLink}
-              icon={copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            >
-              {copiedLink ? "已复制链接" : "复制订阅链接"}
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleOpenEdit}
+                icon={<PencilSimple className="w-3.5 h-3.5 text-accent" />}
+              >
+                自定义链接
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCopyLink}
+                icon={copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              >
+                {copiedLink ? "已复制链接" : "复制订阅链接"}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-4 p-4 rounded-xl bg-paper border border-accent/40 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-rule pb-2.5">
+              <div className="flex items-center gap-2">
+                <PencilSimple weight="bold" className="w-4 h-4 text-accent" />
+                <h3 className="text-xs font-semibold text-ink">自定义订阅链接配置</h3>
+                <span className="text-[11px] text-ink-muted">（个性化订阅域名与路径 Token）</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingUrl(false)}
+                className="text-ink-muted hover:text-ink p-1 rounded transition-colors"
+                title="取消编辑"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Custom Host / Domain */}
+              <div className="space-y-1.5">
+                <label className="flex items-center justify-between text-xs font-medium text-ink">
+                  <span className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-accent" />
+                    自定义域名 / 服务端 Host
+                  </span>
+                  <span className="text-[10px] text-ink-muted">选填</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={customHostInput}
+                    onChange={(e) => setCustomHostInput(e.target.value)}
+                    placeholder={`例如 https://sub.mydomain.com (当前: ${window.location.origin})`}
+                    className="w-full px-3 py-2 text-xs font-mono rounded-md bg-paper-2 border border-rule text-ink placeholder:text-ink-muted/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                  />
+                </div>
+                <p className="text-[11px] text-ink-muted">
+                  留空默认使用当前浏览器地址。适合反向代理、公网 IP 或 Cloudflare 域名。
+                </p>
+              </div>
+
+              {/* Custom Token / Suffix */}
+              <div className="space-y-1.5">
+                <label className="flex items-center justify-between text-xs font-medium text-ink">
+                  <span className="flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-accent" />
+                    订阅 Token / 路径标识符
+                  </span>
+                  <span className="text-[10px] text-accent font-medium">必填</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={customTokenInput}
+                    onChange={(e) => setCustomTokenInput(e.target.value)}
+                    placeholder="例如 my_secret_token_888"
+                    className="flex-1 px-3 py-2 text-xs font-mono rounded-md bg-paper-2 border border-rule text-ink placeholder:text-ink-muted/60 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGenerateRandomToken}
+                    icon={<ArrowsClockwise className="w-3.5 h-3.5" />}
+                    title="生成随机高安全度 Token"
+                  >
+                    随机生成
+                  </Button>
+                </div>
+                <p className="text-[11px] text-ink-muted">
+                  仅限英文字母、数字、下划线及连字符。修改后旧订阅链接将立即失效。
+                </p>
+              </div>
+            </div>
+
+            {/* Real-time URL preview banner */}
+            <div className="p-2.5 rounded-lg bg-paper-2 border border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[11px] font-semibold text-accent flex-shrink-0">实时生成预览:</span>
+                <span className="text-xs font-mono text-ink-secondary truncate select-all">
+                  {`${(customHostInput.trim() || window.location.origin).replace(/\/+$/, "")}/api/sub/${customTokenInput.trim() || "token"}`}
+                </span>
+              </div>
+              {urlError && (
+                <span className="text-xs text-rose-500 font-medium flex-shrink-0">
+                  {urlError}
+                </span>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-2 pt-1 border-t border-rule">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsEditingUrl(false)}
+                disabled={isSavingUrl}
+              >
+                取消
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleSaveCustomUrl}
+                loading={isSavingUrl}
+                icon={<FloppyDisk className="w-3.5 h-3.5" />}
+              >
+                保存并应用
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Subscription Format & View Mode Switcher */}

@@ -270,6 +270,19 @@ export function useData() {
     return res;
   };
 
+  // Subscription Actions
+  const updateSubscription = async (id: string, updates: Partial<SubscriptionToken>) => {
+    const res = await fetch(`/api/subscriptions/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).then((r) => r.json());
+    if (res.success && res.data) {
+      setSubscriptions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
+    }
+    return res;
+  };
+
   // Aggregated Telemetry
   const totalUplinkSpeed = nodes.reduce((acc, n) => acc + (n.uplinkSpeedBytes || 0), 0);
   const totalDownlinkSpeed = nodes.reduce((acc, n) => acc + (n.downlinkSpeedBytes || 0), 0);
@@ -301,6 +314,7 @@ export function useData() {
     deleteRoutingRule,
     reorderRoutingRules,
     resetRoutingRules,
+    updateSubscription,
     totalUplinkSpeed,
     totalDownlinkSpeed,
     totalTrafficUsed,

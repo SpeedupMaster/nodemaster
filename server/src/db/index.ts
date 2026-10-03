@@ -624,6 +624,22 @@ class Database {
     return sub;
   }
 
+  public updateSubscription(id: string, updates: Partial<SubscriptionToken>): SubscriptionToken | null {
+    const sub = this.data.subscriptions.find(s => s.id === id);
+    if (!sub) return null;
+
+    if (updates.token && updates.token !== sub.token) {
+      const exists = this.data.subscriptions.some(s => s.id !== id && s.token === updates.token);
+      if (exists) {
+        throw new Error("Token 已被占用，请更换其他 Token");
+      }
+    }
+
+    Object.assign(sub, updates);
+    this.save();
+    return sub;
+  }
+
   public deleteSubscription(id: string): boolean {
     const before = this.data.subscriptions.length;
     this.data.subscriptions = this.data.subscriptions.filter(s => s.id !== id);

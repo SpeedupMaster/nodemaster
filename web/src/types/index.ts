@@ -83,6 +83,7 @@ export interface SubscriptionToken {
   trafficUsedBytes: number;
   expireAt: number;
   createdAt: number;
+  customHost?: string;
 }
 
 export interface LatencyTask {
