@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useData } from "./hooks/useData";
@@ -23,11 +23,71 @@ import { NodeItem } from "./types";
 
 gsap.registerPlugin(useGSAP);
 
+const VALID_TABS = [
+  "dashboard",
+  "nodes",
+  "ping",
+  "topology",
+  "subscription",
+  "script",
+  "notifications",
+] as const;
+
+const TAB_TITLES: Record<string, string> = {
+  dashboard: "实时仪表盘",
+  nodes: "多 VPS 节点管理",
+  ping: "延迟监测",
+  topology: "链式代理与解锁拓扑",
+  subscription: "订阅分享与客户端导出",
+  script: "一键部署与脚本",
+  notifications: "Telegram 告警通知",
+};
+
+const getTabFromUrl = (): string => {
+  if (typeof window === "undefined") return "dashboard";
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+  if (path && (VALID_TABS as readonly string[]).includes(path)) {
+    return path;
+  }
+  const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase();
+  if (hash && (VALID_TABS as readonly string[]).includes(hash)) {
+    return hash;
+  }
+  return "dashboard";
+};
+
 export function App() {
-  const [currentTab, setCurrentTab] = useState("dashboard");
+  const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectTab = useCallback((tab: string) => {
+    setCurrentTab(tab);
+    const targetPath = tab === "dashboard" ? "/" : `/${tab}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ tab }, "", targetPath);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentTab(getTabFromUrl());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const title = TAB_TITLES[currentTab];
+    if (title) {
+      document.title = `${title} - NodeMaster`;
+    } else {
+      document.title = "NodeMaster - 多 VPS 节点与智能分流控制台";
+    }
+  }, [currentTab]);
 
   const {
     nodes,
@@ -70,7 +130,7 @@ export function App() {
       {/* N3 Side-rail Navigation */}
       <Sidebar
         currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        onSelectTab={handleSelectTab}
         wsConnected={wsConnected}
         totalUpSpeed={totalUpSpeed}
         totalDownSpeed={totalDownSpeed}

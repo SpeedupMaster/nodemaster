@@ -91,11 +91,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = currentTab === item.id;
+            const href = item.id === "dashboard" ? "/" : `/${item.id}`;
             return (
-              <button
+              <a
                 key={item.id}
-                onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                href={href}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                    return; // Allow native browser new-tab click (Ctrl+Click / Cmd+Click)
+                  }
+                  e.preventDefault();
+                  onSelectTab(item.id);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none ${
                   active
                     ? "bg-accent/10 text-accent border border-accent/20"
                     : "text-ink-secondary hover:text-ink hover:bg-paper-hover border border-transparent"
@@ -113,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {onlineCount}/{totalCount}
                   </span>
                 )}
-              </button>
+              </a>
             );
           })}
         </nav>
