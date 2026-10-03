@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
+import { Select, SelectOption } from "../common/Select";
 import { RoutingRule, NodeItem } from "../../types";
 import {
   ShieldCheck,
@@ -456,18 +457,23 @@ export const RuleModal: React.FC<RuleModalProps> = ({
               <label className="text-xs text-ink-secondary font-medium block mb-1.5">
                 指定目标代理出口节点 (可选，默认使用中继拓扑配置)
               </label>
-              <select
+              <Select
+                options={[
+                  {
+                    value: "",
+                    label: "跟随拓扑配置 / 客户端自选出口",
+                    desc: "使用中继拓扑配置规则或由客户端自选出口",
+                  },
+                  ...nodes.map((n) => ({
+                    value: n.id,
+                    label: `${n.name} (${n.ip} · ${n.countryName || "未知地区"})`,
+                    badge: n.protocol ? n.protocol.toUpperCase() : undefined,
+                  })),
+                ]}
                 value={targetNodeId}
-                onChange={(e) => setTargetNodeId(e.target.value)}
-                className="w-full bg-paper border border-rule rounded-md px-3 py-1.5 text-xs text-ink focus:outline-none focus:border-accent"
-              >
-                <option value="">跟随拓扑配置 / 客户端自选出口</option>
-                {nodes.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.name} ({n.ip} · {n.countryName})
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setTargetNodeId(val)}
+                placeholder="跟随拓扑配置 / 客户端自选出口"
+              />
             </div>
           )}
         </div>

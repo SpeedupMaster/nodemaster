@@ -19,6 +19,7 @@ interface SelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  menuClassName?: string;
   id?: string;
 }
 
@@ -29,6 +30,7 @@ export const Select: React.FC<SelectProps> = ({
   placeholder = "请选择...",
   disabled = false,
   className = "",
+  menuClassName = "",
   id,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -104,7 +106,7 @@ export const Select: React.FC<SelectProps> = ({
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute left-0 top-full mt-1.5 min-w-full w-max max-w-[min(90vw,420px)] bg-paper-2 border border-rule rounded-lg shadow-2xl py-1 z-50 max-h-64 overflow-y-auto"
+          className={`absolute left-0 top-full mt-1.5 w-full min-w-[200px] bg-paper-2 border border-rule rounded-lg shadow-2xl py-1 z-50 max-h-64 overflow-y-auto ${menuClassName}`}
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
