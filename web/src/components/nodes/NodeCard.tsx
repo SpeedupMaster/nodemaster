@@ -12,6 +12,7 @@ import {
   ArrowDown,
   Check,
   PencilSimple,
+  CalendarBlank,
 } from "@phosphor-icons/react";
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
@@ -27,6 +28,20 @@ interface NodeCardProps {
   onDelete: (id: string) => void;
   onCopyUrl: (node: NodeItem) => void;
 }
+
+const getExpiryInfo = (expiresAt?: string) => {
+  if (!expiresAt) return null;
+  const target = new Date(expiresAt + "T23:59:59");
+  if (isNaN(target.getTime())) return null;
+  const now = new Date();
+  const diffMs = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return {
+    diffDays,
+    isExpired: diffDays <= 0,
+    isExpiringSoon: diffDays > 0 && diffDays <= 7,
+  };
+};
 
 export const NodeCard: React.FC<NodeCardProps> = ({
   node,
@@ -95,6 +110,66 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                   </span>
                 </>
               )}
+              {node.costAmount !== undefined && node.costAmount > 0 && (
+                <>
+                  <span className="shrink-0">•</span>
+                  <span className="text-amber-400/90 text-[11px] font-medium font-mono shrink-0 flex items-center">
+                    <span>
+                      {node.costCurrency === "USD"
+                        ? "$"
+                        : node.costCurrency === "EUR"
+                        ? "€"
+                        : "¥"}
+                      {node.costAmount}
+                    </span>
+                    <span className="text-amber-400/70 text-[10px] ml-0.5">
+                      {node.costPeriod === "annually"
+                        ? "/年"
+                        : node.costPeriod === "quarterly"
+                        ? "/季"
+                        : "/月"}
+                    </span>
+                  </span>
+                </>
+              )}
+              {node.expiresAt && (
+                <>
+                  <span className="shrink-0">•</span>
+                  {(() => {
+                    const info = getExpiryInfo(node.expiresAt);
+                    const isExp = info?.isExpired;
+                    const isSoon = info?.isExpiringSoon;
+                    return (
+                      <Tooltip
+                        content={`到期时间: ${node.expiresAt} (${
+                          isExp ? "已到期" : `剩余 ${info?.diffDays} 天`
+                        })${node.autoRenew ? " · 已开启自动续费" : " · 手动续费"}`}
+                      >
+                        <span
+                          className={`text-[11px] font-medium font-mono shrink-0 flex items-center gap-1 cursor-help ${
+                            isExp
+                              ? "text-status-danger font-semibold"
+                              : isSoon
+                              ? "text-amber-400 font-semibold"
+                              : "text-ink-secondary"
+                          }`}
+                        >
+                          <CalendarBlank className="w-3 h-3 shrink-0" />
+                          <span>
+                            {isExp ? "已到期" : `${info?.diffDays}天到期`}
+                          </span>
+                          {node.autoRenew && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
+                              title="已开启自动续费"
+                            />
+                          )}
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
+                </>
+              )}
             </div>
           </div>
 
@@ -147,6 +222,15 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               {t}
             </span>
           ))}
+          {node.autoRenew && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 font-mono flex items-center gap-1"
+              title="此节点已开启自动续费"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              自动续费
+            </span>
+          )}
         </div>
 
         {/* Real-time Speeds & Latency */}

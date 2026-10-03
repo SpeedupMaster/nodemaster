@@ -72,6 +72,11 @@ apiRouter.post("/nodes", (req, res) => {
     shadowsocks,
     bandwidthMbps: Number(bandwidthMbps) || 1000,
     trafficResetDay: Math.min(31, Math.max(1, Number(trafficResetDay) || 1)),
+    costAmount: req.body.costAmount !== undefined && req.body.costAmount !== "" ? Number(req.body.costAmount) : undefined,
+    costCurrency: req.body.costCurrency || "CNY",
+    costPeriod: req.body.costPeriod || "monthly",
+    expiresAt: req.body.expiresAt || undefined,
+    autoRenew: req.body.autoRenew !== undefined ? Boolean(req.body.autoRenew) : false,
     lastSeen: Date.now(),
     createdAt: Date.now(),
     tags: tags && tags.length > 0 ? tags : defaultTags,
@@ -97,6 +102,11 @@ apiRouter.put("/nodes/:id", (req, res) => {
     trafficLimitGB,
     bandwidthMbps,
     trafficResetDay,
+    costAmount,
+    costCurrency,
+    costPeriod,
+    expiresAt,
+    autoRenew,
     tags,
     sni,
     ssMethod,
@@ -114,6 +124,17 @@ apiRouter.put("/nodes/:id", (req, res) => {
   if (bandwidthMbps !== undefined) updates.bandwidthMbps = Number(bandwidthMbps) || existing.bandwidthMbps;
   if (trafficResetDay !== undefined) {
     updates.trafficResetDay = Math.min(31, Math.max(1, Number(trafficResetDay) || 1));
+  }
+  if (costAmount !== undefined) {
+    updates.costAmount = costAmount === "" || costAmount === null ? undefined : Number(costAmount);
+  }
+  if (costCurrency !== undefined) updates.costCurrency = costCurrency;
+  if (costPeriod !== undefined) updates.costPeriod = costPeriod;
+  if (expiresAt !== undefined) {
+    updates.expiresAt = expiresAt === "" || expiresAt === null ? undefined : String(expiresAt);
+  }
+  if (autoRenew !== undefined) {
+    updates.autoRenew = Boolean(autoRenew);
   }
   if (trafficLimitBytes !== undefined) {
     updates.trafficLimitBytes = Number(trafficLimitBytes);

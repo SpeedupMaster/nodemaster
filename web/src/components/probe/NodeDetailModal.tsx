@@ -11,6 +11,7 @@ import {
   Eye,
   EyeSlash,
   Info,
+  CalendarBlank,
 } from "@phosphor-icons/react";
 import { NodeItem, NodeLatencyHistory } from "../../types";
 import { Badge } from "../common/Badge";
@@ -20,6 +21,20 @@ interface NodeDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const getExpiryInfo = (expiresAt?: string) => {
+  if (!expiresAt) return null;
+  const target = new Date(expiresAt + "T23:59:59");
+  if (isNaN(target.getTime())) return null;
+  const now = new Date();
+  const diffMs = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return {
+    diffDays,
+    isExpired: diffDays <= 0,
+    isExpiringSoon: diffDays > 0 && diffDays <= 7,
+  };
+};
 
 export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   node,
@@ -360,6 +375,48 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 <span>架构: {node.arch || "x86_64"}</span>
                 <span>•</span>
                 <span>峰值带宽: {node.bandwidthMbps ? `${node.bandwidthMbps} Mbps` : "1 Gbps"}</span>
+                {node.costAmount !== undefined && node.costAmount > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-amber-400 font-medium">
+                      费用: {node.costCurrency === "USD" ? "$" : node.costCurrency === "EUR" ? "€" : "¥"}{node.costAmount}{node.costPeriod === "annually" ? "/年" : node.costPeriod === "quarterly" ? "/季" : "/月"}
+                    </span>
+                  </>
+                )}
+                {node.expiresAt && (
+                  <>
+                    <span>•</span>
+                    {(() => {
+                      const exp = getExpiryInfo(node.expiresAt);
+                      return (
+                        <span
+                          className={`flex items-center gap-1 font-medium ${
+                            exp?.isExpired
+                              ? "text-status-danger"
+                              : exp?.isExpiringSoon
+                              ? "text-amber-400"
+                              : "text-ink-secondary"
+                          }`}
+                        >
+                          <CalendarBlank className="w-3.5 h-3.5" />
+                          <span>到期: {node.expiresAt}</span>
+                          <span className="text-[10px] opacity-80">
+                            ({exp?.isExpired ? "已到期" : `剩 ${exp?.diffDays} 天`})
+                          </span>
+                          <span
+                            className={`text-[9px] px-1 py-0.2 rounded border font-mono ${
+                              node.autoRenew
+                                ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                                : "bg-paper-3 text-ink-muted border-rule"
+                            }`}
+                          >
+                            {node.autoRenew ? "自动续费" : "手动续费"}
+                          </span>
+                        </span>
+                      );
+                    })()}
+                  </>
+                )}
               </div>
             </div>
           </div>

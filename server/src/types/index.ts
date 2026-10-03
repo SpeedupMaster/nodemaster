@@ -41,6 +41,11 @@ export interface NodeItem {
   sni?: string;
   bandwidthMbps?: number;
   trafficResetDay?: number;
+  costAmount?: number;
+  costCurrency?: "CNY" | "USD" | "EUR";
+  costPeriod?: "monthly" | "quarterly" | "annually";
+  expiresAt?: string;
+  autoRenew?: boolean;
   // Probe & System Telemetry
   os?: string;
   arch?: string;

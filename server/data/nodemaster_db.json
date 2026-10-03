@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 64.4,
+      "cpuUsage": 89.8,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1789559611354,
+      "lastSeen": 1791023037813,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -43,8 +43,8 @@
       "arch": "x86_64",
       "uptime": "28天 14小时",
       "loadAvg": [
-        0.97,
-        0.39,
+        1.35,
+        0.9,
         0.18
       ],
       "memTotalBytes": 2147483648,
@@ -52,7 +52,11 @@
       "diskTotalBytes": 42949672960,
       "diskUsedBytes": 15073280000,
       "tcpCount": 124,
-      "udpCount": 16
+      "udpCount": 16,
+      "costAmount": 30,
+      "costCurrency": "USD",
+      "costPeriod": "annually",
+      "sni": "www.microsoft.com"
     },
     {
       "id": "node-jp-02",
@@ -69,7 +73,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 22.5,
+      "cpuUsage": 72.3,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -89,7 +93,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1789559611355,
+      "lastSeen": 1791023037814,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -97,8 +101,8 @@
       "arch": "x86_64",
       "uptime": "42天 8小时",
       "loadAvg": [
-        0.32,
-        1.39,
+        1.09,
+        1.19,
         0.45
       ],
       "memTotalBytes": 4294967296,
@@ -106,7 +110,10 @@
       "diskTotalBytes": 64424509440,
       "diskUsedBytes": 19005230284,
       "tcpCount": 218,
-      "udpCount": 34
+      "udpCount": 34,
+      "costAmount": 5.5,
+      "costCurrency": "USD",
+      "costPeriod": "monthly"
     },
     {
       "id": "node-us-unlock-01",
@@ -123,7 +130,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 64.1,
+      "cpuUsage": 60,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -137,7 +144,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1789559611355,
+      "lastSeen": 1791023037814,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
       "trafficResetDay": 15,
@@ -145,8 +152,8 @@
       "arch": "x86_64",
       "uptime": "15天 2小时",
       "loadAvg": [
-        0.96,
-        0.27,
+        0.91,
+        0.17,
         0.1
       ],
       "memTotalBytes": 1073741824,
@@ -154,7 +161,10 @@
       "diskTotalBytes": 26843545600,
       "diskUsedBytes": 11005853696,
       "tcpCount": 88,
-      "udpCount": 12
+      "udpCount": 12,
+      "costAmount": 18,
+      "costCurrency": "USD",
+      "costPeriod": "quarterly"
     },
     {
       "id": "node-uk-unlock-02",
@@ -171,7 +181,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 78.8,
+      "cpuUsage": 78.9,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -185,7 +195,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1789559611356,
+      "lastSeen": 1791023037815,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
       "trafficResetDay": 28,
@@ -193,8 +203,8 @@
       "arch": "aarch64",
       "uptime": "33天 19小时",
       "loadAvg": [
-        1.15,
-        0.2,
+        1.21,
+        0.42,
         0.14
       ],
       "memTotalBytes": 2147483648,
@@ -202,7 +212,10 @@
       "diskTotalBytes": 34359738368,
       "diskUsedBytes": 8589934592,
       "tcpCount": 96,
-      "udpCount": 14
+      "udpCount": 14,
+      "costAmount": 45,
+      "costCurrency": "EUR",
+      "costPeriod": "annually"
     }
   ],
   "relays": [

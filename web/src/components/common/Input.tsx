@@ -1,13 +1,15 @@
-﻿import React from "react";
+import React from "react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   prefixIcon?: React.ReactNode;
+  prefixText?: string;
   suffixText?: string;
   error?: string;
 }
 
 export const Input: React.FC<InputProps> = ({
   prefixIcon,
+  prefixText,
   suffixText,
   error,
   className = "",
@@ -29,9 +31,17 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
 
+        {prefixText && (
+          <div className="pl-3 text-xs font-mono font-medium text-ink-secondary select-none flex-shrink-0">
+            {prefixText}
+          </div>
+        )}
+
         <input
           type={type}
-          className={`w-full bg-transparent px-3 py-2 text-xs text-ink placeholder:text-ink-muted focus:outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+          className={`w-full bg-transparent px-3 py-2 text-xs text-ink placeholder:text-ink-muted focus:outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+            type === "date" ? "[color-scheme:dark]" : ""
+          } ${className}`}
           {...props}
         />
 

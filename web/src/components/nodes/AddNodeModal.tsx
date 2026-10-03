@@ -3,8 +3,9 @@ import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { Select, SelectOption } from "../common/Select";
 import { Input } from "../common/Input";
+import { DatePicker } from "../common/DatePicker";
 import { NodeItem } from "../../types";
-import { ArrowsClockwise, ShieldCheck, Key, Globe, Sparkle } from "@phosphor-icons/react";
+import { ArrowsClockwise, ShieldCheck, Key, Globe, Sparkle, CalendarBlank } from "@phosphor-icons/react";
 
 interface AddNodeModalProps {
   isOpen: boolean;
@@ -31,6 +32,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
   const [trafficLimitGB, setTrafficLimitGB] = useState("1000");
   const [bandwidthMbps, setBandwidthMbps] = useState("1000");
   const [trafficResetDay, setTrafficResetDay] = useState("1");
+  const [costAmount, setCostAmount] = useState<string>("");
+  const [costCurrency, setCostCurrency] = useState<"CNY" | "USD" | "EUR">("CNY");
+  const [costPeriod, setCostPeriod] = useState<"monthly" | "quarterly" | "annually">("monthly");
+  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [autoRenew, setAutoRenew] = useState<boolean>(false);
   const [tagsStr, setTagsStr] = useState("主力直连, 原生IP, 千兆带宽");
   const [submitting, setSubmitting] = useState(false);
 
@@ -76,6 +82,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
         bandwidthMbps: Number(bandwidthMbps) || 1000,
         trafficResetDay: Number(trafficResetDay) || 1,
+        costAmount: costAmount.trim() !== "" ? Number(costAmount) : undefined,
+        costCurrency,
+        costPeriod,
+        expiresAt: expiresAt.trim() || undefined,
+        autoRenew,
         tags,
         sni: type === "direct" ? sni : undefined,
         ssMethod: type === "unlock" ? ssMethod : undefined,
@@ -85,6 +96,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       // Reset form
       setName("");
       setIp("");
+      setCostAmount("");
+      setCostCurrency("CNY");
+      setCostPeriod("monthly");
+      setExpiresAt("");
+      setAutoRenew(false);
       onClose();
     } catch (err) {
       console.error(err);
@@ -446,6 +462,159 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               placeholder="1"
               suffixText="日"
             />
+          </div>
+        </div>
+
+        {/* VPS Cost & Billing Period */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
+                VPS 费用金额
+              </label>
+              <div className="flex items-center gap-1 shrink-0">
+                {[
+                  { label: "¥ 人民币", val: "CNY" },
+                  { label: "$ 美元", val: "USD" },
+                  { label: "€ 欧元", val: "EUR" },
+                ].map((c) => {
+                  const isActive = costCurrency === c.val;
+                  return (
+                    <button
+                      key={c.val}
+                      type="button"
+                      onClick={() => setCostCurrency(c.val as any)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <Input
+              type="number"
+              step="any"
+              min="0"
+              value={costAmount}
+              onChange={(e) => setCostAmount(e.target.value)}
+              placeholder="0.00"
+              prefixText={
+                costCurrency === "USD" ? "$" : costCurrency === "EUR" ? "€" : "¥"
+              }
+              suffixText={costCurrency}
+            />
+          </div>
+
+          <div>
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
+                付款周期
+              </label>
+              <div className="flex items-center gap-1 shrink-0">
+                {[
+                  { label: "月付", val: "monthly" },
+                  { label: "季付", val: "quarterly" },
+                  { label: "年付", val: "annually" },
+                ].map((p) => {
+                  const isActive = costPeriod === p.val;
+                  return (
+                    <button
+                      key={p.val}
+                      type="button"
+                      onClick={() => setCostPeriod(p.val as any)}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                        isActive
+                          ? "bg-accent/15 text-accent border-accent/40 font-semibold"
+                          : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <Select
+              options={[
+                { label: "月付 (按月续费)", value: "monthly" },
+                { label: "季付 (按季度续费)", value: "quarterly" },
+                { label: "年付 (按年续费)", value: "annually" },
+              ]}
+              value={costPeriod}
+              onChange={(val) => setCostPeriod(val as any)}
+            />
+          </div>
+        </div>
+
+        {/* VPS Expiration Date & Auto-Renew Switch */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
+                <CalendarBlank className="w-3.5 h-3.5 text-accent" />
+                <span>VPS 到期日期</span>
+              </label>
+              {expiresAt && (
+                <span className="text-[10px] font-mono text-ink-muted truncate">
+                  {expiresAt}
+                </span>
+              )}
+            </div>
+            <DatePicker
+              value={expiresAt}
+              onChange={(val) => setExpiresAt(val)}
+              placeholder="请选择到期日期 (年-月-日)"
+            />
+          </div>
+
+          <div>
+            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
+                <ArrowsClockwise className="w-3.5 h-3.5 text-accent" />
+                <span>自动续费</span>
+              </label>
+              <span className={`text-[10px] font-mono ${autoRenew ? "text-emerald-400 font-medium" : "text-ink-muted"}`}>
+                {autoRenew ? "到期前自动扣款" : "手动续费"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoRenew(!autoRenew)}
+              className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none ${
+                autoRenew
+                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15"
+                  : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
+              }`}
+            >
+              <span className="text-xs font-mono font-medium flex items-center gap-1.5 truncate pr-2">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    autoRenew ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" : "bg-ink-muted/40"
+                  }`}
+                />
+                <span className="truncate">
+                  {autoRenew ? "开启自动续费 (Auto-Renew)" : "已关闭自动续费 (手动)"}
+                </span>
+              </span>
+
+              {/* Modern smooth toggle switch */}
+              <div
+                className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors shrink-0 ${
+                  autoRenew ? "bg-emerald-500" : "bg-paper-3 border border-rule"
+                }`}
+              >
+                <div
+                  className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                    autoRenew ? "translate-x-3.5" : "translate-x-0"
+                  }`}
+                />
+              </div>
+            </button>
           </div>
         </div>
 
