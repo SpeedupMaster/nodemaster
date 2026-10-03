@@ -134,3 +134,36 @@ export interface RoutingRule {
   updatedAt: number;
 }
 
+export interface TelegramConfig {
+  enabled: boolean;
+  botToken: string;
+  chatId: string;
+  apiEndpoint?: string;
+  // 离线通知
+  offlineAlert: boolean;
+  // 流量预警
+  trafficAlert: boolean;
+  trafficThresholdPercent: number; // e.g. 80
+  // 续费通知
+  renewalAlert: boolean;
+  renewalDaysAhead: number; // e.g. 7
+  // CPU 占用预警
+  cpuAlert: boolean;
+  cpuThresholdPercent: number; // e.g. 85
+  // 内存占用预警
+  memAlert: boolean;
+  memThresholdPercent: number; // e.g. 85
+}
+
+export interface TelegramAlertLog {
+  id: string;
+  type: "offline" | "recovery" | "traffic" | "renewal" | "cpu" | "mem" | "test";
+  nodeId?: string;
+  nodeName?: string;
+  title: string;
+  message: string;
+  timestamp: number;
+  success: boolean;
+  error?: string;
+}
+

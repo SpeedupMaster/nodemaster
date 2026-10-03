@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 89.8,
+      "cpuUsage": 88.9,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1791023037813,
+      "lastSeen": 1791024172855,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -44,7 +44,7 @@
       "uptime": "28天 14小时",
       "loadAvg": [
         1.35,
-        0.9,
+        0.85,
         0.18
       ],
       "memTotalBytes": 2147483648,
@@ -73,7 +73,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 72.3,
+      "cpuUsage": 67.1,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -93,7 +93,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1791023037814,
+      "lastSeen": 1791024172856,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -101,8 +101,8 @@
       "arch": "x86_64",
       "uptime": "42天 8小时",
       "loadAvg": [
-        1.09,
-        1.19,
+        1,
+        1.28,
         0.45
       ],
       "memTotalBytes": 4294967296,
@@ -130,7 +130,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 60,
+      "cpuUsage": 88.2,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -144,7 +144,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1791023037814,
+      "lastSeen": 1791024172856,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
       "trafficResetDay": 15,
@@ -152,8 +152,8 @@
       "arch": "x86_64",
       "uptime": "15天 2小时",
       "loadAvg": [
-        0.91,
-        0.17,
+        1.29,
+        0.07,
         0.1
       ],
       "memTotalBytes": 1073741824,
@@ -181,7 +181,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 78.9,
+      "cpuUsage": 88.7,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -195,7 +195,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1791023037815,
+      "lastSeen": 1791024172857,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
       "trafficResetDay": 28,
@@ -203,8 +203,8 @@
       "arch": "aarch64",
       "uptime": "33天 19小时",
       "loadAvg": [
-        1.21,
-        0.42,
+        1.33,
+        0.48,
         0.14
       ],
       "memTotalBytes": 2147483648,
@@ -514,5 +514,21 @@
       "createdAt": 1786966968864,
       "updatedAt": 1786966968864
     }
-  ]
+  ],
+  "telegramConfig": {
+    "enabled": false,
+    "botToken": "",
+    "chatId": "",
+    "apiEndpoint": "https://api.telegram.org",
+    "offlineAlert": true,
+    "trafficAlert": true,
+    "trafficThresholdPercent": 80,
+    "renewalAlert": true,
+    "renewalDaysAhead": 7,
+    "cpuAlert": true,
+    "cpuThresholdPercent": 90,
+    "memAlert": true,
+    "memThresholdPercent": 85
+  },
+  "telegramLogs": []
 }

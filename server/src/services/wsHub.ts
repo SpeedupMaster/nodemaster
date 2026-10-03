@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import { Server } from "http";
 import { db } from "../db/index.js";
 import { NodeItem } from "../types/index.js";
+import { telegramService } from "./telegramService.js";
 
 export class WsHub {
   private wss: WebSocketServer | null = null;
@@ -42,6 +43,7 @@ export class WsHub {
           this.agentClients.delete(node.id);
           db.updateNode(node.id, { status: "offline" });
           this.broadcastNodeUpdate(node.id);
+          telegramService.checkNodeAlerts(db.getNodes()).catch(() => {});
         });
       } else {
         // Web Dashboard Client
@@ -141,6 +143,11 @@ export class WsHub {
         type: "TELEMETRY_BATCH",
         nodes: db.getNodes(),
         timestamp: Date.now(),
+      });
+
+      // Periodically check Telegram alert rules
+      telegramService.checkNodeAlerts(db.getNodes()).catch((err) => {
+        console.error("[TelegramAlerts] Error:", err);
       });
     }, 3000);
   }

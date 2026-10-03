@@ -11,6 +11,7 @@ import {
   Broadcast,
   Pulse,
   ArrowsSplit,
+  PaperPlaneTilt,
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
 
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "routing", label: "分流规则编排", icon: ArrowsSplit },
     { id: "subscription", label: "订阅分享与导出", icon: LinkSimple },
     { id: "script", label: "一键部署与脚本", icon: TerminalWindow },
+    { id: "notifications", label: "Telegram 告警通知", icon: PaperPlaneTilt },
   ];
 
   const formatSpeed = (bytesPerSec: number) => {

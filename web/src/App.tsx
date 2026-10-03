@@ -12,6 +12,7 @@ import { TopologyCanvas } from "./components/topology/TopologyCanvas";
 import { RoutingRulesView } from "./components/routing/RoutingRulesView";
 import { SubscriptionView } from "./components/subscription/SubscriptionView";
 import { ScriptView } from "./components/dashboard/ScriptView";
+import { TelegramNotificationView } from "./components/notifications/TelegramNotificationView";
 import { AddNodeModal } from "./components/nodes/AddNodeModal";
 import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
 import { NodeDetailModal } from "./components/probe/NodeDetailModal";
@@ -162,6 +163,10 @@ export function App() {
             )}
 
             {currentTab === "script" && <ScriptView />}
+
+            {currentTab === "notifications" && (
+              <TelegramNotificationView nodes={nodes} />
+            )}
           </div>
         </main>
 

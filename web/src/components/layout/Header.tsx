@@ -44,6 +44,10 @@ export const Header: React.FC<HeaderProps> = ({
       title: "一键部署与脚本",
       desc: "官方 Linux VPS 一键 Agent 安装命令与 Xray 服务集成",
     },
+    notifications: {
+      title: "Telegram 告警通知",
+      desc: "配置 Bot 机器人推送，实现离线、流量超额、VPS 续费到期、CPU 及内存占用实时预警",
+    },
   };
 
   const info = titles[currentTab] || { title: "控制台", desc: "" };

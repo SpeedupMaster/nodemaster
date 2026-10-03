@@ -7,7 +7,8 @@ import { db } from "../db/index.js";
 import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig, compileRuleForPreview } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
-import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule } from "../types/index.js";
+import { telegramService } from "../services/telegramService.js";
+import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule, TelegramConfig } from "../types/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -797,5 +798,42 @@ apiRouter.post("/routing/rules/simulate", (req, res) => {
     },
   });
 });
+
+// -------------------------------------------------------------
+// 7. Telegram Notifications
+// -------------------------------------------------------------
+apiRouter.get("/telegram/config", (req, res) => {
+  res.json({ success: true, data: db.getTelegramConfig() });
+});
+
+apiRouter.put("/telegram/config", (req, res) => {
+  const updated = db.updateTelegramConfig(req.body);
+  res.json({ success: true, data: updated });
+});
+
+apiRouter.post("/telegram/test", async (req, res) => {
+  const { botToken, chatId, apiEndpoint } = req.body;
+  if (botToken && chatId) {
+    db.updateTelegramConfig({ botToken, chatId, apiEndpoint });
+  }
+  const result = await telegramService.simulateAlert("test", undefined);
+  res.json(result);
+});
+
+apiRouter.post("/telegram/simulate", async (req, res) => {
+  const { type, nodeId } = req.body;
+  const result = await telegramService.simulateAlert(type || "test", nodeId);
+  res.json(result);
+});
+
+apiRouter.get("/telegram/logs", (req, res) => {
+  res.json({ success: true, data: db.getTelegramLogs() });
+});
+
+apiRouter.delete("/telegram/logs", (req, res) => {
+  db.clearTelegramLogs();
+  res.json({ success: true, message: "推送历史已清空" });
+});
+
 
 

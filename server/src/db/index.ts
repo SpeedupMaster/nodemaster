@@ -1,6 +1,16 @@
 import fs from "fs";
 import path from "path";
-import { NodeItem, RelayLink, SubscriptionToken, SystemConfig, LatencyTask, NodeLatencyHistory, RoutingRule } from "../types/index.js";
+import {
+  NodeItem,
+  RelayLink,
+  SubscriptionToken,
+  SystemConfig,
+  LatencyTask,
+  NodeLatencyHistory,
+  RoutingRule,
+  TelegramConfig,
+  TelegramAlertLog,
+} from "../types/index.js";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,6 +25,8 @@ export interface DatabaseSchema {
   config: SystemConfig;
   latencyTasks: LatencyTask[];
   routingRules: RoutingRule[];
+  telegramConfig?: TelegramConfig;
+  telegramLogs?: TelegramAlertLog[];
 }
 
 const DEFAULT_CONFIG: SystemConfig = {
@@ -25,6 +37,22 @@ const DEFAULT_CONFIG: SystemConfig = {
   autoCircuitBreaker: true,
   circuitBreakerThresholdPct: 98,
   trafficResetDay: 1,
+};
+
+const DEFAULT_TELEGRAM_CONFIG: TelegramConfig = {
+  enabled: false,
+  botToken: "",
+  chatId: "",
+  apiEndpoint: "https://api.telegram.org",
+  offlineAlert: true,
+  trafficAlert: true,
+  trafficThresholdPercent: 80,
+  renewalAlert: true,
+  renewalDaysAhead: 7,
+  cpuAlert: true,
+  cpuThresholdPercent: 85,
+  memAlert: true,
+  memThresholdPercent: 85,
 };
 
 const INITIAL_NODES: NodeItem[] = [
@@ -478,6 +506,14 @@ class Database {
           this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
           changed = true;
         }
+        if (!this.data.telegramConfig) {
+          this.data.telegramConfig = { ...DEFAULT_TELEGRAM_CONFIG };
+          changed = true;
+        }
+        if (!this.data.telegramLogs) {
+          this.data.telegramLogs = [];
+          changed = true;
+        }
         if (changed) {
           this.save();
         }
@@ -500,13 +536,24 @@ class Database {
       config: DEFAULT_CONFIG,
       latencyTasks: [...INITIAL_LATENCY_TASKS],
       routingRules: JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES)),
+      telegramConfig: { ...DEFAULT_TELEGRAM_CONFIG },
+      telegramLogs: [],
     };
   }
 
   private save() {
-    const tmp = `${DATA_FILE}.tmp.${Date.now()}`;
-    fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2), "utf-8");
-    fs.renameSync(tmp, DATA_FILE);
+    try {
+      const tmp = `${DATA_FILE}.tmp.${Date.now()}`;
+      fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2), "utf-8");
+      try {
+        fs.renameSync(tmp, DATA_FILE);
+      } catch {
+        fs.copyFileSync(tmp, DATA_FILE);
+        if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+      }
+    } catch {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(this.data, null, 2), "utf-8");
+    }
   }
 
   // Nodes API
@@ -855,6 +902,45 @@ class Database {
     this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
     this.save();
     return this.getRoutingRules();
+  }
+
+  // Telegram Notification API
+  public getTelegramConfig(): TelegramConfig {
+    if (!this.data.telegramConfig) {
+      this.data.telegramConfig = { ...DEFAULT_TELEGRAM_CONFIG };
+      this.save();
+    }
+    return this.data.telegramConfig;
+  }
+
+  public updateTelegramConfig(updates: Partial<TelegramConfig>): TelegramConfig {
+    this.data.telegramConfig = {
+      ...this.getTelegramConfig(),
+      ...updates,
+    };
+    this.save();
+    return this.data.telegramConfig;
+  }
+
+  public getTelegramLogs(): TelegramAlertLog[] {
+    return this.data.telegramLogs || [];
+  }
+
+  public addTelegramLog(log: TelegramAlertLog): void {
+    if (!this.data.telegramLogs) {
+      this.data.telegramLogs = [];
+    }
+    this.data.telegramLogs.unshift(log);
+    // Keep last 100 logs
+    if (this.data.telegramLogs.length > 100) {
+      this.data.telegramLogs = this.data.telegramLogs.slice(0, 100);
+    }
+    this.save();
+  }
+
+  public clearTelegramLogs(): void {
+    this.data.telegramLogs = [];
+    this.save();
   }
 }
 
