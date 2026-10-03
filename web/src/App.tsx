@@ -9,7 +9,6 @@ import { OverviewCards } from "./components/dashboard/OverviewCards";
 import { NodeList } from "./components/nodes/NodeList";
 import { ProbeDashboard } from "./components/probe/ProbeDashboard";
 import { TopologyCanvas } from "./components/topology/TopologyCanvas";
-import { RoutingRulesView } from "./components/routing/RoutingRulesView";
 import { SubscriptionView } from "./components/subscription/SubscriptionView";
 import { ScriptView } from "./components/dashboard/ScriptView";
 import { TelegramNotificationView } from "./components/notifications/TelegramNotificationView";
@@ -35,7 +34,6 @@ export function App() {
     relays,
     subscriptions,
     latencyTasks,
-    routingRules,
     loading,
     wsConnected,
     fetchData,
@@ -49,11 +47,6 @@ export function App() {
     updateLatencyTask,
     deleteLatencyTask,
     resetLatencyTasks,
-    addRoutingRule,
-    updateRoutingRule,
-    deleteRoutingRule,
-    reorderRoutingRules,
-    resetRoutingRules,
     updateSubscription,
     totalUplinkSpeed: totalUpSpeed,
     totalDownlinkSpeed: totalDownSpeed,
@@ -141,18 +134,6 @@ export function App() {
                 relays={relays}
                 onAddRelay={addRelay}
                 onDeleteRelay={deleteRelay}
-              />
-            )}
-
-            {currentTab === "routing" && (
-              <RoutingRulesView
-                rules={routingRules}
-                nodes={nodes}
-                onAddRule={addRoutingRule}
-                onUpdateRule={updateRoutingRule}
-                onDeleteRule={deleteRoutingRule}
-                onReorderRules={reorderRoutingRules}
-                onResetRules={resetRoutingRules}
               />
             )}
 
