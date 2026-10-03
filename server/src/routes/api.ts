@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { db } from "../db/index.js";
 import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig, compileRuleForPreview } from "../services/xrayConfig.js";
-import { assembleProxies, renderClashYaml, renderSingboxJson, renderBase64, toVlessUrl } from "../services/subscription.js";
+import { assembleProxies, renderClashYaml, renderSingboxJson, renderEgernYaml, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
 import { telegramService } from "../services/telegramService.js";
 import { NodeItem, RelayLink, ShadowsocksConfig, XrayRealityConfig, LatencyTask, RoutingRule, TelegramConfig } from "../types/index.js";
@@ -339,6 +339,13 @@ apiRouter.get("/sub/:token", (req, res) => {
   if (explicitFormat === "singbox" || (!explicitFormat && (ua.includes("sing-box") || ua.includes("singbox")))) {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     return res.send(renderSingboxJson(proxies));
+  }
+
+  if (explicitFormat === "egern" || (!explicitFormat && ua.includes("egern"))) {
+    res.setHeader("Content-Type", "text/yaml; charset=utf-8");
+    res.setHeader("Content-Disposition", `inline; filename="nodemaster_${sub.id}.yaml"; filename*=UTF-8''${encodeURIComponent(sub.name)}.yaml`);
+    const fullSubUrl = `${req.protocol}://${req.get("host")}/api/sub/${sub.token}?format=egern`;
+    return res.send(renderEgernYaml(proxies, fullSubUrl));
   }
 
   // Default: Base64 URI list for Shadowrocket / v2rayN / Quantumult X

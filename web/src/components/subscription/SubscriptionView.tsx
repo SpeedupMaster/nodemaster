@@ -282,7 +282,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   nodes,
 }) => {
   const [selectedSubToken, setSelectedSubToken] = useState<string>("");
-  const [format, setFormat] = useState<"clash" | "singbox" | "base64">("clash");
+  const [format, setFormat] = useState<"clash" | "singbox" | "egern" | "base64">("clash");
   const [viewMode, setViewMode] = useState<"visual" | "code">("visual");
   const [previewContent, setPreviewContent] = useState<string>("");
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -343,17 +343,19 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   };
 
   const handleDownload = () => {
-    const ext = format === "clash" ? "yaml" : format === "singbox" ? "json" : "txt";
+    const ext = format === "clash" || format === "egern" ? "yaml" : format === "singbox" ? "json" : "txt";
     const blob = new Blob([previewContent], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `nodemaster_${activeSub?.name || "nodes"}.${ext}`;
+    a.download = `nodemaster_${format}_${activeSub?.name || "config"}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const oneClickClashUrl = `clash://install-config?url=${encodeURIComponent(subUrl)}&name=${encodeURIComponent("NodeMaster")}`;
+  const oneClickClashUrl = `clash://install-config?url=${encodeURIComponent(subUrl)}&name=${encodeURIComponent(activeSub?.name || "NodeMaster")}`;
+  const egernSubUrl = subUrl ? `${subUrl}?format=egern` : "";
+  const oneClickEgernUrl = `egern:/profiles/new?name=${encodeURIComponent(activeSub?.name || "NodeMaster")}&url=${encodeURIComponent(egernSubUrl)}`;
 
   const toggleCollapse = (id: string) => {
     setCollapsedSet((prev) => {
@@ -490,17 +492,24 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               </h2>
             </div>
             <p className="text-xs text-ink-muted mt-1 max-w-xl">
-              服务端依据客户端的 User-Agent 自动自适应下发对应配置（Clash Meta / Mihomo、Sing-box、Shadowrocket）。包含自动选择、美国节点、亚太节点、欧洲节点与独立服务专线。
+              服务端依据客户端的 User-Agent 自动自适应下发对应配置（Clash Meta / Mihomo、Sing-box、Egern、Shadowrocket）。包含自动选择、美国节点、亚太节点、欧洲节点与独立服务专线。
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <a
               href={oneClickClashUrl}
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
             >
               <Sparkle weight="fill" className="w-3.5 h-3.5" />
-              一键导入 Clash / Mihomo
+              一键导入 Clash
+            </a>
+            <a
+              href={oneClickEgernUrl}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-paper-3 text-ink font-semibold text-xs border border-rule hover:bg-paper-2 hover:border-accent/40 transition-colors shadow-sm"
+            >
+              <Sparkle weight="fill" className="w-3.5 h-3.5 text-accent" />
+              一键导入 Egern
             </a>
           </div>
         </div>
@@ -532,13 +541,14 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             {[
               { id: "clash", label: "Clash Meta / Mihomo (YAML)" },
               { id: "singbox", label: "Sing-box (JSON)" },
+              { id: "egern", label: "Egern (YAML)" },
               { id: "base64", label: "Shadowrocket / 通用 (Base64)" },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
                   setFormat(item.id as any);
-                  if (item.id !== "clash") setViewMode("code");
+                  if (item.id !== "clash" && item.id !== "egern") setViewMode("code");
                 }}
                 className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
                   format === item.id
@@ -553,7 +563,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
           <div className="flex items-center gap-2">
             {/* View Mode Switcher */}
-            {format === "clash" && (
+            {(format === "clash" || format === "egern") && (
               <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule mr-1">
                 <button
                   type="button"
@@ -582,6 +592,25 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               </div>
             )}
 
+            {format === "egern" && (
+              <a
+                href={oneClickEgernUrl}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
+              >
+                <Sparkle weight="fill" className="w-3.5 h-3.5" />
+                导入 Egern
+              </a>
+            )}
+            {format === "clash" && (
+              <a
+                href={oneClickClashUrl}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
+              >
+                <Sparkle weight="fill" className="w-3.5 h-3.5" />
+                导入 Clash
+              </a>
+            )}
+
             <Button
               variant="secondary"
               size="sm"
@@ -601,8 +630,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </div>
         </div>
 
-        {/* 1. CLASH POLICY GROUP DASHBOARD */}
-        {viewMode === "visual" && format === "clash" ? (
+        {/* 1. CLASH & EGERN POLICY GROUP DASHBOARD */}
+        {viewMode === "visual" && (format === "clash" || format === "egern") ? (
           <div className="space-y-4">
             {/* Filter and Fold Controls Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-paper border border-rule text-xs">
