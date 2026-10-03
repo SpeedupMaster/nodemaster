@@ -193,8 +193,8 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         }
       }
 
-      // 4. Inject active custom routing rules from panel
-      const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+      // 4. Inject active user-defined custom routing rules from panel (exclude built-in presets that are handled by dedicated template groups)
+      const activeRules = db.getRoutingRules().filter((r) => r.enabled && !r.builtInPresetId);
       const allNodes = db.getNodes();
       const customClashRules: string[] = [];
 
@@ -202,6 +202,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         let target = "节点选择";
         if (rule.targetOutbound === "DIRECT") target = "DIRECT";
         else if (rule.targetOutbound === "BLOCK") target = "REJECT";
+        else if (rule.targetOutbound === "UNLOCK_OUT") target = "美国节点";
         else if (rule.targetOutbound === "PROXY") {
           if (rule.targetNodeId) {
             const tgtNode = allNodes.find((n) => n.id === rule.targetNodeId);
@@ -613,12 +614,12 @@ export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>,
   ];
 
   const standardPreferred = [
+    "节点选择",
     "自动选择",
     ...(apacProxies.length > 0 ? ["亚太节点"] : []),
     ...(usProxies.length > 0 ? ["美国节点"] : []),
     ...(euProxies.length > 0 ? ["欧洲节点"] : []),
     "手动选择",
-    "节点选择",
     "DIRECT",
   ];
 
@@ -644,13 +645,52 @@ export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>,
 
   policyGroups.push({
     select: {
+      name: "苹果服务",
+      policies: [
+        "DIRECT",
+        "自动选择",
+        ...(apacProxies.length > 0 ? ["亚太节点"] : []),
+        ...(usProxies.length > 0 ? ["美国节点"] : []),
+        ...(euProxies.length > 0 ? ["欧洲节点"] : []),
+        "手动选择",
+        "节点选择",
+        "REJECT",
+      ],
+    },
+  });
+
+  policyGroups.push({
+    select: {
+      name: "微软服务",
+      policies: [
+        "节点选择",
+        "自动选择",
+        "DIRECT",
+        ...(apacProxies.length > 0 ? ["亚太节点"] : []),
+        ...(usProxies.length > 0 ? ["美国节点"] : []),
+        ...(euProxies.length > 0 ? ["欧洲节点"] : []),
+        "手动选择",
+        "REJECT",
+      ],
+    },
+  });
+
+  policyGroups.push({
+    select: {
+      name: "Speedtest",
+      policies: [...standardPreferred],
+    },
+  });
+
+  policyGroups.push({
+    select: {
       name: "广告拦截",
       policies: ["REJECT", "DIRECT"],
     },
   });
 
-  // 注入面板自定义路由规则
-  const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+  // 注入面板自定义路由规则（排除已被细分策略组覆盖的内置预设）
+  const activeRules = db.getRoutingRules().filter((r) => r.enabled && !r.builtInPresetId);
   const allNodes = db.getNodes();
   const customEgernRules: any[] = [];
 
@@ -658,6 +698,7 @@ export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>,
     let target = "节点选择";
     if (rule.targetOutbound === "DIRECT") target = "DIRECT";
     else if (rule.targetOutbound === "BLOCK") target = "REJECT";
+    else if (rule.targetOutbound === "UNLOCK_OUT") target = "美国节点";
     else if (rule.targetOutbound === "PROXY") {
       if (rule.targetNodeId) {
         const tgtNode = allNodes.find((n) => n.id === rule.targetNodeId);
@@ -768,6 +809,38 @@ export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>,
     { domain_suffix: { match: "google.com.hk", policy: "谷歌服务" } },
     { domain_suffix: { match: "googleapis.com", policy: "谷歌服务" } },
     { domain_suffix: { match: "gstatic.com", policy: "谷歌服务" } },
+
+    // 苹果服务
+    { domain_suffix: { match: "apple.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "icloud.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "itunes.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "mzstatic.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "aaplimg.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "apple-cloudkit.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "apple-livephotoskit.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "cdn-apple.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "icloud-content.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "me.com", policy: "苹果服务" } },
+    { domain_suffix: { match: "apple-dns.net", policy: "苹果服务" } },
+
+    // 微软服务
+    { domain_suffix: { match: "microsoft.com", policy: "微软服务" } },
+    { domain_suffix: { match: "office.com", policy: "微软服务" } },
+    { domain_suffix: { match: "office365.com", policy: "微软服务" } },
+    { domain_suffix: { match: "live.com", policy: "微软服务" } },
+    { domain_suffix: { match: "bing.com", policy: "微软服务" } },
+    { domain_suffix: { match: "msn.com", policy: "微软服务" } },
+    { domain_suffix: { match: "windows.com", policy: "微软服务" } },
+    { domain_suffix: { match: "windowsupdate.com", policy: "微软服务" } },
+    { domain_suffix: { match: "azure.com", policy: "微软服务" } },
+    { domain_suffix: { match: "onedrive.com", policy: "微软服务" } },
+    { domain_suffix: { match: "sharepoint.com", policy: "微软服务" } },
+    { domain_suffix: { match: "skype.com", policy: "微软服务" } },
+    { domain_suffix: { match: "xbox.com", policy: "微软服务" } },
+
+    // Speedtest
+    { domain_suffix: { match: "speedtest.net", policy: "Speedtest" } },
+    { domain_suffix: { match: "ookla.com", policy: "Speedtest" } },
 
     // 广告拦截
     { domain_suffix: { match: "doubleclick.net", policy: "广告拦截" } },

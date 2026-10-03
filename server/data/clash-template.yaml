@@ -13,41 +13,40 @@
 # 基本使用教程
 # ============================================================
 # 1. 添加机场订阅：
-#    找到 proxy-providers → Primary-VPS → url，
-#    将占位内容替换成你的机场订阅链接，例如：
-#      url: https://example.com/xxxx
+#    系统已在导出订阅时自动注入节点；如需手动使用模板，请在
+#    proxy-providers → Primary-VPS → url 中填入订阅链接。
 #    注意：url: 后面不能写成 `#https://...`，因为 # 会被 YAML 当作注释。
 #
 # 2. 启动后选择总策略：
-#    节点选择 是主要的总出口策略组。
-#    可以选择 Global-Manual、EUR-Manual、各地区 Auto、DIRECT 等作为整体代理出口。
+#    【节点选择】是主要的总出口策略组（默认首选【自动选择】）。
+#    可自由选择 自动选择、美国节点、亚太节点、欧洲节点、手动选择、DIRECT 等作为通用代理出口。
 #
 # 3. 服务型策略组：
-#    YouTube、Netflix、Disney+、Spotify、TikTok、Twitch、
-#    GPT、Gemini、Claude、Copilot、Grok、Google、X、
-#    Facebook、Instagram、WhatsApp、Telegram、Github、Speedtest
-#    均可单独选择线路。
+#    流媒体视频：YouTube、Netflix、Disney+、Spotify、TikTok、Twitch
+#    AI 大模型：GPT、Gemini、Claude、Copilot、Grok
+#    社交与平台：Google、X、Facebook、Instagram、WhatsApp、Telegram、Github、Speedtest
+#    常用生态服务：微软服务、苹果服务、广告拦截
+#    以上所有服务均具备独立策略组，可单独分流与选择线路。
 #
-# 4. 服务组与 节点选择 相互独立：
-#    例如可以设置 GPT → 🇺🇸 US-Auto，
-#    Netflix → 🇸🇬 SG-Auto。
-#    此时改变 节点选择 的选择，不会改变 GPT/Netflix 的选择。
+# 4. 默认策略与首选节点规则：
+#    - 流媒体与社交专线（TikTok、YouTube、Netflix、Disney+、Spotify、Telegram、Meta、Speedtest）、推特/X 与 GitHub：默认首选【节点选择】；
+#    - AI 大模型专线（GPT、Gemini、Claude、Copilot、Grok）与谷歌服务（Google）：默认首选【美国节点】；
+#    - 微软服务：默认首选【节点选择】；
+#    - 苹果服务：默认首选【DIRECT】（直连）；
+#    - 广告拦截：默认首选【REJECT】（拦截）；
+#    - 核心顶级总出口（节点选择）：默认首选【自动选择】。
+#    各服务组与【节点选择】相互独立，切换任一服务组的选择不会影响其他服务。
 #
-# 5. Auto 组的含义：
-#    选择某个地区 Auto 后，地区本身固定，
-#    但 Auto 组仍会根据测速结果自动选择该地区的节点。
-#    例如选择 🇺🇸 US-Auto，不代表固定某一台美国节点
-#    而是会选择🇺🇸 US-Auto里的最快节点。
-# 6. 手动固定单个节点：
-#    如果需要固定到某一个具体节点，请进入对应的 Manual 组，
-#    手动选择节点，再让相应的上级策略组使用该 Manual 组。
+# 5. 自动测速（URL-Test）与手动选择：
+#    - 【自动选择】/【美国节点】/【亚太节点】/【欧洲节点】会定期测速并自动优选该区域内的最低延迟节点；
+#    - 如需固定连接某一台特定节点，可进入【手动选择】指定该节点，再将对应服务组设为【手动选择】。
 #
-# 7. DIRECT：
-#    选择 DIRECT 会让该服务组的流量直连。
+# 6. DIRECT 与 REJECT：
+#    - 选择 DIRECT 将使该服务流量走本机直连，不经过任何代理；
+#    - 选择 REJECT 将阻断该服务的所有网络请求（用于广告与跟踪拦截）。
 #
-# 8. 配置修改：
-#    本配置中的订阅 URL、策略组选择等属于用户需要自行填写/调整的部分。
-#    不要公开包含个人订阅 Token 的配置文件。
+# 7. 配置修改与隐私安全：
+#    不要在公开场合分享包含个人订阅 Token 或私有代理节点的完整配置文件。
 #
 # ============================================================
 # 以下为正式配置
@@ -212,67 +211,67 @@ proxy-groups:
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/YouTube.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Netflix
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Netflix.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Disney+
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Disney+.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Spotify
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Spotify.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: TikTok
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/TikTok.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Twitch
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Twitch.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: GPT
     type: select
@@ -344,78 +343,108 @@ proxy-groups:
     type: select
     icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash/icon/x.png
     proxies:
+      - 节点选择
       - 自动选择
       - 美国节点
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Facebook
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Facebook.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Instagram
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Instagram.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: WhatsApp
     type: select
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/whatsapp.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Telegram
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Telegram.png
     proxies:
+      - 节点选择
       - 自动选择
       - 亚太节点
       - 欧洲节点
       - 美国节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Github
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/GitHub.png
     proxies:
+      - 节点选择
       - 自动选择
       - 美国节点
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - 节点选择
       - DIRECT
   - name: Speedtest
     type: select
     icon: https://cdn.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Speedtest.png
     proxies:
+      - 节点选择
+      - 自动选择
+      - 亚太节点
+      - 美国节点
+      - 欧洲节点
+      - 手动选择
+      - DIRECT
+  - name: 苹果服务
+    type: select
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Apple.png
+    proxies:
+      - DIRECT
       - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
       - 节点选择
+      - REJECT
+  - name: 微软服务
+    type: select
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Microsoft.png
+    proxies:
+      - 节点选择
+      - 自动选择
+      - DIRECT
+      - 亚太节点
+      - 美国节点
+      - 欧洲节点
+      - 手动选择
+      - REJECT
+  - name: 广告拦截
+    type: select
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Reject.png
+    proxies:
+      - REJECT
       - DIRECT
   - name: APNs-Fallback
     type: fallback
@@ -445,22 +474,13 @@ rules:
   - IP-CIDR6,2403:300:a51::/48,Apple Push,no-resolve
   - IP-CIDR6,2a01:b740:a42::/48,Apple Push,no-resolve
 
-  - RULE-SET,Apple,DIRECT
-  - RULE-SET,Apple_Domain,DIRECT
-  - RULE-SET,AdvertisingLite,REJECT
-  - RULE-SET,AdvertisingLite_Domain,REJECT
-  - RULE-SET,Privacy,REJECT
-  - RULE-SET,Privacy_Domain,REJECT
-  - RULE-SET,ACL4SSR_BanAD,REJECT
-  - RULE-SET,ACL4SSR_BanProgramAD,REJECT
-
   # ============================================================
   # 服务型分流规则
   # ============================================================
   # 说明：
   # 1. 服务规则必须位于通用 节点选择 规则之前；命中服务规则后，
   #    流量直接进入对应服务策略组，不再继续匹配后面的规则。
-  # 2. 每个服务组均可独立选择 US/SG/HK/JP/TW/EUR/节点选择/DIRECT。
+  # 2. 每个服务组均可独立选择 自动选择/各区域节点/手动选择/节点选择/DIRECT/REJECT。
   # 3. 本区域优先使用 DOMAIN-SUFFIX；只有服务域名体系非常分散时才使用
   #    DOMAIN-KEYWORD。这样可以尽量避免不同服务之间发生误匹配。
   # 4. 动态 CDN / 第三方云服务如果无法可靠确认归属，不使用过宽的
@@ -686,6 +706,51 @@ rules:
   - DOMAIN-SUFFIX,ookla.net,Speedtest
   - DOMAIN-SUFFIX,speedtestcustom.com,Speedtest
 
+  # -------------------- 微软服务 (Microsoft) --------------------
+  - DOMAIN-SUFFIX,microsoft.com,微软服务
+  - DOMAIN-SUFFIX,office.com,微软服务
+  - DOMAIN-SUFFIX,office365.com,微软服务
+  - DOMAIN-SUFFIX,live.com,微软服务
+  - DOMAIN-SUFFIX,live.net,微软服务
+  - DOMAIN-SUFFIX,bing.com,微软服务
+  - DOMAIN-SUFFIX,bing.net,微软服务
+  - DOMAIN-SUFFIX,msn.com,微软服务
+  - DOMAIN-SUFFIX,windows.com,微软服务
+  - DOMAIN-SUFFIX,windowsupdate.com,微软服务
+  - DOMAIN-SUFFIX,azure.com,微软服务
+  - DOMAIN-SUFFIX,onedrive.com,微软服务
+  - DOMAIN-SUFFIX,sharepoint.com,微软服务
+  - DOMAIN-SUFFIX,skype.com,微软服务
+  - DOMAIN-SUFFIX,xbox.com,微软服务
+  - DOMAIN-SUFFIX,xboxlive.com,微软服务
+  - GEOSITE,microsoft,微软服务
+
+  # -------------------- 苹果服务 (Apple) --------------------
+  - DOMAIN-SUFFIX,apple.com,苹果服务
+  - DOMAIN-SUFFIX,icloud.com,苹果服务
+  - DOMAIN-SUFFIX,itunes.com,苹果服务
+  - DOMAIN-SUFFIX,mzstatic.com,苹果服务
+  - DOMAIN-SUFFIX,aaplimg.com,苹果服务
+  - DOMAIN-SUFFIX,apple-cloudkit.com,苹果服务
+  - DOMAIN-SUFFIX,apple-livephotoskit.com,苹果服务
+  - DOMAIN-SUFFIX,cdn-apple.com,苹果服务
+  - DOMAIN-SUFFIX,icloud-content.com,苹果服务
+  - DOMAIN-SUFFIX,me.com,苹果服务
+  - DOMAIN-SUFFIX,apple-dns.net,苹果服务
+  - DOMAIN-SUFFIX,apple,苹果服务
+  - GEOSITE,apple,苹果服务
+  - RULE-SET,Apple,苹果服务
+
+  # -------------------- 广告拦截 (AdBlock) --------------------
+  - RULE-SET,AdvertisingLite,广告拦截
+  - RULE-SET,AdvertisingLite_Domain,广告拦截
+  - RULE-SET,Privacy,广告拦截
+  - RULE-SET,Privacy_Domain,广告拦截
+  - RULE-SET,ACL4SSR_BanAD,广告拦截
+  - RULE-SET,ACL4SSR_BanProgramAD,广告拦截
+  - GEOSITE,category-ads-all,广告拦截
+
+  # -------------------- 国内直连与漏网之鱼 --------------------
   - RULE-SET,ChinaMax,DIRECT
   - RULE-SET,ChinaMax_Domain,DIRECT
   - RULE-SET,ChinaMax_IP,DIRECT

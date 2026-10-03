@@ -145,7 +145,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/YouTube.png",
     category: "media",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "netflix",
@@ -153,7 +153,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Netflix.png",
     category: "media",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "disney",
@@ -161,7 +161,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Disney+.png",
     category: "media",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "spotify",
@@ -169,7 +169,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Spotify.png",
     category: "media",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "tiktok",
@@ -177,7 +177,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/TikTok.png",
     category: "media",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
 
   // 社交与常用工具
@@ -203,7 +203,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Telegram.png",
     category: "social",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "apple",
@@ -219,7 +219,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash/icon/x.png",
     category: "social",
-    defaultSelected: "美国节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "meta",
@@ -227,7 +227,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Facebook.png",
     category: "social",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "github",
@@ -235,7 +235,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/GitHub.png",
     category: "social",
-    defaultSelected: "美国节点",
+    defaultSelected: "节点选择",
   },
   {
     id: "speedtest",
@@ -243,7 +243,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
     type: "Selector",
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Speedtest.png",
     category: "social",
-    defaultSelected: "亚太节点",
+    defaultSelected: "节点选择",
   },
 ];
 
@@ -316,8 +316,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     return init;
   });
 
-  // Store collapsed state for groups
-  const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set(["microsoft", "apple", "twitter", "meta"]));
+  // Store collapsed state for groups (default empty = all groups expanded)
+  const [collapsedSet, setCollapsedSet] = useState<Set<string>>(new Set());
 
   const activeSub =
     subscriptions.find((s) => s.token === selectedSubToken) ||
@@ -547,14 +547,56 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       ];
     }
 
-    // 9. 其他业务专线（YouTube、Netflix、Telegram 等）
+    // 9. 苹果服务 (Apple)：默认首选 DIRECT，可灵活切换各区域节点
+    if (group.id === "apple") {
+      return [
+        { name: "DIRECT", type: "Direct" },
+        { name: "自动选择", type: "URL-Test" },
+        { name: "亚太节点", type: "URL-Test" },
+        { name: "美国节点", type: "URL-Test" },
+        { name: "欧洲节点", type: "URL-Test" },
+        { name: "手动选择", type: "Selector" },
+        { name: "节点选择", type: "Selector" },
+        { name: "REJECT", type: "Reject" },
+      ];
+    }
+
+    // 10. 微软服务 (Microsoft)：默认首选「节点选择」
+    if (group.id === "microsoft") {
+      return [
+        { name: "节点选择", type: "Selector" },
+        { name: "自动选择", type: "URL-Test" },
+        { name: "DIRECT", type: "Direct" },
+        { name: "亚太节点", type: "URL-Test" },
+        { name: "美国节点", type: "URL-Test" },
+        { name: "欧洲节点", type: "URL-Test" },
+        { name: "手动选择", type: "Selector" },
+        { name: "REJECT", type: "Reject" },
+      ];
+    }
+
+    // 11. 推特/X 与 GitHub 代码托管：首选「节点选择」
+    if (group.id === "twitter" || group.id === "github") {
+      return [
+        { name: "节点选择", type: "Selector" },
+        { name: "自动选择", type: "URL-Test" },
+        { name: "美国节点", type: "URL-Test" },
+        { name: "亚太节点", type: "URL-Test" },
+        { name: "欧洲节点", type: "URL-Test" },
+        { name: "手动选择", type: "Selector" },
+        { name: "DIRECT", type: "Direct" },
+        { name: "REJECT", type: "Reject" },
+      ];
+    }
+
+    // 12. 流媒体与社交专线（TikTok、YouTube、Netflix、Disney+、Spotify、Telegram、Meta、Speedtest）：首选「节点选择」
     return [
+      { name: "节点选择", type: "Selector" },
       { name: "自动选择", type: "URL-Test" },
       { name: "亚太节点", type: "URL-Test" },
       { name: "美国节点", type: "URL-Test" },
       { name: "欧洲节点", type: "URL-Test" },
       { name: "手动选择", type: "Selector" },
-      { name: "节点选择", type: "Selector" },
       { name: "DIRECT", type: "Direct" },
       { name: "REJECT", type: "Reject" },
     ];
@@ -917,7 +959,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               {filteredGroups.map((group) => {
                 const isCollapsed = collapsedSet.has(group.id);
                 const proxyList = getGroupProxies(group);
-                const currentSelected = selectedMap[group.id] || group.defaultSelected || (proxyList[0]?.name ?? "DIRECT");
+                const isProxyValid = (val?: string) => Boolean(val && proxyList.some((p) => p.name === val));
+                const currentSelected = isProxyValid(selectedMap[group.id])
+                  ? (selectedMap[group.id] as string)
+                  : (isProxyValid(group.defaultSelected) ? group.defaultSelected : (proxyList[0]?.name ?? "DIRECT"));
 
                 return (
                   <div
