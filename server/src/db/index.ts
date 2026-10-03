@@ -668,7 +668,7 @@ class Database {
 
   // Latency Tasks API
   public getLatencyTasks(): LatencyTask[] {
-    return this.data.latencyTasks || [];
+    return (this.data.latencyTasks || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
   public getLatencyTaskById(id: string): LatencyTask | undefined {
@@ -702,7 +702,28 @@ class Database {
   public resetLatencyTasks(): LatencyTask[] {
     this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
     this.save();
-    return this.data.latencyTasks;
+    return this.getLatencyTasks();
+  }
+
+  public reorderLatencyTasks(orderedIds: string[]): LatencyTask[] {
+    if (!this.data.latencyTasks) this.data.latencyTasks = [];
+    const map = new Map(this.data.latencyTasks.map(t => [t.id, t]));
+    const reordered: LatencyTask[] = [];
+    orderedIds.forEach((id, index) => {
+      const task = map.get(id);
+      if (task) {
+        task.order = index + 1;
+        reordered.push(task);
+        map.delete(id);
+      }
+    });
+    for (const remaining of map.values()) {
+      remaining.order = reordered.length + 1;
+      reordered.push(remaining);
+    }
+    this.data.latencyTasks = reordered;
+    this.save();
+    return this.getLatencyTasks();
   }
 
   // Node Latency History Simulator / Provider

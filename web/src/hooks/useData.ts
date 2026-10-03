@@ -211,6 +211,35 @@ export function useData() {
     return res;
   };
 
+  const reorderLatencyTasks = async (orderedIds: string[]) => {
+    // Optimistic update
+    setLatencyTasks((prev) => {
+      const map = new Map(prev.map((t) => [t.id, t]));
+      const next: LatencyTask[] = [];
+      orderedIds.forEach((id, idx) => {
+        const item = map.get(id);
+        if (item) {
+          next.push({ ...item, order: idx + 1 });
+          map.delete(id);
+        }
+      });
+      for (const remaining of map.values()) {
+        next.push({ ...remaining, order: next.length + 1 });
+      }
+      return next;
+    });
+
+    const res = await fetch("/api/ping/tasks/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: orderedIds }),
+    }).then((r) => r.json());
+    if (res.success && Array.isArray(res.data)) {
+      setLatencyTasks(res.data);
+    }
+    return res;
+  };
+
   // Routing Rules actions
   const addRoutingRule = async (ruleData: Partial<RoutingRule>) => {
     const res = await fetch("/api/routing/rules", {
@@ -309,6 +338,7 @@ export function useData() {
     updateLatencyTask,
     deleteLatencyTask,
     resetLatencyTasks,
+    reorderLatencyTasks,
     addRoutingRule,
     updateRoutingRule,
     deleteRoutingRule,

@@ -27,6 +27,7 @@ interface LatencyMonitorViewProps {
   onUpdateTask: (id: string, updates: Partial<LatencyTask>) => Promise<any>;
   onDeleteTask: (id: string) => Promise<any>;
   onResetTasks: () => Promise<any>;
+  onReorderTasks?: (orderedIds: string[]) => Promise<any>;
   onOpenNodeDetail: (node: NodeItem) => void;
 }
 
@@ -37,11 +38,81 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
   onUpdateTask,
   onDeleteTask,
   onResetTasks,
+  onReorderTasks,
   onOpenNodeDetail,
 }) => {
   const [activeTab, setActiveTab] = useState<"tasks" | "servers">("tasks");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<LatencyTask | null>(null);
+
+  // Drag-and-Drop Reordering State
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const [dropPosition, setDropPosition] = useState<"top" | "bottom" | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, idx: number, taskId: string) => {
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", taskId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (draggedIdx === null || draggedIdx === idx) {
+      setDragOverIdx(null);
+      setDropPosition(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const isTop = offsetY < rect.height / 2;
+    setDragOverIdx(idx);
+    setDropPosition(isTop ? "top" : "bottom");
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const related = e.relatedTarget as Node | null;
+    if (!e.currentTarget.contains(related)) {
+      setDragOverIdx(null);
+      setDropPosition(null);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx || !dropPosition) {
+      setDraggedIdx(null);
+      setDragOverIdx(null);
+      setDropPosition(null);
+      return;
+    }
+
+    const reordered = [...tasks];
+    const [removed] = reordered.splice(draggedIdx, 1);
+    let insertAt = targetIdx;
+    if (draggedIdx < targetIdx) {
+      insertAt = dropPosition === "top" ? targetIdx - 1 : targetIdx;
+    } else {
+      insertAt = dropPosition === "top" ? targetIdx : targetIdx + 1;
+    }
+    insertAt = Math.max(0, Math.min(reordered.length, insertAt));
+    reordered.splice(insertAt, 0, removed);
+
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+    setDropPosition(null);
+
+    if (onReorderTasks) {
+      await onReorderTasks(reordered.map((t) => t.id));
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    setDragOverIdx(null);
+    setDropPosition(null);
+  };
 
   // Form State
   const [formName, setFormName] = useState("");
@@ -210,8 +281,15 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
             )}
           </button>
         </div>
-        <div className="text-xs text-ink-muted font-mono pb-2.5">
-          共 {tasks.length} 个监测任务 · 采样周期 60s
+        <div className="text-xs text-ink-muted font-mono pb-2.5 flex items-center gap-2">
+          <span>共 {tasks.length} 个监测任务</span>
+          <span>·</span>
+          <span>采样周期 60s</span>
+          <span>·</span>
+          <span className="text-accent/90 font-sans flex items-center gap-0.5">
+            <DotsSixVertical className="w-3.5 h-3.5 inline" />
+            支持拖拽排序
+          </span>
         </div>
       </div>
 
@@ -223,7 +301,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-rule bg-paper/60 text-[11px] font-mono text-ink-muted uppercase select-none">
-                    <th className="py-3 px-3 w-10 text-center">#</th>
+                    <th className="py-3 px-3 w-10 text-center" title="拖拽排序">#</th>
                     <th className="py-3 px-4 font-medium min-w-[130px]">名称</th>
                     <th className="py-3 px-4 font-medium min-w-[200px]">服务器</th>
                     <th className="py-3 px-4 font-medium min-w-[240px]">目标</th>
@@ -233,17 +311,38 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-rule font-mono">
-                  {tasks.map((task, idx) => (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-paper-hover transition-colors group"
-                    >
-                      {/* Drag / Index */}
-                      <td className="py-3 px-3 text-center text-ink-muted">
-                        <div className="flex items-center justify-center opacity-60 group-hover:opacity-100 cursor-grab">
-                          <DotsSixVertical className="w-4 h-4 text-ink-muted" />
-                        </div>
-                      </td>
+                  {tasks.map((task, idx) => {
+                    const isDragging = draggedIdx === idx;
+                    const isDragOver = dragOverIdx === idx;
+                    return (
+                      <tr
+                        key={task.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, idx, task.id)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, idx)}
+                        onDragEnd={handleDragEnd}
+                        className={`hover:bg-paper-hover transition-colors group relative ${
+                          isDragging ? "opacity-30 bg-accent/10 cursor-grabbing" : ""
+                        } ${
+                          isDragOver && dropPosition === "top"
+                            ? "border-t-2 !border-t-accent bg-accent/5 shadow-[0_-2px_6px_rgba(56,189,248,0.25)]"
+                            : ""
+                        } ${
+                          isDragOver && dropPosition === "bottom"
+                            ? "border-b-2 !border-b-accent bg-accent/5 shadow-[0_2px_6px_rgba(56,189,248,0.25)]"
+                            : ""
+                        }`}
+                      >
+                        {/* Drag / Index */}
+                        <td className="py-3 px-3 text-center text-ink-muted">
+                          <Tooltip content="按住上下拖拽调整排序">
+                            <div className="flex items-center justify-center p-1 rounded hover:bg-paper-3 text-ink-muted group-hover:text-ink hover:!text-accent cursor-grab active:cursor-grabbing transition-colors">
+                              <DotsSixVertical className="w-4 h-4" />
+                            </div>
+                          </Tooltip>
+                        </td>
 
                       {/* Name */}
                       <td className="py-3 px-4 font-sans whitespace-nowrap">
@@ -309,7 +408,8 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
 
                   {tasks.length === 0 && (
                     <tr>

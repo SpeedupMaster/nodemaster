@@ -548,6 +548,26 @@ apiRouter.post("/ping/tasks/presets", (req, res) => {
   res.json({ success: true, data: resetTasks });
 });
 
+apiRouter.post("/ping/tasks/reorder", (req, res) => {
+  const { ids, orderedIds } = req.body;
+  const list = ids || orderedIds;
+  if (!Array.isArray(list)) {
+    return res.status(400).json({ success: false, message: "ids 必须为有效数组" });
+  }
+  const tasks = db.reorderLatencyTasks(list);
+  res.json({ success: true, data: tasks });
+});
+
+apiRouter.put("/ping/tasks/reorder", (req, res) => {
+  const { ids, orderedIds } = req.body;
+  const list = ids || orderedIds;
+  if (!Array.isArray(list)) {
+    return res.status(400).json({ success: false, message: "ids 必须为有效数组" });
+  }
+  const tasks = db.reorderLatencyTasks(list);
+  res.json({ success: true, data: tasks });
+});
+
 apiRouter.get("/ping/node-history/:nodeId", (req, res) => {
   const range = (req.query.range as string) || "1h";
   const history = db.getNodeLatencyHistory(req.params.nodeId, range);

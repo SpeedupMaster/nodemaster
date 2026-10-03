@@ -107,6 +107,7 @@ export function App() {
     updateLatencyTask,
     deleteLatencyTask,
     resetLatencyTasks,
+    reorderLatencyTasks,
     updateSubscription,
     totalUplinkSpeed: totalUpSpeed,
     totalDownlinkSpeed: totalDownSpeed,
@@ -185,6 +186,7 @@ export function App() {
                 onUpdateTask={updateLatencyTask}
                 onDeleteTask={deleteLatencyTask}
                 onResetTasks={resetLatencyTasks}
+                onReorderTasks={reorderLatencyTasks}
                 onOpenNodeDetail={(node) => setSelectedNodeDetail(node)}
               />
             )}
