@@ -343,6 +343,9 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                   onMouseEnter={() => setHoveredPointIdx(idx)}
                   onMouseLeave={() => setHoveredPointIdx(null)}
                 >
+                  {/* 全高背景槽位导轨：为视觉系统提供清晰贯穿的垂直几何基准，锁定中轴 */}
+                  <div className="absolute inset-y-0 w-4 rounded-none bg-paper-3/20 border-x border-rule/20 pointer-events-none -z-10" />
+
                   {/* Tooltip 浮动框 */}
                   {isHovered && (
                     <div className="absolute bottom-[calc(100%+8px)] z-30 p-2.5 rounded-lg bg-paper-3 border border-rule shadow-xl text-xs font-mono space-y-1 pointer-events-none min-w-[170px] left-1/2 -translate-x-1/2">
@@ -363,7 +366,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                           <span>社交:</span>
                           <span>{formatBytes(p.socialBytes)} ({socPct}%)</span>
                         </div>
-                        <div className="flex justify-between text-purple-400">
+                        <div className="flex justify-between text-purple-300">
                           <span>开发:</span>
                           <span>{formatBytes(p.devBytes)} ({devPct}%)</span>
                         </div>
@@ -371,10 +374,10 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                     </div>
                   )}
 
-                  {/* 柱子主体：严格直角矩形柱身 + 连续垂直外边框 + 内部色块清晰分隔线，彻底消除视错觉 */}
+                  {/* 柱子主体：严格直角矩形柱身 + 显式垂直外轮廓 + 均衡明度色块 */}
                   <div
                     style={{ height: `${heightPct}%` }}
-                    className={`w-4 rounded-none border border-rule-subtle/80 overflow-hidden flex flex-col justify-end divide-y divide-paper-2/60 transition-all shrink-0 ${
+                    className={`w-4 rounded-none border border-white/20 overflow-hidden flex flex-col justify-end divide-y divide-paper transition-all shrink-0 ${
                       isHovered ? "brightness-125 ring-2 ring-accent/80 z-20" : "opacity-95"
                     }`}
                   >
@@ -383,7 +386,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                         <div style={{ flex: `${p.streamingBytes || 55} 1 0px` }} className="bg-rose-500 w-full min-h-[1px]" />
                         <div style={{ flex: `${p.aiBytes || 22} 1 0px` }} className="bg-emerald-500 w-full min-h-[1px]" />
                         <div style={{ flex: `${p.socialBytes || 13} 1 0px` }} className="bg-sky-500 w-full min-h-[1px]" />
-                        <div style={{ flex: `${p.devBytes || 10} 1 0px` }} className="bg-purple-500 w-full min-h-[1px]" />
+                        <div style={{ flex: `${p.devBytes || 10} 1 0px` }} className="bg-purple-400 w-full min-h-[1px]" />
                       </>
                     ) : (
                       <div className="bg-accent w-full h-full" />
@@ -423,8 +426,8 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                 <span className="w-2.5 h-2.5 rounded-xs bg-sky-500 inline-block" />
                 社交通讯
               </span>
-              <span className="flex items-center gap-1.5 text-purple-400">
-                <span className="w-2.5 h-2.5 rounded-xs bg-purple-500 inline-block" />
+              <span className="flex items-center gap-1.5 text-purple-300">
+                <span className="w-2.5 h-2.5 rounded-xs bg-purple-400 inline-block" />
                 开发托管
               </span>
             </div>
