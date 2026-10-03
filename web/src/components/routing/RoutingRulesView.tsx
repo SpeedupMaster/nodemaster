@@ -6,6 +6,7 @@ import {
 import { RuleModal } from "./RuleModal";
 import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
+import { Tooltip } from "../common/Tooltip";
 import {
   ArrowsSplit,
   Plus,
@@ -581,49 +582,52 @@ export const RoutingRulesView: React.FC<RoutingRulesViewProps> = ({
                   <div className="flex items-start gap-3.5 min-w-0 flex-1">
                     {/* Priority Controller */}
                     <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 pt-0.5">
-                      <button
-                        type="button"
-                        disabled={isFirst}
-                        onClick={() => handleMoveUp(idx)}
-                        className={`p-1 rounded text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors ${
-                          isFirst ? "opacity-20 cursor-not-allowed" : ""
-                        }`}
-                        title="上移提高优先级"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip content="上移提高优先级">
+                        <button
+                          type="button"
+                          disabled={isFirst}
+                          onClick={() => handleMoveUp(idx)}
+                          className={`p-1 rounded text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors ${
+                            isFirst ? "opacity-20 cursor-not-allowed" : "cursor-pointer"
+                          }`}
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                       <span className="text-xs font-mono font-bold text-ink-muted px-1">
                         #{String(rule.priority).padStart(2, "0")}
                       </span>
-                      <button
-                        type="button"
-                        disabled={isLast}
-                        onClick={() => handleMoveDown(idx)}
-                        className={`p-1 rounded text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors ${
-                          isLast ? "opacity-20 cursor-not-allowed" : ""
-                        }`}
-                        title="下移降低优先级"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip content="下移降低优先级">
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={() => handleMoveDown(idx)}
+                          className={`p-1 rounded text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors ${
+                            isLast ? "opacity-20 cursor-not-allowed" : "cursor-pointer"
+                          }`}
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
 
                     {/* Enable Switch */}
                     <div className="pt-1 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleEnabled(rule)}
-                        className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors ${
-                          rule.enabled ? "bg-accent" : "bg-paper-3 border border-rule"
-                        }`}
-                        title={rule.enabled ? "点击停用" : "点击启用"}
-                      >
-                        <div
-                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                            rule.enabled ? "translate-x-4" : "translate-x-0"
+                      <Tooltip content={rule.enabled ? "点击停用" : "点击启用"}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEnabled(rule)}
+                          className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+                            rule.enabled ? "bg-accent" : "bg-paper-3 border border-rule"
                           }`}
-                        />
-                      </button>
+                        >
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                              rule.enabled ? "translate-x-4" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+                      </Tooltip>
                     </div>
 
                     {/* Info & Badges */}

@@ -16,6 +16,7 @@ import {
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { RollingCounter } from "../common/RollingCounter";
+import { Tooltip } from "../common/Tooltip";
 
 interface NodeCardProps {
   node: NodeItem;
@@ -66,12 +67,11 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1 pr-1">
             <div className="flex items-center gap-1.5 min-w-0">
-              <h4
-                className="font-semibold text-ink text-sm tracking-tight truncate"
-                title={node.name}
-              >
-                {node.name}
-              </h4>
+              <Tooltip content={node.name}>
+                <h4 className="font-semibold text-ink text-sm tracking-tight truncate cursor-default">
+                  {node.name}
+                </h4>
+              </Tooltip>
             </div>
             <div className="text-xs font-mono text-ink-muted mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="text-ink-secondary font-medium shrink-0">{node.countryName}</span>
@@ -245,62 +245,68 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       {/* Card Actions */}
       <div className="mt-5 pt-3 border-t border-rule flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
-          <button
-            onClick={handleCopy}
-            className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1"
-            title="复制客户端 VLESS 链接"
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-            <span className="text-[11px] font-mono">链接</span>
-          </button>
+          <Tooltip content="复制客户端 VLESS 链接">
+            <button
+              onClick={handleCopy}
+              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+              <span className="text-[11px] font-mono">链接</span>
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => onViewConfig(node)}
-            className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1"
-            title="查看 Xray 服务端配置"
-          >
-            <Code className="w-3.5 h-3.5" />
-            <span className="text-[11px] font-mono">配置</span>
-          </button>
+          <Tooltip content="查看 Xray 服务端配置">
+            <button
+              onClick={() => onViewConfig(node)}
+              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-mono">配置</span>
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => onViewInstall(node)}
-            className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1"
-            title="一键部署命令"
-          >
-            <Terminal className="w-3.5 h-3.5 text-accent" />
-            <span className="text-[11px] font-mono">命令</span>
-          </button>
+          <Tooltip content="一键部署命令">
+            <button
+              onClick={() => onViewInstall(node)}
+              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <Terminal className="w-3.5 h-3.5 text-accent" />
+              <span className="text-[11px] font-mono">命令</span>
+            </button>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => onEdit(node)}
-            className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
-            title="编辑节点配置"
-          >
-            <PencilSimple className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content="编辑节点配置">
+            <button
+              onClick={() => onEdit(node)}
+              className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
+            >
+              <PencilSimple className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => onResetTraffic(node.id)}
-            className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer"
-            title="重置当月流量统计"
-          >
-            <ArrowClockwise className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content="重置当月流量统计">
+            <button
+              onClick={() => onResetTraffic(node.id)}
+              className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer"
+            >
+              <ArrowClockwise className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => onDelete(node.id)}
-            className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer"
-            title="删除节点"
-          >
-            <Trash className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content="删除节点">
+            <button
+              onClick={() => onDelete(node.id)}
+              className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer"
+            >
+              <Trash className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

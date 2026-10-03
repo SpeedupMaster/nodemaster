@@ -5,6 +5,7 @@ import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { RollingCounter } from "../common/RollingCounter";
 import { Input } from "../common/Input";
+import { Tooltip } from "../common/Tooltip";
 import {
   Cpu,
   HardDrive,
@@ -205,28 +206,30 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
 
           {/* View Mode Toggle Buttons */}
           <div className="flex items-center gap-0.5 bg-paper p-0.5 rounded-md border border-rule shrink-0">
-            <button
-              onClick={() => setViewMode("table")}
-              title="表格列表模式 (ServerStatus 风格)"
-              className={`p-1.5 rounded transition-colors cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-paper-2 text-accent border border-rule shadow-xs"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              <ListBullets className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("grid")}
-              title="矩阵卡片模式"
-              className={`p-1.5 rounded transition-colors cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-paper-2 text-accent border border-rule shadow-xs"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              <SquaresFour className="w-4 h-4" />
-            </button>
+            <Tooltip content="表格列表模式 (ServerStatus 风格)">
+              <button
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-paper-2 text-accent border border-rule shadow-xs"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                <ListBullets className="w-4 h-4" />
+              </button>
+            </Tooltip>
+            <Tooltip content="矩阵卡片模式">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded transition-colors cursor-pointer ${
+                  viewMode === "grid"
+                    ? "bg-paper-2 text-accent border border-rule shadow-xs"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                <SquaresFour className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

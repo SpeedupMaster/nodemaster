@@ -15,6 +15,7 @@ import { ScriptView } from "./components/dashboard/ScriptView";
 import { AddNodeModal } from "./components/nodes/AddNodeModal";
 import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
 import { NodeDetailModal } from "./components/probe/NodeDetailModal";
+import { GlobalTooltip } from "./components/common/Tooltip";
 import { NodeItem } from "./types";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
@@ -180,6 +181,9 @@ export function App() {
         isOpen={!!selectedNodeDetail}
         onClose={() => setSelectedNodeDetail(null)}
       />
+
+      {/* Global Unified Tooltip Portal & Native Title Interceptor */}
+      <GlobalTooltip />
     </div>
   );
 }

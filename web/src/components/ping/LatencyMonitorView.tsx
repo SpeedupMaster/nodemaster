@@ -18,6 +18,7 @@ import {
 import { LatencyTask, NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { Input } from "../common/Input";
+import { Tooltip } from "../common/Tooltip";
 
 interface LatencyMonitorViewProps {
   tasks: LatencyTask[];
@@ -160,14 +161,15 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={handleResetPresets}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
-            title="一键恢复默认三网测速目标预设"
-          >
-            <ArrowsClockwise className="w-3.5 h-3.5" />
-            <span>重置三网测试点</span>
-          </button>
+          <Tooltip content="一键恢复默认三网测速目标预设">
+            <button
+              onClick={handleResetPresets}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
+            >
+              <ArrowsClockwise className="w-3.5 h-3.5" />
+              <span>重置三网测试点</span>
+            </button>
+          </Tooltip>
           <button
             onClick={openCreateModal}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer"
@@ -284,24 +286,26 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openEditModal(task)}
-                            className="p-1.5 rounded-md hover:bg-paper-3 text-ink-muted hover:text-ink transition-colors cursor-pointer"
-                            title="编辑任务"
-                          >
-                            <PencilSimple className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`确定删除任务「${task.name}」吗？`)) {
-                                onDeleteTask(task.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-md hover:bg-rose-500/10 text-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
-                            title="删除任务"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
+                          <Tooltip content="编辑任务">
+                            <button
+                              onClick={() => openEditModal(task)}
+                              className="p-1.5 rounded-md hover:bg-paper-3 text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                            >
+                              <PencilSimple className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                          <Tooltip content="删除任务">
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`确定删除任务「${task.name}」吗？`)) {
+                                  onDeleteTask(task.id);
+                                }
+                              }}
+                              className="p-1.5 rounded-md hover:bg-rose-500/10 text-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
+                            >
+                              <Trash className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>
