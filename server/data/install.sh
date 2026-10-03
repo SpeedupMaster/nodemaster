@@ -7,10 +7,14 @@ set -e
 PANEL_URL=""
 TOKEN=""
 
+MODE="all"
+
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --panel) PANEL_URL="$2"; shift ;;
     --token) TOKEN="$2"; shift ;;
+    --probe-only) MODE="probe_only" ;;
+    --mode) MODE="$2"; shift ;;
   esac
   shift
 done
@@ -21,15 +25,20 @@ fi
 
 if [ -z "$TOKEN" ]; then
   echo "Error: --token is required."
-  echo "Usage: curl -fsSL ${PANEL_URL}/api/install.sh | bash -s -- --panel ${PANEL_URL} --token <YOUR_TOKEN>"
+  echo "Usage: curl -fsSL ${PANEL_URL}/api/install.sh | bash -s -- --panel ${PANEL_URL} --token <YOUR_TOKEN> [--probe-only]"
   exit 1
 fi
 
 echo "========================================================="
-echo "   NodeMaster 一键纳管部署 (代理节点 + 系统探针守护)    "
+if [ "$MODE" = "probe_only" ]; then
+  echo "       NodeMaster 一键纳管部署 (仅系统探针监控模式)      "
+else
+  echo "   NodeMaster 一键纳管部署 (代理节点 + 系统探针守护)    "
+fi
 echo "========================================================="
 echo "Panel Master : ${PANEL_URL}"
 echo "Node Token   : ${TOKEN}"
+echo "Deploy Mode  : ${MODE}"
 
 ARCH=$(uname -m)
 case $ARCH in
@@ -38,7 +47,14 @@ case $ARCH in
   *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-echo "[1/4] 安装必要系统依赖 (curl, jq, unzip, tar)..."
+TOTAL_STEPS="4"
+STEP_PROBE="4"
+if [ "$MODE" = "probe_only" ]; then
+  TOTAL_STEPS="3"
+  STEP_PROBE="3"
+fi
+
+echo "[1/${TOTAL_STEPS}] 安装必要系统依赖 (curl, jq, unzip, tar)..."
 if command -v apt-get >/dev/null 2>&1; then
   apt-get update -qq && apt-get install -y -qq curl jq unzip tar >/dev/null 2>&1
 elif command -v yum >/dev/null 2>&1; then
@@ -47,29 +63,30 @@ elif command -v apk >/dev/null 2>&1; then
   apk add --no-cache curl jq unzip tar bash >/dev/null 2>&1
 fi
 
-echo "[2/4] 获取主控节点配置与初始化运行目录..."
+echo "[2/${TOTAL_STEPS}] 获取主控节点配置与初始化运行目录..."
 mkdir -p /etc/nodemaster /usr/local/bin /var/log/nodemaster
 
 NODE_INFO=$(curl -fsSL "${PANEL_URL}/api/nodes/by-token/${TOKEN}" || echo "")
 NODE_ID=$(echo "${NODE_INFO}" | jq -r '.data.id // empty')
 NODE_TYPE=$(echo "${NODE_INFO}" | jq -r '.data.type // "direct"')
 
-# --- Part A: 部署代理服务内核 ---
-echo "[3/4] 部署代理节点服务 (Xray-core / Shadowsocks)..."
-XRAY_LATEST_VER="v1.8.24"
-XRAY_ZIP="/tmp/xray.zip"
-curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/${XRAY_LATEST_VER}/Xray-linux-${XRAY_ARCH}.zip" -o ${XRAY_ZIP} || true
-if [ -f "${XRAY_ZIP}" ]; then
-  unzip -qo ${XRAY_ZIP} xray -d /usr/local/bin/
-  chmod +x /usr/local/bin/xray
-  rm -f ${XRAY_ZIP}
-fi
+# --- Part A: 部署代理服务内核 (仅在全量模式执行) ---
+if [ "$MODE" != "probe_only" ]; then
+  echo "[3/${TOTAL_STEPS}] 部署代理节点服务 (Xray-core / Shadowsocks)..."
+  XRAY_LATEST_VER="v1.8.24"
+  XRAY_ZIP="/tmp/xray.zip"
+  curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/${XRAY_LATEST_VER}/Xray-linux-${XRAY_ARCH}.zip" -o ${XRAY_ZIP} || true
+  if [ -f "${XRAY_ZIP}" ]; then
+    unzip -qo ${XRAY_ZIP} xray -d /usr/local/bin/
+    chmod +x /usr/local/bin/xray
+    rm -f ${XRAY_ZIP}
+  fi
 
-if [ -n "${NODE_ID}" ]; then
-  curl -fsSL "${PANEL_URL}/api/nodes/${NODE_ID}/xray-config" | jq '.data' > /etc/nodemaster/config.json 2>/dev/null || true
-fi
+  if [ -n "${NODE_ID}" ]; then
+    curl -fsSL "${PANEL_URL}/api/nodes/${NODE_ID}/xray-config" | jq '.data' > /etc/nodemaster/config.json 2>/dev/null || true
+  fi
 
-cat <<EOF > /etc/systemd/system/nodemaster-proxy.service
+  cat <<EOF > /etc/systemd/system/nodemaster-proxy.service
 [Unit]
 Description=NodeMaster Proxy Core Service
 After=network.target
@@ -85,9 +102,10 @@ LimitNOFILE=512000
 [Install]
 WantedBy=multi-user.target
 EOF
+fi
 
 # --- Part B: 部署系统探针客户端 (NodeMaster Probe Agent) ---
-echo "[4/4] 部署 NodeMaster 探针守护进程 (实时采集系统指标)..."
+echo "[${STEP_PROBE}/${TOTAL_STEPS}] 部署 NodeMaster 探针守护进程 (实时采集系统指标)..."
 cat <<'PROBE_EOF' > /usr/local/bin/nodemaster-probe
 #!/usr/bin/env bash
 PANEL_URL="{{DEFAULT_PANEL_URL}}"
@@ -236,13 +254,21 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now nodemaster-proxy >/dev/null 2>&1 || true
+if [ "$MODE" != "probe_only" ]; then
+  systemctl enable --now nodemaster-proxy >/dev/null 2>&1 || true
+fi
 systemctl enable --now nodemaster-probe >/dev/null 2>&1 || true
 
 echo "========================================================="
-echo "✓ [1/2] 代理服务内核已成功启动并就绪"
-echo "✓ [2/2] NodeMaster 探针守护进程已成功上线运行"
-echo "---------------------------------------------------------"
-echo "探针与节点遥测数据已实时推送至主控后台："
+if [ "$MODE" != "probe_only" ]; then
+  echo "✓ [1/2] 代理服务内核已成功启动并就绪"
+  echo "✓ [2/2] NodeMaster 探针守护进程已成功上线运行"
+  echo "---------------------------------------------------------"
+  echo "探针与节点遥测数据已实时推送至主控后台："
+else
+  echo "✓ [1/1] NodeMaster 探针守护进程已成功上线运行 (仅探针模式)"
+  echo "---------------------------------------------------------"
+  echo "探针硬件与系统遥测数据已实时推送至主控后台："
+fi
 echo ">> ${PANEL_URL}"
 echo "========================================================="

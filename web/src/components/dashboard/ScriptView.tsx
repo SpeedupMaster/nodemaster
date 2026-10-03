@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../common/Button";
-import { Terminal, Copy, Check, ShieldCheck, Cpu } from "@phosphor-icons/react";
+import { Terminal, Copy, Check, ShieldCheck, Cpu, Pulse } from "@phosphor-icons/react";
 
 export const ScriptView: React.FC = () => {
   const [scriptContent, setScriptContent] = useState("");
   const [copied, setCopied] = useState(false);
   const [copiedGeneric, setCopiedGeneric] = useState(false);
+  const [deployMode, setDeployMode] = useState<"all" | "probe_only">("all");
 
   const panelHost = window.location.origin;
-  const genericCmd = `curl -fsSL ${panelHost}/api/install.sh | bash -s -- --panel ${panelHost} --token <NODE_TOKEN>`;
+  const genericCmd =
+    deployMode === "probe_only"
+      ? `curl -fsSL ${panelHost}/api/install.sh | bash -s -- --panel ${panelHost} --token <NODE_TOKEN> --probe-only`
+      : `curl -fsSL ${panelHost}/api/install.sh | bash -s -- --panel ${panelHost} --token <NODE_TOKEN>`;
 
   useEffect(() => {
     fetch("/api/install.sh")
@@ -41,12 +45,47 @@ export const ScriptView: React.FC = () => {
         </div>
 
         <p className="text-xs text-ink-muted leading-relaxed max-w-3xl">
-          NodeMaster 采用 Master-Agent 架构。当您在面板添加节点后，复制专属安装命令至目标 VPS 运行，脚本将在 30 秒内同时完成代理服务内核（Xray-core / Shadowsocks）部署与 NodeMaster 探针守护进程注册，并自动建立安全长连接向主控端回传 CPU、内存、磁盘、实时吞吐等硬件与系统指标。
+          NodeMaster 采用 Master-Agent 架构。当您在面板添加节点后，可选择「同时部署探针与节点」或「仅部署探针」模式生成专属安装命令。脚本将自动检测 VPS 架构并在 30 秒内完成环境安装与守护进程注册，通过安全通道向主控端回传硬件与系统指标。
         </p>
+
+        {/* 部署模式切换 */}
+        <div>
+          <label className="text-xs font-medium text-ink-secondary mb-1.5 block">
+            选择部署模式:
+          </label>
+          <div className="grid grid-cols-2 max-w-md p-1 bg-paper border border-rule rounded-lg gap-1.5">
+            <button
+              type="button"
+              onClick={() => setDeployMode("all")}
+              className={`py-1.5 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                deployMode === "all"
+                  ? "bg-accent/15 text-accent border border-accent/40 shadow-sm"
+                  : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>同时部署探针与节点</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeployMode("probe_only")}
+              className={`py-1.5 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                deployMode === "probe_only"
+                  ? "bg-accent/15 text-accent border border-accent/40 shadow-sm"
+                  : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
+              }`}
+            >
+              <Pulse className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>仅部署探针 (纯监控)</span>
+            </button>
+          </div>
+        </div>
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-mono text-ink-secondary">通用快速安装指令格式:</span>
+            <span className="text-xs font-mono text-ink-secondary">
+              {deployMode === "all" ? "全量纳管指令格式 (内核+探针):" : "纯探针监控指令格式 (仅探针):"}
+            </span>
             <Button
               variant="secondary"
               size="sm"
