@@ -176,6 +176,8 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
 
           if (name === "手动选择" || name === "🌎 Global-Manual") {
             g.set("proxies", doc.createNode([...proxyNames, "DIRECT"]));
+          } else if (name === "自动选择") {
+            g.set("proxies", doc.createNode(proxyNames.length > 0 ? proxyNames : ["DIRECT"]));
           }
 
           const filter = g.get("filter");
@@ -183,7 +185,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
             try {
               const reg = new RegExp(String(filter).replace(/^\(\?i\)/, ""), "i");
               const matched = proxyNames.filter((pName: string) => reg.test(pName));
-              g.set("proxies", doc.createNode(matched.length > 0 ? [...matched, "DIRECT"] : ["DIRECT"]));
+              g.set("proxies", doc.createNode(matched.length > 0 ? matched : ["DIRECT"]));
             } catch (e) {
               // Ignore regex errors
             }
@@ -197,7 +199,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
       const customClashRules: string[] = [];
 
       for (const rule of activeRules) {
-        let target = "PROXY-Gate";
+        let target = "节点选择";
         if (rule.targetOutbound === "DIRECT") target = "DIRECT";
         else if (rule.targetOutbound === "BLOCK") target = "REJECT";
         else if (rule.targetOutbound === "PROXY") {

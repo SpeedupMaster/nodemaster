@@ -19,7 +19,7 @@
 #    注意：url: 后面不能写成 `#https://...`，因为 # 会被 YAML 当作注释。
 #
 # 2. 启动后选择总策略：
-#    PROXY-Gate 是主要的总出口策略组。
+#    节点选择 是主要的总出口策略组。
 #    可以选择 Global-Manual、EUR-Manual、各地区 Auto、DIRECT 等作为整体代理出口。
 #
 # 3. 服务型策略组：
@@ -28,10 +28,10 @@
 #    Facebook、Instagram、WhatsApp、Telegram、Github、Speedtest
 #    均可单独选择线路。
 #
-# 4. 服务组与 PROXY-Gate 相互独立：
+# 4. 服务组与 节点选择 相互独立：
 #    例如可以设置 GPT → 🇺🇸 US-Auto，
 #    Netflix → 🇸🇬 SG-Auto。
-#    此时改变 PROXY-Gate 的选择，不会改变 GPT/Netflix 的选择。
+#    此时改变 节点选择 的选择，不会改变 GPT/Netflix 的选择。
 #
 # 5. Auto 组的含义：
 #    选择某个地区 Auto 后，地区本身固定，
@@ -155,15 +155,23 @@ profile:
 
 #策略组
 proxy-groups:
-  - name: PROXY-Gate
+  - name: 节点选择
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Final.png
     proxies:
+      - 自动选择
       - 美国节点
       - 亚太节点
       - 欧洲节点
       - 手动选择
       - DIRECT
+  - name: 自动选择
+    type: url-test
+    include-all: true
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Auto.png
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
   - name: Apple Push
     type: fallback
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Apple.png
@@ -188,7 +196,7 @@ proxy-groups:
     type: url-test
     include-all: true
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png
-    filter: '(?i)(\[HK\]|^HK$|Hong Kong|\bHK\b|香港|🇨🇳香港|\[JP\]|^JP$|Japan|\bJP\b|日本|东京|大阪|🇯🇵日本|\[SG\]|^SG$|Singapore|\bSG\b|新加坡|狮城|\[TW\]|^TW$|Taiwan|Taibei|\bTW\b|台湾|台北|🇹🇼|\[KR\]|^KR$|Korea|\bKR\b|韩国|首尔|亚太)'
+    filter: '(?i)(\[HK\]|^HK$|\bHK\b|Hong Kong|香港|🇨🇳香港|\[JP\]|^JP$|\bJP\b|Japan|日本|东京|大阪|🇯🇵日本|\[SG\]|^SG$|\bSG\b|Singapore|新加坡|狮城|\[TW\]|^TW$|\bTW\b|Taiwan|Taibei|台湾|台北|🇹🇼|\[KR\]|^KR$|\bKR\b|Korea|韩国|首尔|亚太)'
     url: http://www.gstatic.com/generate_204
     interval: 600
     tolerance: 50
@@ -196,7 +204,7 @@ proxy-groups:
     type: url-test
     include-all: true
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Europe_Map.png
-    filter: '(?i)(\[UK\]|^UK$|UK|United Kingdom|Britain|\bUK\b|英国|伦敦|\[DE\]|^DE$|Germany|Deutschland|\bDE\b|德国|法兰克福|\[FR\]|^FR$|France|\bFR\b|法国|巴黎|\[RU\]|^RU$|Russia|Russian Federation|\bRU\b|俄罗斯|莫斯科|伯力|\[NL\]|^NL$|Netherlands|\bNL\b|荷兰|欧洲|EUR|GB)'
+    filter: '(?i)(\[UK\]|^UK$|\bUK\b|United Kingdom|Britain|英国|伦敦|\[DE\]|^DE$|\bDE\b|Germany|Deutschland|德国|法兰克福|\[FR\]|^FR$|\bFR\b|France|法国|巴黎|\[RU\]|^RU$|\bRU\b|Russia|Russian Federation|俄罗斯|莫斯科|伯力|\[NL\]|^NL$|\bNL\b|Netherlands|荷兰|欧洲|\bEUR\b|\bGB\b)'
     url: http://www.gstatic.com/generate_204
     interval: 600
     tolerance: 50
@@ -204,191 +212,210 @@ proxy-groups:
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/YouTube.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Netflix
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Netflix.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Disney+
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Disney+.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Spotify
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Spotify.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: TikTok
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/TikTok.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Twitch
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Twitch.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: GPT
     type: select
     icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash/icon/openai.png
     proxies:
       - 美国节点
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Gemini
     type: select
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/google-gemini.png
     proxies:
       - 美国节点
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Claude
     type: select
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/anthropic.png
     proxies:
       - 美国节点
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Copilot
     type: select
-    icon: https://cdn.jsdelivr.net/gh/Hawaiine/Oasisic-Icons@main/icons/Microsoft/Copilot-1.png
+    icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Copilot.png
     proxies:
       - 美国节点
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Grok
     type: select
     icon: https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/Grok.png
     proxies:
       - 美国节点
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Google
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Google.png
     proxies:
-      - 亚太节点
       - 美国节点
+      - 自动选择
+      - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: X
     type: select
     icon: https://fastly.jsdelivr.net/gh/shindgewongxj/WHATSINStash/icon/x.png
     proxies:
+      - 自动选择
       - 美国节点
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Facebook
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Facebook.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Instagram
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Instagram.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: WhatsApp
     type: select
     icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/whatsapp.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Telegram
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Telegram.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 欧洲节点
       - 美国节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Github
     type: select
     icon: https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/GitHub.png
     proxies:
+      - 自动选择
       - 美国节点
       - 亚太节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: Speedtest
     type: select
     icon: https://cdn.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Speedtest.png
     proxies:
+      - 自动选择
       - 亚太节点
       - 美国节点
       - 欧洲节点
       - 手动选择
-      - PROXY-Gate
+      - 节点选择
       - DIRECT
   - name: APNs-Fallback
     type: fallback
@@ -431,9 +458,9 @@ rules:
   # 服务型分流规则
   # ============================================================
   # 说明：
-  # 1. 服务规则必须位于通用 PROXY-Gate 规则之前；命中服务规则后，
+  # 1. 服务规则必须位于通用 节点选择 规则之前；命中服务规则后，
   #    流量直接进入对应服务策略组，不再继续匹配后面的规则。
-  # 2. 每个服务组均可独立选择 US/SG/HK/JP/TW/EUR/PROXY-Gate/DIRECT。
+  # 2. 每个服务组均可独立选择 US/SG/HK/JP/TW/EUR/节点选择/DIRECT。
   # 3. 本区域优先使用 DOMAIN-SUFFIX；只有服务域名体系非常分散时才使用
   #    DOMAIN-KEYWORD。这样可以尽量避免不同服务之间发生误匹配。
   # 4. 动态 CDN / 第三方云服务如果无法可靠确认归属，不使用过宽的
@@ -664,7 +691,7 @@ rules:
   - RULE-SET,ChinaMax_IP,DIRECT
   - GEOSITE,CN,DIRECT
   - GEOIP,CN,DIRECT,no-resolve
-  - MATCH,PROXY-Gate
+  - MATCH,节点选择
 rule-providers:
   Apple:
     type: http
