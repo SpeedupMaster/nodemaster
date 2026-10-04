@@ -3,6 +3,7 @@ import { Server } from "http";
 import { db } from "../db/index.js";
 import { NodeItem } from "../types/index.js";
 import { telegramService } from "./telegramService.js";
+import { verifyToken } from "./authService.js";
 
 export class WsHub {
   private wss: WebSocketServer | null = null;
@@ -46,7 +47,13 @@ export class WsHub {
           telegramService.checkNodeAlerts(db.getNodes()).catch(() => {});
         });
       } else {
-        // Web Dashboard Client
+        // Web Dashboard Client - Require valid Admin JWT Token
+        const authResult = verifyToken(token || "");
+        if (!authResult.valid) {
+          ws.close(4001, "Unauthorized Web Client");
+          return;
+        }
+
         this.webClients.add(ws);
         // Send initial full state
         ws.send(JSON.stringify({

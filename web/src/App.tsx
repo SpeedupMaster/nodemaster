@@ -17,8 +17,10 @@ import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
 import { NodeDetailModal } from "./components/probe/NodeDetailModal";
 import { GlobalTooltip } from "./components/common/Tooltip";
 import { TrafficAnalyticsView } from "./components/traffic/TrafficAnalyticsView";
-import { Broadcast, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
+import { Broadcast, ArrowUpRight, ArrowDownRight, ShareNetwork } from "@phosphor-icons/react";
 import { NodeItem } from "./types";
+import { useAuth } from "./context/AuthContext";
+import { LoginPage } from "./components/auth/LoginPage";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
@@ -61,6 +63,7 @@ const getTabFromUrl = (): string => {
 };
 
 export function App() {
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
@@ -120,7 +123,7 @@ export function App() {
     totalTrafficUsed,
     totalTrafficLimit,
     onlineNodesCount,
-  } = useData();
+  } = useData(isAuthenticated);
 
   // Tab switch GSAP transition
   useGSAP(() => {
@@ -141,6 +144,22 @@ export function App() {
 
   const mobileUp = formatSpeed(totalUpSpeed);
   const mobileDown = formatSpeed(totalDownSpeed);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-paper flex flex-col items-center justify-center text-ink select-none">
+        <div className="w-12 h-12 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent animate-pulse mb-3.5 shadow-lg shadow-accent/10">
+          <ShareNetwork weight="bold" className="w-7 h-7" />
+        </div>
+        <div className="text-sm font-semibold tracking-wide text-ink">NodeMaster 控制中心</div>
+        <div className="text-xs text-ink-muted mt-1.5 font-mono">正在验证安全访问凭证...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="flex min-h-screen bg-paper text-ink">

@@ -278,4 +278,14 @@ export interface TrafficAnalyticsSummary {
   updatedAt: number;
 }
 
+export interface AdminUser {
+  username: string;
+  updatedAt?: number;
+}
+
+export interface AuthSession {
+  token: string;
+  user: AdminUser;
+}
+
 

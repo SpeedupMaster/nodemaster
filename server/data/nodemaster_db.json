@@ -15,7 +15,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 9.3,
+      "cpuUsage": 37.2,
       "memUsage": 28.2,
       "diskUsage": 35.1,
       "latencyMs": 38,
@@ -35,7 +35,7 @@
         "fingerprint": "chrome",
         "dest": "www.microsoft.com:443"
       },
-      "lastSeen": 1791113123848,
+      "lastSeen": 1791118390775,
       "createdAt": 1788104083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -43,8 +43,8 @@
       "arch": "x86_64",
       "uptime": "28天 14小时",
       "loadAvg": [
-        0.1,
-        2.04,
+        0.55,
+        2.13,
         0.18
       ],
       "memTotalBytes": 2147483648,
@@ -74,7 +74,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 52.9,
+      "cpuUsage": 64.1,
       "memUsage": 31,
       "diskUsage": 29.5,
       "latencyMs": 65,
@@ -94,7 +94,7 @@
         "fingerprint": "firefox",
         "dest": "addons.mozilla.org:443"
       },
-      "lastSeen": 1791113123849,
+      "lastSeen": 1791118390776,
       "createdAt": 1788536083984,
       "bandwidthMbps": 1000,
       "trafficResetDay": 1,
@@ -102,8 +102,8 @@
       "arch": "x86_64",
       "uptime": "42天 8小时",
       "loadAvg": [
-        0.8,
-        2.29,
+        0.96,
+        2.58,
         0.45
       ],
       "memTotalBytes": 4294967296,
@@ -132,7 +132,7 @@
       "trafficLimitBytes": 2147483648000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 41.9,
+      "cpuUsage": 39.2,
       "memUsage": 22.4,
       "diskUsage": 41,
       "latencyMs": 145,
@@ -146,7 +146,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "u0J9xK1L2m3N4o5P6q7R8s=="
       },
-      "lastSeen": 1791113123849,
+      "lastSeen": 1791118390776,
       "createdAt": 1787672083984,
       "bandwidthMbps": 500,
       "trafficResetDay": 15,
@@ -154,8 +154,8 @@
       "arch": "x86_64",
       "uptime": "15天 2小时",
       "loadAvg": [
-        0.59,
-        0.17,
+        0.58,
+        0.27,
         0.1
       ],
       "memTotalBytes": 1073741824,
@@ -184,7 +184,7 @@
       "trafficLimitBytes": 1073741824000,
       "uplinkSpeedBytes": 0,
       "downlinkSpeedBytes": 0,
-      "cpuUsage": 61.6,
+      "cpuUsage": 65.9,
       "memUsage": 19,
       "diskUsage": 25,
       "latencyMs": 180,
@@ -198,7 +198,7 @@
         "method": "2022-blake3-aes-128-gcm",
         "password": "v1K0yL2M3n4O5p6Q7r8S9t=="
       },
-      "lastSeen": 1791113123850,
+      "lastSeen": 1791118390777,
       "createdAt": 1788708883984,
       "bandwidthMbps": 500,
       "trafficResetDay": 28,
@@ -206,8 +206,8 @@
       "arch": "aarch64",
       "uptime": "33天 19小时",
       "loadAvg": [
-        0.93,
-        2.31,
+        0.94,
+        2.34,
         0.14
       ],
       "memTotalBytes": 2147483648,
@@ -539,5 +539,11 @@
     "memAlert": true,
     "memThresholdPercent": 85
   },
-  "telegramLogs": []
+  "telegramLogs": [],
+  "admin": {
+    "username": "admin",
+    "passwordHash": "bdde8626f004522b416b209cda3c32b419da31f1ec02319b9078ec3368afdb5e5a18f10343659d603ffe9342f2a9fcdf35d14f7ad259ffbd20e189dc808a0ec5",
+    "salt": "e30a260965f96fbf3ee726d15e6ee892",
+    "updatedAt": 1791116520459
+  }
 }

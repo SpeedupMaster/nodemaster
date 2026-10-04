@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import {
   NodeItem,
   RelayLink,
@@ -10,6 +11,7 @@ import {
   RoutingRule,
   TelegramConfig,
   TelegramAlertLog,
+  AdminUser,
 } from "../types/index.js";
 import { fileURLToPath } from "url";
 
@@ -27,6 +29,7 @@ export interface DatabaseSchema {
   routingRules: RoutingRule[];
   telegramConfig?: TelegramConfig;
   telegramLogs?: TelegramAlertLog[];
+  admin?: AdminUser;
 }
 
 const DEFAULT_CONFIG: SystemConfig = {
@@ -514,6 +517,10 @@ class Database {
           this.data.telegramLogs = [];
           changed = true;
         }
+        if (!this.data.admin) {
+          this.data.admin = this.createDefaultAdmin();
+          changed = true;
+        }
         if (this.data.nodes) {
           for (const n of this.data.nodes) {
             if (!n.xrayVersion) {
@@ -536,6 +543,17 @@ class Database {
     }
   }
 
+  private createDefaultAdmin(): AdminUser {
+    const salt = crypto.randomBytes(16).toString("hex");
+    const passwordHash = crypto.pbkdf2Sync("admin123456", salt, 100000, 64, "sha512").toString("hex");
+    return {
+      username: "admin",
+      passwordHash,
+      salt,
+      updatedAt: Date.now(),
+    };
+  }
+
   private createDefault(): DatabaseSchema {
     return {
       nodes: INITIAL_NODES,
@@ -546,6 +564,7 @@ class Database {
       routingRules: JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES)),
       telegramConfig: { ...DEFAULT_TELEGRAM_CONFIG },
       telegramLogs: [],
+      admin: this.createDefaultAdmin(),
     };
   }
 
@@ -668,6 +687,22 @@ class Database {
     this.data.subscriptions = this.data.subscriptions.filter(s => s.id !== id);
     this.save();
     return this.data.subscriptions.length < before;
+  }
+
+  // Admin API
+  public getAdmin(): AdminUser {
+    if (!this.data.admin) {
+      this.data.admin = this.createDefaultAdmin();
+      this.save();
+    }
+    return this.data.admin;
+  }
+
+  public updateAdmin(updates: Partial<AdminUser>): AdminUser {
+    const current = this.getAdmin();
+    this.data.admin = { ...current, ...updates, updatedAt: Date.now() };
+    this.save();
+    return this.data.admin;
   }
 
   // Config API

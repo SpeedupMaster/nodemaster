@@ -13,8 +13,10 @@ import {
   PaperPlaneTilt,
   ChartBar,
   X,
+  SignOut,
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
+import { useAuth } from "../../context/AuthContext";
 
 interface SidebarProps {
   currentTab: string;
@@ -39,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen = false,
   onCloseMobile,
 }) => {
+  const { user, logout } = useAuth();
   const openTimeRef = useRef<number>(0);
 
   useEffect(() => {
@@ -230,6 +233,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-ink">
             {totalCount > 0 ? Math.round((onlineCount / totalCount) * 100) : 0}%
           </span>
+        </div>
+
+        {/* Admin Account Status */}
+        <div className="text-[11px] font-mono text-ink-muted flex items-center justify-between pt-1 border-t border-rule-subtle">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span className="truncate">{user?.username || "admin"}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="text-ink-muted hover:text-rose-400 cursor-pointer transition-colors p-1 -mr-1"
+            title="退出登录"
+          >
+            <SignOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </>

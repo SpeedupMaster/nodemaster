@@ -16,11 +16,131 @@ import {
   generateUpgradeScript,
 } from "../services/xrayVersionService.js";
 import { trafficService } from "../services/trafficService.js";
+import {
+  hashPassword,
+  verifyPassword,
+  signToken,
+  requireAuth,
+} from "../services/authService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const apiRouter = Router();
+
+// -------------------------------------------------------------
+// 0. API Whitelist Middleware & Admin Authentication Gate
+// -------------------------------------------------------------
+apiRouter.use((req, res, next) => {
+  const cleanPath = req.path.replace(/\/+$/, "") || "/";
+  const method = req.method;
+
+  // 1. Admin login route
+  if (method === "POST" && cleanPath === "/auth/login") {
+    return next();
+  }
+  // 2. Client subscription routes
+  if (method === "GET" && cleanPath.startsWith("/sub/")) {
+    return next();
+  }
+  // 3. VPS probe telemetry ingestion
+  if (method === "POST" && cleanPath === "/nodes/telemetry") {
+    return next();
+  }
+  // 4. VPS probe config / query by token
+  if (method === "GET" && cleanPath.startsWith("/nodes/by-token/")) {
+    return next();
+  }
+  // 5. Automated installer and optimization shell scripts
+  if (
+    method === "GET" &&
+    (cleanPath === "/install.sh" ||
+      cleanPath === "/update-probe.sh" ||
+      cleanPath === "/tcp-tune.sh" ||
+      cleanPath === "/xray/upgrade.sh")
+  ) {
+    return next();
+  }
+
+  // All other API routes require valid Admin JWT Token
+  return requireAuth(req, res, next);
+});
+
+// -------------------------------------------------------------
+// 0.1 Authentication & Admin Account Management API
+// -------------------------------------------------------------
+apiRouter.post("/auth/login", (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: "请输入用户名和密码" });
+  }
+
+  const admin = db.getAdmin();
+  if (
+    username !== admin.username ||
+    !verifyPassword(password, admin.passwordHash, admin.salt)
+  ) {
+    return res.status(401).json({ success: false, message: "用户名或密码错误" });
+  }
+
+  const token = signToken({ sub: admin.username, role: "admin" });
+  res.json({
+    success: true,
+    data: {
+      token,
+      user: {
+        username: admin.username,
+        updatedAt: admin.updatedAt,
+      },
+    },
+  });
+});
+
+apiRouter.get("/auth/me", (req, res) => {
+  const admin = db.getAdmin();
+  res.json({
+    success: true,
+    data: {
+      username: admin.username,
+      updatedAt: admin.updatedAt,
+    },
+  });
+});
+
+apiRouter.post("/auth/change-password", (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ success: false, message: "原密码与新密码均不能为空" });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ success: false, message: "新密码长度不能少于 6 位" });
+  }
+
+  const admin = db.getAdmin();
+  if (!verifyPassword(oldPassword, admin.passwordHash, admin.salt)) {
+    return res.status(400).json({ success: false, message: "当前原密码输入错误" });
+  }
+
+  const { hash, salt } = hashPassword(newPassword);
+  db.updateAdmin({ passwordHash: hash, salt });
+
+  const token = signToken({ sub: admin.username, role: "admin" });
+  res.json({
+    success: true,
+    message: "密码修改成功",
+    data: {
+      token,
+      user: {
+        username: admin.username,
+        updatedAt: Date.now(),
+      },
+    },
+  });
+});
+
+apiRouter.post("/auth/logout", (req, res) => {
+  res.json({ success: true, message: "已安全退出登录" });
+});
 
 // -------------------------------------------------------------
 // 1. Node Management

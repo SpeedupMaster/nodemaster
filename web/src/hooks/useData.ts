@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { NodeItem, RelayLink, SubscriptionToken, LatencyTask, RoutingRule } from "../types";
+import { getStoredToken } from "../services/api";
 
-export function useData() {
+export function useData(enabled: boolean = true) {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [relays, setRelays] = useState<RelayLink[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionToken[]>([]);
@@ -12,6 +13,13 @@ export function useData() {
 
   // Initial Fetch
   const fetchData = useCallback(async () => {
+    if (!enabled) return;
+    const token = getStoredToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const [resNodes, resRelays, resSubs, resTasks, resRules] = await Promise.all([
         fetch("/api/nodes").then((r) => r.json()),
@@ -21,30 +29,46 @@ export function useData() {
         fetch("/api/routing/rules").then((r) => r.json()),
       ]);
 
-      if (resNodes.success) setNodes(resNodes.data);
-      if (resRelays.success) setRelays(resRelays.data);
-      if (resSubs.success) setSubscriptions(resSubs.data);
-      if (resTasks.success) setLatencyTasks(resTasks.data);
+      if (resNodes?.success) setNodes(resNodes.data);
+      if (resRelays?.success) setRelays(resRelays.data);
+      if (resSubs?.success) setSubscriptions(resSubs.data);
+      if (resTasks?.success) setLatencyTasks(resTasks.data);
       if (resRules?.success) setRoutingRules(resRules.data);
     } catch (err) {
       console.error("[useData] fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (enabled) {
+      fetchData();
+    }
+  }, [fetchData, enabled]);
 
   // WebSocket Live Connection
   useEffect(() => {
+    if (!enabled) {
+      setWsConnected(false);
+      return;
+    }
+
+    const token = getStoredToken();
+    if (!token) {
+      setWsConnected(false);
+      return;
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
     let ws: WebSocket | null = null;
     let reconnectTimer: any = null;
 
     const connect = () => {
+      const currentToken = getStoredToken();
+      if (!currentToken) return;
+
+      const wsUrl = `${protocol}//${window.location.host}/ws?type=web&token=${encodeURIComponent(currentToken)}`;
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
@@ -77,8 +101,12 @@ export function useData() {
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setWsConnected(false);
+        if (event.code === 4001) {
+          window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
+          return;
+        }
         reconnectTimer = setTimeout(connect, 3000);
       };
 
@@ -96,7 +124,7 @@ export function useData() {
         ws.close();
       }
     };
-  }, []);
+  }, [enabled]);
 
   // CRUD API helpers
   const addNode = async (nodeData: Partial<NodeItem>) => {

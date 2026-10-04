@@ -288,3 +288,10 @@ export interface TrafficAnalyticsSummary {
   updatedAt: number;
 }
 
+export interface AdminUser {
+  username: string;
+  passwordHash: string;
+  salt: string;
+  updatedAt: number;
+}
+
