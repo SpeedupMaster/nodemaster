@@ -113,7 +113,7 @@ export async function getXrayVersionMatrix(forceRefresh = false): Promise<XrayVe
   const nodes = db.getNodes();
 
   const nodeStatuses: XrayVersionNodeStatus[] = nodes.map((n) => {
-    const cur = normalizeVersion(n.xrayVersion || "v1.8.24");
+    const cur = normalizeVersion(n.xrayVersion || "v26.3.27");
     let status: XrayVersionNodeStatus["status"] = "unknown";
     if (cur) {
       status = compareSemver(cur, latest.version) < 0 ? "outdated" : "up_to_date";

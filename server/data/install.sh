@@ -89,8 +89,11 @@ NODE_TYPE=$(echo "${NODE_INFO}" | jq -r '.data.type // "direct"')
 # --- Part A: 部署代理服务内核 (仅在全量模式执行) ---
 if [ "$MODE" != "probe_only" ]; then
   echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 部署代理节点服务 (Xray-core / Shadowsocks)..."
-  CURRENT_STEP=$((CURRENT_STEP + 1))
-  XRAY_LATEST_VER="v1.8.24"
+  # 优先拉取 XTLS/Xray-core 官方最新 Release (如 v26.3.27)，网络超时则回退至稳定版 v26.3.27
+  XRAY_LATEST_VER=$(curl -fsSL --connect-timeout 4 https://api.github.com/repos/XTLS/Xray-core/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
+  if [ -z "${XRAY_LATEST_VER}" ]; then
+    XRAY_LATEST_VER="v26.3.27"
+  fi
   XRAY_ZIP="/tmp/xray.zip"
   curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/${XRAY_LATEST_VER}/Xray-linux-${XRAY_ARCH}.zip" -o ${XRAY_ZIP} || true
   if [ -f "${XRAY_ZIP}" ]; then

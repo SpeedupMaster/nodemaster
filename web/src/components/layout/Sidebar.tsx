@@ -1,17 +1,18 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Gauge,
   HardDrives,
   ShareNetwork,
   LinkSimple,
   TerminalWindow,
-  Cpu,
   ArrowUpRight,
   ArrowDownRight,
   Broadcast,
   Pulse,
   PaperPlaneTilt,
   ChartBar,
+  X,
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
 
@@ -23,6 +24,8 @@ interface SidebarProps {
   totalDownSpeed: number;
   onlineCount: number;
   totalCount: number;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -33,7 +36,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
   totalDownSpeed,
   onlineCount,
   totalCount,
+  isMobileOpen = false,
+  onCloseMobile,
 }) => {
+  const openTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (isMobileOpen) {
+      openTimeRef.current = Date.now();
+    }
+  }, [isMobileOpen]);
+
+  // ESC key to close mobile drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileOpen) {
+        onCloseMobile?.();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileOpen, onCloseMobile]);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (isMobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileOpen]);
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Prevent synthetic ghost click on mobile from immediately dismissing the drawer
+    if (Date.now() - openTimeRef.current < 300) {
+      return;
+    }
+    onCloseMobile?.();
+  };
+
   const navItems = [
     { id: "dashboard", label: "实时仪表盘", icon: Gauge },
     { id: "nodes", label: "多节点管理", icon: HardDrives },
@@ -55,38 +100,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const up = formatSpeed(totalUpSpeed);
   const down = formatSpeed(totalDownSpeed);
 
-  return (
-    <aside className="w-64 flex-shrink-0 bg-paper-2 border-r border-rule flex flex-col justify-between h-screen select-none sticky top-0">
+  const renderNavContent = (isMobile: boolean) => (
+    <>
       {/* Brand & Status */}
       <div>
-        <div className="h-16 flex items-center px-5 border-b border-rule gap-3">
-          <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-paper font-bold shadow">
-            <ShareNetwork weight="bold" className="w-5 h-5 text-paper" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-ink tracking-tight">
-                NodeMaster
-              </span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-mono">
-                v1.0
-              </span>
+        <div className="h-16 flex items-center justify-between px-5 border-b border-rule">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-paper font-bold shadow">
+              <ShareNetwork weight="bold" className="w-5 h-5 text-paper" />
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  wsConnected ? "bg-status-online animate-pulse" : "bg-status-warning"
-                }`}
-              />
-              <span className="text-[11px] text-ink-muted font-mono">
-                {wsConnected ? "遥测在线 (WS)" : "正在连接..."}
-              </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-ink tracking-tight">
+                  NodeMaster
+                </span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-secondary border border-rule font-mono">
+                  v1.0
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    wsConnected ? "bg-status-online animate-pulse" : "bg-status-warning"
+                  }`}
+                />
+                <span className="text-[11px] text-ink-muted font-mono">
+                  {wsConnected ? "遥测在线 (WS)" : "正在连接..."}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Close Button on Mobile Drawer */}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCloseMobile?.();
+              }}
+              className="p-2 -mr-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors cursor-pointer touch-manipulation"
+              aria-label="关闭导航抽屉"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Navigation Items */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-14rem)]">
           <div className="px-3 py-1 text-[11px] font-mono text-ink-muted uppercase tracking-wider">
             控制台模块
           </div>
@@ -104,8 +166,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                   e.preventDefault();
                   onSelectTab(item.id);
+                  if (isMobile) {
+                    onCloseMobile?.();
+                  }
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer select-none touch-manipulation ${
                   active
                     ? "bg-accent/10 text-accent border border-accent/20"
                     : "text-ink-secondary hover:text-ink hover:bg-paper-hover border border-transparent"
@@ -167,6 +232,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar (Only visible on md: screen and above) */}
+      <aside
+        className="hidden md:flex md:w-64 flex-shrink-0 bg-paper-2 border-r border-rule flex-col justify-between h-screen select-none sticky top-0"
+        aria-label="主要导航"
+      >
+        {renderNavContent(false)}
+      </aside>
+
+      {/* Mobile Drawer (Portal into document.body to avoid parent layout/z-index containment) */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+              isMobileOpen
+                ? "visible opacity-100 pointer-events-auto"
+                : "invisible opacity-0 pointer-events-none"
+            }`}
+            aria-hidden={!isMobileOpen}
+          >
+            {/* Backdrop Overlay */}
+            <div
+              className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ${
+                isMobileOpen ? "opacity-100" : "opacity-0"
+              }`}
+              onClick={handleBackdropClick}
+              aria-hidden="true"
+            />
+
+            {/* Slide-over Drawer Panel */}
+            <aside
+              className={`fixed inset-y-0 left-0 z-10 w-72 max-w-[85vw] bg-paper-2 border-r border-rule flex flex-col justify-between h-full shadow-2xl transition-transform duration-300 ease-out select-none ${
+                isMobileOpen ? "translate-x-0" : "-translate-x-full"
+              }`}
+              aria-label="移动端导航菜单"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {renderNavContent(true)}
+            </aside>
+          </div>,
+          document.body
+        )}
+    </>
   );
 };

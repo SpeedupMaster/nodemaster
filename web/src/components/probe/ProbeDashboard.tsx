@@ -106,69 +106,73 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
   return (
     <div ref={containerRef} className="space-y-4">
       {/* Probe Telemetry Summary Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between">
-          <div>
-            <div className="text-[11px] font-mono text-ink-muted">在管探针总数</div>
-            <div className="text-lg font-bold font-mono text-ink mt-0.5 flex items-center gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        {/* Card 1: 在管探针总数 */}
+        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">在管探针总数</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5 flex items-baseline gap-1 truncate">
               <span>{onlineCount}</span>
               <span className="text-xs text-ink-muted font-normal">/ {nodes.length} 在线</span>
             </div>
           </div>
-          <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="p-1.5 sm:p-2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
+            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between">
-          <div>
-            <div className="text-[11px] font-mono text-ink-muted">全网出入吞吐</div>
-            <div className="text-sm font-bold font-mono text-ink mt-1 flex items-center gap-2">
-              <span className="text-emerald-400 flex items-center gap-0.5">
-                <ArrowDown className="w-3 h-3" />
+        {/* Card 2: 全网出入吞吐 */}
+        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">全网出入吞吐</div>
+            <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 flex flex-col xs:flex-row items-start xs:items-center gap-0.5 sm:gap-2 truncate">
+              <span className="text-emerald-400 flex items-center gap-0.5 truncate">
+                <ArrowDown className="w-3 h-3 shrink-0" />
                 <RollingCounter value={aggDown.val} decimals={1} suffix={` ${aggDown.unit}`} />
               </span>
-              <span className="text-sky-400 flex items-center gap-0.5">
-                <ArrowUp className="w-3 h-3" />
+              <span className="text-sky-400 flex items-center gap-0.5 truncate">
+                <ArrowUp className="w-3 h-3 shrink-0" />
                 <RollingCounter value={aggUp.val} decimals={1} suffix={` ${aggUp.unit}`} />
               </span>
             </div>
           </div>
-          <div className="p-2 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <Lightning className="w-5 h-5" />
+          <div className="p-1.5 sm:p-2 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
+            <Lightning className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between">
-          <div>
-            <div className="text-[11px] font-mono text-ink-muted">全网平均 CPU 负载</div>
-            <div className="text-lg font-bold font-mono text-ink mt-0.5">
+        {/* Card 3: 全网平均 CPU 负载 */}
+        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">平均 CPU 负载</div>
+            <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5">
               {avgCpu}%
             </div>
           </div>
-          <div className="p-2 rounded-md bg-accent/10 text-accent border border-accent/20">
-            <Cpu className="w-5 h-5" />
+          <div className="p-1.5 sm:p-2 rounded-md bg-accent/10 text-accent border border-accent/20 shrink-0 ml-1.5">
+            <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between">
-          <div>
-            <div className="text-[11px] font-mono text-ink-muted">物理内存总占用</div>
-            <div className="text-sm font-bold font-mono text-ink mt-1">
-              {formatBytes(totalMemUsed)} / {formatBytes(totalMemTotal)}
+        {/* Card 4: 物理内存总占用 */}
+        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">物理内存总占用</div>
+            <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 truncate">
+              {formatBytes(totalMemUsed)} <span className="text-[10px] font-normal text-ink-muted">/ {formatBytes(totalMemTotal)}</span>
             </div>
           </div>
-          <div className="p-2 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">
-            <Database className="w-5 h-5" />
+          <div className="p-1.5 sm:p-2 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
+            <Database className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </div>
 
       {/* Toolbar: Filter, Search & View Mode Toggle */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-paper-2 p-3 rounded-lg border border-rule">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-paper-2 p-2.5 sm:p-3 rounded-lg border border-rule">
+        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-0.5 sm:pb-0">
           {/* Region Tabs */}
-          <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule">
+          <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule shrink-0">
             {[
               { id: "all", label: "全部探针" },
               { id: "asia", label: "亚太地区" },
@@ -177,7 +181,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               <button
                 key={r.id}
                 onClick={() => setRegionFilter(r.id)}
-                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors cursor-pointer shrink-0 ${
                   regionFilter === r.id
                     ? "bg-paper-2 text-ink shadow-sm border border-rule"
                     : "text-ink-muted hover:text-ink"
@@ -188,14 +192,14 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-ink-muted font-mono pl-2">
+          <div className="hidden lg:flex items-center gap-1.5 text-xs text-ink-muted font-mono pl-2 shrink-0">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>实时探针心跳 (3s 采样)</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          <div className="w-full sm:w-56">
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          <div className="flex-1 sm:w-56">
             <Input
               prefixIcon={<MagnifyingGlass className="w-3.5 h-3.5" />}
               value={search}
@@ -204,8 +208,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
             />
           </div>
 
-          {/* View Mode Toggle Buttons */}
-          <div className="flex items-center gap-0.5 bg-paper p-0.5 rounded-md border border-rule shrink-0">
+          {/* View Mode Toggle Buttons (Desktop only, mobile has dedicated card stream) */}
+          <div className="hidden md:flex items-center gap-0.5 bg-paper p-0.5 rounded-md border border-rule shrink-0">
             <Tooltip content="表格列表模式 (ServerStatus 风格)">
               <button
                 onClick={() => setViewMode("table")}
@@ -234,9 +238,165 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
         </div>
       </div>
 
-      {/* View Mode 1: Nezha / ServerStatus Style High-Density Probe Table */}
-      {viewMode === "table" ? (
-        <div className="rounded-lg bg-paper-2 border border-rule overflow-hidden shadow-sm">
+      {/* Mobile View: High-Performance Touch-Friendly Card Stream */}
+      <div className="md:hidden space-y-3">
+        {filteredNodes.map((node) => {
+          const up = formatSpeed(node.uplinkSpeedBytes);
+          const down = formatSpeed(node.downlinkSpeedBytes);
+          const memTotal = node.memTotalBytes || 2147483648;
+          const memUsed = node.memUsedBytes || Math.floor(memTotal * (node.memUsage / 100));
+          const trafficUsedGB = (node.trafficUsedBytes / (1024 * 1024 * 1024)).toFixed(1);
+          const trafficLimitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
+          const trafficPct = Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100);
+
+          return (
+            <div
+              key={node.id}
+              onClick={() => onSelectNode?.(node)}
+              className="probe-item-anim rounded-xl bg-paper-2 border border-rule p-3.5 space-y-3 hover:border-rule-active active:bg-paper-hover transition-all cursor-pointer shadow-xs select-none"
+              title="点击查看详细延迟时序与硬件指标"
+            >
+              {/* Header: Node Name + Country + Status Badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-ink text-sm tracking-tight truncate">
+                      {node.name}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0">
+                      {node.countryName.split(" ")[0]}
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-ink-muted mt-0.5 flex items-center gap-1.5 truncate">
+                    <span>{node.ip}:{node.port}</span>
+                    <span>•</span>
+                    <span
+                      className={`uppercase text-[10px] font-medium shrink-0 ${
+                        node.type === "unlock" ? "text-purple-400" : "text-accent"
+                      }`}
+                    >
+                      {node.type === "unlock" ? "SS 解锁" : "Reality 直连"}
+                    </span>
+                    <span>•</span>
+                    <span className="truncate">{cleanOsName(node.os)}</span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 pt-0.5">
+                  <Badge
+                    variant={
+                      node.status === "online"
+                        ? "online"
+                        : node.status === "circuit_broken"
+                        ? "danger"
+                        : "neutral"
+                    }
+                    pulse={node.status === "online"}
+                    size="sm"
+                  >
+                    {node.status === "online"
+                      ? "在线"
+                      : node.status === "circuit_broken"
+                      ? "熔断"
+                      : "离线"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Metrics Grid: CPU & RAM */}
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-rule-subtle">
+                {/* CPU */}
+                <div className="bg-paper/60 p-2 rounded-lg border border-rule">
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-ink-muted flex items-center gap-1">
+                      <Cpu className="w-3 h-3 text-accent" />
+                      <span>CPU 负载</span>
+                    </span>
+                    <span className="font-mono font-semibold text-ink">{node.cpuUsage}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        node.cpuUsage > 80
+                          ? "bg-status-danger"
+                          : node.cpuUsage > 50
+                          ? "bg-amber-400"
+                          : "bg-accent"
+                      }`}
+                      style={{ width: `${node.cpuUsage}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted mt-1">
+                    <span>Load {node.loadAvg ? node.loadAvg[0] : 0.15}</span>
+                    <span>{node.uptime || "28天"}</span>
+                  </div>
+                </div>
+
+                {/* RAM */}
+                <div className="bg-paper/60 p-2 rounded-lg border border-rule">
+                  <div className="flex items-center justify-between text-[11px] mb-1">
+                    <span className="text-ink-muted flex items-center gap-1">
+                      <Database className="w-3 h-3 text-sky-400" />
+                      <span>内存占用</span>
+                    </span>
+                    <span className="font-mono font-semibold text-ink">{node.memUsage}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        node.memUsage > 85 ? "bg-status-danger" : "bg-sky-500"
+                      }`}
+                      style={{ width: `${node.memUsage}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] font-mono text-ink-muted mt-1 truncate">
+                    {formatCompactBytes(memUsed)} / {formatCompactBytes(memTotal)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Bar: Speeds & Monthly Traffic */}
+              <div className="bg-paper/60 p-2.5 rounded-lg border border-rule space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3 font-mono text-[11px]">
+                    <span className="text-emerald-400 font-semibold flex items-center gap-0.5">
+                      <ArrowDown className="w-3 h-3" />
+                      <span>{down.val.toFixed(1)} {down.unit}</span>
+                    </span>
+                    <span className="text-sky-400 font-semibold flex items-center gap-0.5">
+                      <ArrowUp className="w-3 h-3" />
+                      <span>{up.val.toFixed(1)} {up.unit}</span>
+                    </span>
+                  </div>
+                  <div className="text-[11px] font-mono text-ink-muted">
+                    <span className="text-ink font-semibold">{trafficUsedGB}</span> / {trafficLimitGB} GB
+                  </div>
+                </div>
+
+                <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      trafficPct > 90 ? "bg-status-danger" : "bg-accent"
+                    }`}
+                    style={{ width: `${trafficPct}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {filteredNodes.length === 0 && (
+          <div className="p-8 text-center rounded-lg border border-dashed border-rule text-ink-muted text-sm">
+            暂无符合条件的探针节点
+          </div>
+        )}
+      </div>
+
+      {/* Desktop View: ServerStatus Table or Matrix Grid */}
+      <div className="hidden md:block">
+        {viewMode === "table" ? (
+          <div className="rounded-lg bg-paper-2 border border-rule overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -612,6 +772,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           })}
         </div>
       )}
+      </div>
     </div>
   );
 };

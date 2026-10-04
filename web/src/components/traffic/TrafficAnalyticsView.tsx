@@ -231,193 +231,202 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
   return (
     <div className="space-y-6">
       {/* 头部导航与操作栏 */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-ink tracking-tight">业务流量统计与服务分析</h2>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-accent/15 text-accent border border-accent/25">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base sm:text-xl font-bold text-ink tracking-tight">业务流量统计与服务分析</h2>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-medium bg-accent/15 text-accent border border-accent/25 shrink-0">
               <Lightning className="w-3 h-3" />
-              时序级多维洞悉
+              时序洞悉
             </span>
           </div>
-          <p className="text-xs text-ink-muted mt-1">
+          <p className="text-xs text-ink-muted mt-0.5 hidden sm:block">
             实时统计各应用服务流量消耗、分流命中走向及全网 VPS 节点分流承载矩阵
           </p>
         </div>
 
         {/* 时间跨度切换 & 操作按钮 */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-paper-2 border border-rule rounded-lg p-0.5 text-xs font-medium">
-            {(
-              [
-                { id: "today", label: "今日 (24h)" },
-                { id: "7d", label: "近 7 天" },
-                { id: "30d", label: "近 30 天" },
-                { id: "month", label: "本月计费期" },
-                { id: "all", label: "全部累计" },
-              ] as const
-            ).map((t) => (
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+          <div className="flex items-center bg-paper-2 border border-rule rounded-lg p-0.5 text-xs font-medium overflow-x-auto no-scrollbar flex-1 sm:flex-initial">
+            {[
+              { id: "today", label: "今日 (24h)", short: "今日" },
+              { id: "7d", label: "近 7 天", short: "7天" },
+              { id: "30d", label: "近 30 天", short: "30天" },
+              { id: "month", label: "本月计费期", short: "本月" },
+              { id: "all", label: "全部累计", short: "全部" },
+            ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTimeRange(t.id)}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                onClick={() => setTimeRange(t.id as any)}
+                className={`px-2 sm:px-2.5 py-1 rounded-md transition-colors cursor-pointer shrink-0 text-center ${
                   timeRange === t.id
                     ? "bg-paper-3 text-accent font-semibold shadow-xs"
                     : "text-ink-secondary hover:text-ink"
                 }`}
               >
-                {t.label}
+                <span className="sm:hidden">{t.short}</span>
+                <span className="hidden sm:inline">{t.label}</span>
               </button>
             ))}
           </div>
 
-          <button
-            onClick={() => fetchAnalytics()}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
-            title="刷新统计数据"
-          >
-            <ArrowClockwise className={`w-3.5 h-3.5 ${loading ? "animate-spin text-accent" : ""}`} />
-            <span>刷新</span>
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => fetchAnalytics()}
+              disabled={loading}
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer touch-manipulation min-h-[30px]"
+              title="刷新统计数据"
+            >
+              <ArrowClockwise className={`w-3.5 h-3.5 ${loading ? "animate-spin text-accent" : ""}`} />
+              <span className="hidden sm:inline">刷新</span>
+            </button>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
-            title="导出 JSON 流量报告"
-          >
-            <DownloadSimple className="w-3.5 h-3.5" />
-            <span>导出报告</span>
-          </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer touch-manipulation min-h-[30px]"
+              title="导出 JSON 流量报告"
+            >
+              <DownloadSimple className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">导出</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* 顶部 4 大核心指标看板 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 顶部 4 大核心指标看板 (移动端 2x2 规整布局) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* 卡片 1: 监测总流量 */}
-        <div className="p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-secondary">监测总流量消耗</span>
-            <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-              <ChartBar className="w-4 h-4" />
+        <div className="p-3 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] sm:text-xs font-medium text-ink-secondary truncate">监测总流量消耗</span>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+                <ChartBar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="mt-1.5 sm:mt-2">
+              <span className="text-lg sm:text-2xl font-bold font-mono text-ink tracking-tight truncate block">
+                {data ? formatBytes(data.totalRecordedBytes) : "--"}
+              </span>
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight">
-              {data ? formatBytes(data.totalRecordedBytes) : "--"}
-            </span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-2 text-[11px] font-mono text-ink-muted">
+          <div className="mt-2 sm:mt-2.5 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono text-ink-muted flex-wrap">
             <span className="flex items-center gap-0.5 text-sky-400">
-              <ArrowDown className="w-3 h-3" />
-              下行: {data ? formatBytes(data.totalDownlinkBytes) : "--"}
+              <ArrowDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              {data ? formatBytes(data.totalDownlinkBytes) : "--"}
             </span>
-            <span>•</span>
+            <span className="opacity-40">•</span>
             <span className="flex items-center gap-0.5 text-purple-400">
-              <ArrowUp className="w-3 h-3" />
-              上行: {data ? formatBytes(data.totalUplinkBytes) : "--"}
+              <ArrowUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              {data ? formatBytes(data.totalUplinkBytes) : "--"}
             </span>
           </div>
         </div>
 
         {/* 卡片 2: Top 1 霸榜服务 */}
-        <div className="p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-secondary">流量消耗霸榜服务</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <YoutubeOfficialLogo className="w-4 h-4" />
+        <div className="p-3 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] sm:text-xs font-medium text-ink-secondary truncate">流量霸榜服务</span>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                <YoutubeOfficialLogo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1.5 truncate">
+              <span className="text-base sm:text-2xl font-bold font-mono text-ink tracking-tight truncate">
+                {topService ? topService.name : "--"}
+              </span>
+              {topService && (
+                <span className="text-[10px] sm:text-xs font-mono font-semibold text-rose-400 shrink-0">
+                  {topService.percentage}%
+                </span>
+              )}
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight">
-              {topService ? topService.name : "--"}
-            </span>
-            {topService && (
-              <span className="text-xs font-mono font-semibold text-rose-400">
-                {topService.percentage}%
-              </span>
-            )}
-          </div>
-          <div className="mt-2.5 text-[11px] font-mono text-ink-muted flex items-center gap-1.5">
-            <span>消耗:</span>
+          <div className="mt-2 sm:mt-2.5 text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">
+            <span>消耗: </span>
             <span className="font-semibold text-ink">
               {topService ? formatBytes(topService.totalBytes) : "--"}
             </span>
-            <span>• 主要由主力直连承载</span>
           </div>
         </div>
 
         {/* 卡片 3: AI 办公智能流量 */}
-        <div className="p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-secondary">AI 智能服务累计消耗</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <OpenAiOfficialLogo className="w-4 h-4" />
+        <div className="p-3 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] sm:text-xs font-medium text-ink-secondary truncate">AI 智能消耗</span>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <OpenAiOfficialLogo className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1.5 truncate">
+              <span className="text-lg sm:text-2xl font-bold font-mono text-emerald-400 tracking-tight truncate">
+                {formatBytes(aiTraffic)}
+              </span>
+              <span className="text-[10px] sm:text-xs font-mono font-semibold text-ink-muted shrink-0">
+                ({aiPercentage}%)
+              </span>
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-emerald-400 tracking-tight">
-              {formatBytes(aiTraffic)}
-            </span>
-            <span className="text-xs font-mono font-semibold text-ink-muted">
-              ({aiPercentage}%)
-            </span>
-          </div>
-          <div className="mt-2.5 text-[11px] font-mono text-ink-muted flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>OpenAI / Claude 全由落地解锁机分流</span>
+          <div className="mt-2 sm:mt-2.5 text-[10px] sm:text-[11px] font-mono text-ink-muted flex items-center gap-1 truncate">
+            <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0" />
+            <span className="truncate">落地住宅机分流</span>
           </div>
         </div>
 
         {/* 卡片 4: 业务调度请求数 & 实时流 */}
-        <div className="p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-ink-secondary">调度请求数 / 活跃流</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-              <HardDrives className="w-4 h-4" />
+        <div className="p-3 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] sm:text-xs font-medium text-ink-secondary truncate">调度请求 / 活跃流</span>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                <HardDrives className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
+            </div>
+            <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1 truncate">
+              <span className="text-lg sm:text-2xl font-bold font-mono text-ink tracking-tight truncate">
+                {data ? data.totalRequests.toLocaleString() : "--"}
+              </span>
+              <span className="text-[10px] sm:text-xs font-mono text-ink-muted shrink-0">次</span>
             </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-ink tracking-tight">
-              {data ? data.totalRequests.toLocaleString() : "--"}
-            </span>
-            <span className="text-xs font-mono text-ink-muted">次</span>
-          </div>
-          <div className="mt-2.5 text-[11px] font-mono text-ink-muted flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>实时活跃长连接:</span>
-            <span className="font-semibold text-accent font-mono">
-              {data?.activeStreams || 0} 个
-            </span>
+          <div className="mt-2 sm:mt-2.5 text-[10px] sm:text-[11px] font-mono text-ink-muted flex items-center gap-1 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="text-accent font-semibold font-mono">{data?.activeStreams || 0}</span>
+            <span>个活跃连接</span>
           </div>
         </div>
       </div>
 
       {/* 中部图表分析区域：时序流量趋势 + 业务类别分布 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* 左侧 2/3: 时序流量趋势柱状堆叠图 */}
-        <div className="lg:col-span-2 p-5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-2 p-3.5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
-              <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                <ChartBar className="w-4 h-4 text-accent" />
-                {chartMode === "total" ? "流量总量时序走势" : "流量时序分布图"} ({timeRange === "today" ? "24 小时" : timeRange === "7d" ? "近 7 天" : "周期分布"})
+              <h3 className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-2">
+                <ChartBar className="w-4 h-4 text-accent shrink-0" />
+                <span>{chartMode === "total" ? "流量总量时序走势" : "流量时序分布图"} ({timeRange === "today" ? "24 小时" : timeRange === "7d" ? "近 7 天" : "周期分布"})</span>
               </h3>
-              <p className="text-[11px] text-ink-muted mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-ink-muted mt-0.5">
                 {timeRange === "today" ? (
                   <span>
-                    高峰时段 <span className="text-accent font-medium font-mono">20:00 - 23:00</span> · {chartMode === "total" ? "鼠标悬停曲线查看时序流量总量与切片" : "鼠标悬停柱体查看分类切片与构成明细"}
+                    高峰时段 <span className="text-accent font-medium font-mono">20:00 - 23:00</span> · <span className="hidden sm:inline">{chartMode === "total" ? "鼠标悬停曲线查看时序流量总量与切片" : "鼠标悬停柱体查看分类切片与构成明细"}</span><span className="sm:hidden">点击柱体查看明细</span>
                   </span>
                 ) : (
-                  chartMode === "total" ? "鼠标悬停曲线查看对应时间切片的总量走势" : "鼠标悬停柱状图查看对应时间切片的分类流量构成"
+                  <span>
+                    <span className="hidden sm:inline">{chartMode === "total" ? "鼠标悬停曲线查看对应时间切片的总量走势" : "鼠标悬停柱状图查看对应时间切片的分类流量构成"}</span>
+                    <span className="sm:hidden">点击柱体查看明细</span>
+                  </span>
                 )}
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-paper-3 border border-rule rounded-md p-0.5 text-[11px]">
+            <div className="flex items-center gap-1 bg-paper-3 border border-rule rounded-md p-0.5 text-[11px] self-start sm:self-auto shrink-0">
               <button
                 onClick={() => setChartMode("stacked")}
-                className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 sm:py-0.5 rounded transition-colors cursor-pointer touch-manipulation min-h-[26px] sm:min-h-0 flex items-center ${
                   chartMode === "stacked" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted hover:text-ink"
                 }`}
                 title="各业务分类堆叠展示"
@@ -426,7 +435,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
               </button>
               <button
                 onClick={() => setChartMode("total")}
-                className={`px-2 py-0.5 rounded transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 sm:py-0.5 rounded transition-colors cursor-pointer touch-manipulation min-h-[26px] sm:min-h-0 flex items-center ${
                   chartMode === "total" ? "bg-accent/20 text-accent font-semibold" : "text-ink-muted hover:text-ink"
                 }`}
                 title="按时序流量展示平滑面积总量走势"
@@ -706,7 +715,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
         </div>
 
         {/* 右侧 1/3: 类别占比环形 / 比例列表 */}
-        <div className="p-5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+        <div className="p-3.5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
               <ChartPieSlice className="w-4 h-4 text-accent" />
@@ -757,17 +766,17 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
       {/* 下部核心表格：各应用服务流量消耗排行明细 */}
       <div className="rounded-xl border border-rule bg-paper-2 overflow-hidden shadow-xs space-y-0">
         {/* 表头筛选与搜索栏 */}
-        <div className="p-4 border-b border-rule flex flex-col md:flex-row md:items-center justify-between gap-3 bg-paper-2">
+        <div className="p-3.5 sm:p-4 border-b border-rule flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 bg-paper-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-ink">服务流量消耗明细</span>
-            <span className="text-xs text-ink-muted font-mono">
+            <span className="text-xs sm:text-sm font-semibold text-ink">服务流量消耗明细</span>
+            <span className="text-[11px] sm:text-xs text-ink-muted font-mono">
               ({filteredServices.length} 个服务)
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full md:w-auto">
             {/* 分类筛选胶囊 */}
-            <div className="flex items-center gap-1 bg-paper-3 p-0.5 rounded-lg border border-rule text-xs">
+            <div className="flex items-center gap-1 bg-paper-3 p-0.5 rounded-lg border border-rule text-xs overflow-x-auto no-scrollbar flex-1 md:flex-initial">
               {[
                 { id: "all", label: "全部" },
                 { id: "streaming", label: "流媒体" },
@@ -778,7 +787,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                 <button
                   key={c.id}
                   onClick={() => setSelectedCategory(c.id)}
-                  className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                  className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
                     selectedCategory === c.id
                       ? "bg-accent/20 text-accent font-semibold"
                       : "text-ink-muted hover:text-ink"
@@ -790,7 +799,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
             </div>
 
             {/* 搜索框 */}
-            <div className="w-48 sm:w-56">
+            <div className="w-full md:w-56 shrink-0">
               <Input
                 prefixIcon={<MagnifyingGlass className="w-3.5 h-3.5" />}
                 value={search}
@@ -801,8 +810,105 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
           </div>
         </div>
 
-        {/* 服务明细表格 */}
-        <div className="overflow-x-auto">
+        {/* 移动端卡片式流式列表 (md:hidden) */}
+        <div className="md:hidden divide-y divide-rule/50">
+          {filteredServices.map((service, idx) => (
+            <div key={service.id} className="p-3.5 space-y-2.5 bg-paper-2 hover:bg-paper-hover/50 transition-colors">
+              <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-rule shadow-xs"
+                    style={{ backgroundColor: `${service.color}15` }}
+                  >
+                    {renderOfficialServiceLogo(service.icon, service.id, service.color, "w-4 h-4")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-xs text-ink truncate">
+                        {service.name}
+                      </span>
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded-full font-mono font-medium border whitespace-nowrap shrink-0 leading-none"
+                        style={{
+                          backgroundColor: `${service.color}15`,
+                          borderColor: `${service.color}35`,
+                          color: service.color,
+                        }}
+                      >
+                        {service.categoryName}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-ink-muted font-mono mt-0.5 flex items-center gap-1">
+                      <span className="font-semibold text-ink-secondary">#{idx + 1}</span>
+                      <span>•</span>
+                      <span>{service.activeConnections} 活跃连接</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右侧数值：总消耗与占比 */}
+                <div className="text-right shrink-0">
+                  <div className="font-bold text-xs font-mono text-ink">
+                    {formatBytes(service.totalBytes)}
+                  </div>
+                  <div className="text-[10px] font-mono font-semibold text-accent mt-0.5">
+                    {service.percentage}%
+                  </div>
+                </div>
+              </div>
+
+              {/* 进度条 */}
+              <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, service.percentage * 3.5)}%`,
+                    backgroundColor: service.color,
+                  }}
+                />
+              </div>
+
+              {/* 下行 / 上行与请求数 */}
+              <div className="flex items-center justify-between text-[10px] font-mono pt-1 text-ink-secondary">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex items-center gap-0.5 text-sky-400">
+                    <ArrowDown className="w-2.5 h-2.5" />
+                    <span>{formatBytes(service.downlinkBytes)}</span>
+                  </span>
+                  <span className="flex items-center gap-0.5 text-purple-400">
+                    <ArrowUp className="w-2.5 h-2.5" />
+                    <span>{formatBytes(service.uplinkBytes)}</span>
+                  </span>
+                </div>
+                <span className="text-ink-muted">
+                  {service.requestsCount.toLocaleString()} 次请求
+                </span>
+              </div>
+
+              {/* 承载节点分布 (移动端紧凑徽章) */}
+              {service.nodeDistribution.some((n) => n.percentage > 0) && (
+                <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                  <span className="text-[9px] text-ink-muted font-mono shrink-0">承载:</span>
+                  {service.nodeDistribution
+                    .filter((n) => n.percentage > 0)
+                    .slice(0, 3)
+                    .map((nd) => (
+                      <span
+                        key={nd.nodeId}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono bg-paper-3 border border-rule text-ink-secondary"
+                      >
+                        <span className="truncate max-w-[90px]">{nd.nodeName}</span>
+                        <span className="text-accent font-semibold">{nd.percentage}%</span>
+                      </span>
+                    ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* 桌面端完整明细表格 (hidden md:block) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-rule bg-paper/60 text-[11px] font-mono text-ink-muted uppercase select-none">
@@ -927,31 +1033,31 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
       {/* 节点分流承载矩阵 (Node Breakdown Cards) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-            <HardDrives className="w-4 h-4 text-accent" />
-            各 VPS 节点业务承载分布
+          <h3 className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-2">
+            <HardDrives className="w-4 h-4 text-accent shrink-0" />
+            <span>各 VPS 节点业务承载分布</span>
           </h3>
-          <span className="text-xs text-ink-muted font-mono">
+          <span className="text-[10px] sm:text-xs text-ink-muted font-mono">
             共纳管 {nodes.length} 个节点
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {data?.nodeDistributions.map((nd) => (
             <div
               key={nd.nodeId}
-              className="p-4 rounded-xl bg-paper-2 border border-rule space-y-3 hover:border-rule-active transition-all"
+              className="p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule space-y-3 hover:border-rule-active transition-all"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-semibold text-sm text-ink font-mono tracking-tight truncate max-w-[160px]">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-xs sm:text-sm text-ink font-mono tracking-tight truncate">
                     {nd.nodeName}
                   </h4>
-                  <div className="text-[11px] text-ink-muted mt-0.5 font-mono">
+                  <div className="text-[10px] sm:text-[11px] text-ink-muted mt-0.5 font-mono truncate">
                     {nd.countryName}
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold text-accent px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                <span className="text-xs font-mono font-bold text-accent px-2 py-0.5 rounded bg-accent/10 border border-accent/20 shrink-0">
                   {nd.percentage}%
                 </span>
               </div>

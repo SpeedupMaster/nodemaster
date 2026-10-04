@@ -186,8 +186,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         </div>
 
         {/* IP & Port */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-ink-muted mb-1">
               公网 IP 地址 *
             </label>
@@ -298,13 +298,13 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         </div>
 
         {/* Region & Bandwidth */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 地理位置
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { code: "HK", name: "中国香港", label: "HK" },
                   { code: "JP", name: "日本东京", label: "JP" },
@@ -320,7 +320,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                         setCountry(r.code);
                         setCountryName(r.name);
                       }}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -344,11 +344,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 标称峰值带宽
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "500M", val: "500" },
                   { label: "1Gbps", val: "1000" },
@@ -361,7 +361,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={p.val}
                       type="button"
                       onClick={() => setBandwidthMbps(p.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -384,13 +384,13 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         </div>
 
         {/* Traffic Quota & Reset Day */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 月度流量配额
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "500G", val: "500" },
                   { label: "1T", val: "1000" },
@@ -403,7 +403,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={q.val}
                       type="button"
                       onClick={() => setTrafficLimitGB(q.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -425,11 +425,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 流量重置日
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "1日", val: "1" },
                   { label: "15日", val: "15" },
@@ -441,7 +441,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={d.val}
                       type="button"
                       onClick={() => setTrafficResetDay(d.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -466,13 +466,13 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         </div>
 
         {/* VPS Cost & Billing Period */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 VPS 费用金额
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "¥ 人民币", val: "CNY" },
                   { label: "$ 美元", val: "USD" },
@@ -484,7 +484,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={c.val}
                       type="button"
                       onClick={() => setCostCurrency(c.val as any)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -511,11 +511,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 付款周期
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "月付", val: "monthly" },
                   { label: "季付", val: "quarterly" },
@@ -527,7 +527,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={p.val}
                       type="button"
                       onClick={() => setCostPeriod(p.val as any)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -552,9 +552,9 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         </div>
 
         {/* VPS Expiration Date & Auto-Renew Switch */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
                 <CalendarBlank className="w-3.5 h-3.5 text-accent" />
                 <span>VPS 到期日期</span>
@@ -573,7 +573,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
                 <ArrowsClockwise className="w-3.5 h-3.5 text-accent" />
                 <span>自动续费</span>
@@ -585,7 +585,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             <button
               type="button"
               onClick={() => setAutoRenew(!autoRenew)}
-              className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none ${
+              className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none touch-manipulation ${
                 autoRenew
                   ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15"
                   : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
@@ -621,11 +621,11 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         {/* Dynamic Protocol Fields: Direct (Reality SNI) vs Unlock (Shadowsocks Key) */}
         {type === "direct" ? (
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
-              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
-                SNI 伪装域名 (Server Name Indication) *
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted truncate">
+                SNI 伪装域名 <span className="hidden sm:inline text-ink-muted/80">(Server Name Indication)</span> *
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0 max-w-[65%] sm:max-w-none">
                 {[
                   "www.microsoft.com",
                   "www.apple.com",
@@ -639,7 +639,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                       key={domain}
                       type="button"
                       onClick={() => setSni(domain)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border-rule"
@@ -658,7 +658,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               placeholder="例如: www.microsoft.com"
               suffixText="SNI"
             />
-            <p className="text-[11px] text-ink-muted mt-1">
+            <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
               VLESS-Reality 握手借用的合规 TLS 域名（需支持 TLS 1.3 及 H2，无须您拥有该域名证书）
             </p>
           </div>
@@ -727,10 +727,22 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
 
         {/* Submit Actions */}
         <div className="pt-4 border-t border-rule flex items-center justify-end gap-3">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="flex-1 sm:flex-initial min-h-[38px] sm:min-h-[34px] touch-manipulation"
+          >
             取消
           </Button>
-          <Button type="submit" variant="primary" size="sm" loading={submitting}>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            loading={submitting}
+            className="flex-1 sm:flex-initial min-h-[38px] sm:min-h-[34px] touch-manipulation"
+          >
             立即生成并上线
           </Button>
         </div>

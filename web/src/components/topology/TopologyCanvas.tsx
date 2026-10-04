@@ -331,15 +331,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Topology Banner */}
-      <div className="p-6 rounded-2xl bg-paper-2 border border-rule space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-paper-2 border border-rule space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0 mt-0.5">
-              <ShareNetwork weight="bold" className="w-5 h-5" />
+          <div className="flex items-start gap-3 sm:gap-3.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0 mt-0.5">
+              <ShareNetwork weight="bold" className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-base font-semibold text-ink">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm sm:text-base font-semibold text-ink">
                   主力直连 + 链式解锁代理拓扑
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
@@ -360,41 +360,41 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             size="sm"
             onClick={handleOpenAddModal}
             icon={<Plus className="w-3.5 h-3.5" />}
-            className="shrink-0 self-start lg:self-center font-medium"
+            className="w-full lg:w-auto shrink-0 justify-center font-medium min-h-[38px] lg:min-h-0 touch-manipulation"
           >
             创建链式解锁代理
           </Button>
         </div>
 
         {/* 4-Step Architecture Ribbon */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
-          <div className="p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-2.5 pt-1 sm:pt-2">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Laptop className="w-4 h-4 text-accent shrink-0" />
-            <div className="truncate">
+            <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">1. 客户端连接</div>
               <div className="text-[9px] text-ink-muted truncate">直连主力 VPS 极速延迟</div>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Broadcast className="w-4 h-4 text-sky-400 shrink-0" />
-            <div className="truncate">
+            <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">2. 主力入口机</div>
               <div className="text-[9px] text-ink-muted truncate">香港 / 日本 / 新加坡 BGP</div>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2 sm:gap-2.5 min-w-0">
             <Shuffle className="w-4 h-4 text-purple-400 shrink-0" />
-            <div className="truncate">
+            <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">3. Xray 智能分流</div>
               <div className="text-[9px] text-ink-muted truncate">自定义/AI/Netflix 自动匹配</div>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5">
+          <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5 min-w-0">
             <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-            <div className="truncate">
+            <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">4. 原生家宽落地</div>
               <div className="text-[9px] text-ink-muted truncate">双ISP 住宅级流量出口</div>
             </div>
@@ -404,19 +404,19 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
 
       {/* Part 1: Unlock Gateways Pool */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
             <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
               流媒体 / AI 专属落地网关池 (Unlock Gateways)
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0">
               {unlockNodes.length} 台落地网关
             </span>
           </div>
 
-          <span className="text-[11px] font-mono text-ink-muted flex items-center gap-1">
-            <Sparkle className="w-3.5 h-3.5 text-accent" />
+          <span className="text-[11px] font-mono text-ink-muted flex items-center gap-1 shrink-0">
+            <Sparkle className="w-3.5 h-3.5 text-accent shrink-0" />
             <span>原生纯净双ISP • 共享出站出口</span>
           </span>
         </div>
@@ -427,19 +427,23 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               (r) => r.unlockNodeId === un.id || r.exitNodeId === un.id
             );
 
+            const displayCountryTag = un.countryName?.includes("原生住宅")
+              ? un.countryName
+              : `${un.countryName || "原生网络"} (原生住宅)`;
+
             return (
               <div
                 key={un.id}
-                className="p-4 rounded-xl bg-paper-2 border border-rule hover:border-purple-500/40 transition-all space-y-3 shadow-xs relative overflow-hidden"
+                className="p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule hover:border-purple-500/40 transition-all space-y-3 shadow-xs relative overflow-hidden"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {renderCountryBadge(un.country, "md")}
-                    <div>
-                      <h4 className="text-xs font-bold text-ink font-mono truncate max-w-[140px] sm:max-w-[170px]">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-ink font-mono truncate">
                         {un.name}
                       </h4>
-                      <span className="text-[10px] font-mono text-ink-muted block mt-0.5">
+                      <span className="text-[10px] font-mono text-ink-muted block mt-0.5 truncate">
                         {un.ip}:{un.port}
                       </span>
                     </div>
@@ -453,17 +457,17 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
 
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/25 font-mono font-medium">
-                    {un.countryName} (原生住宅)
+                    {displayCountryTag}
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono">
                     {un.protocol.toUpperCase()}
                   </span>
                 </div>
 
-                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-ink-muted flex items-center gap-1.5 text-[10px]">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>已为 {servingRelays.length} 台主力机提供解锁</span>
+                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono gap-2">
+                  <span className="text-ink-muted flex items-center gap-1.5 text-[10px] truncate min-w-0 flex-1">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">已为 {servingRelays.length} 台主力机提供解锁</span>
                   </span>
 
                   <button
@@ -472,7 +476,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                         activeUnlockFilter === un.id ? "all" : un.id
                       );
                     }}
-                    className={`text-[10px] px-2 py-0.5 rounded border transition-all cursor-pointer font-mono ${
+                    className={`text-[10px] px-2.5 py-1 min-h-[28px] rounded border transition-all cursor-pointer font-mono shrink-0 touch-manipulation flex items-center justify-center ${
                       activeUnlockFilter === un.id
                         ? "bg-purple-500/20 text-purple-300 border-purple-500/40"
                         : "bg-paper-3 text-ink-muted hover:text-ink border-rule"
@@ -493,28 +497,29 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           <div className="w-full border-t border-rule" />
         </div>
         <div className="relative flex justify-center">
-          <span className="px-3 py-1 bg-paper border border-rule rounded-full text-[10px] font-mono text-ink-muted flex items-center gap-1.5 shadow-xs">
-            <Shuffle className="w-3 h-3 text-accent" />
-            <span>Xray 智能路由分流层 • 相对流量出站至上方落地网关 • 常规流量全直连</span>
+          <span className="px-3 py-1 bg-paper border border-rule rounded-full text-[10px] font-mono text-ink-muted flex items-center gap-1.5 shadow-xs text-center max-w-[95%] sm:max-w-none">
+            <Shuffle className="w-3 h-3 text-accent shrink-0" />
+            <span className="hidden sm:inline">Xray 智能路由分流层 • 目标流量出站至上方落地网关 • 常规流量全直连</span>
+            <span className="sm:hidden">Xray 智能分流层 • 目标流量转至落地网关</span>
           </span>
         </div>
       </div>
 
       {/* Part 2: Direct Fleet with Search & Filtering */}
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
             <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
               主力直连节点集群 (Direct Inbound Fleet)
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 shrink-0">
               共 {mainNodes.length} 台
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="relative w-48 sm:w-56">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+            <div className="relative flex-1 min-w-[140px] sm:w-56 sm:flex-initial">
               <MagnifyingGlass className="w-3.5 h-3.5 text-ink-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -525,11 +530,11 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               />
             </div>
 
-            <div className="flex bg-paper border border-rule rounded-lg p-0.5 gap-0.5">
+            <div className="flex bg-paper border border-rule rounded-lg p-0.5 gap-0.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveUnlockFilter("all")}
-                className={`px-2 py-1 rounded text-[10px] font-mono transition-all cursor-pointer ${
+                className={`px-2.5 py-1 min-h-[28px] rounded text-[10px] font-mono transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
                   activeUnlockFilter === "all"
                     ? "bg-accent/15 text-accent font-bold"
                     : "text-ink-muted hover:text-ink"
@@ -540,7 +545,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveUnlockFilter("unbound")}
-                className={`px-2 py-1 rounded text-[10px] font-mono transition-all cursor-pointer ${
+                className={`px-2.5 py-1 min-h-[28px] rounded text-[10px] font-mono transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
                   activeUnlockFilter === "unbound"
                     ? "bg-accent/15 text-accent font-bold"
                     : "text-ink-muted hover:text-ink"
@@ -570,16 +575,16 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             return (
               <div
                 key={mn.id}
-                className="p-4 rounded-xl bg-paper-2 border border-rule hover:border-accent/40 transition-all space-y-3 shadow-xs"
+                className="p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule hover:border-accent/40 transition-all space-y-3 shadow-xs"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {renderCountryBadge(mn.country, "md")}
-                    <div>
-                      <h4 className="text-xs font-bold text-ink font-mono truncate max-w-[140px] sm:max-w-[170px]">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-ink font-mono truncate">
                         {mn.name}
                       </h4>
-                      <span className="text-[10px] font-mono text-ink-muted block mt-0.5">
+                      <span className="text-[10px] font-mono text-ink-muted block mt-0.5 truncate">
                         {mn.ip}:{mn.port}
                       </span>
                     </div>
@@ -600,14 +605,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   </span>
                 </div>
 
-                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono h-8">
+                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono min-h-[32px] gap-2">
                   {chainedRelays.length > 0 ? (
-                    <div className="flex items-center gap-1.5 truncate">
+                    <div className="flex items-center gap-1.5 truncate min-w-0 flex-1">
                       <span className="text-ink-muted flex items-center gap-1 text-[10px] shrink-0">
                         <ArrowsLeftRight className="w-3 h-3 text-purple-400" />
-                        <span>已挂载出站:</span>
+                        <span>已挂载:</span>
                       </span>
-                      <div className="flex items-center gap-1 truncate">
+                      <div className="flex items-center gap-1 truncate min-w-0 flex-1">
                         {chainedRelays.map((r) => {
                           const targetUnlock = nodes.find(
                             (n) => n.id === (r.unlockNodeId || r.exitNodeId)
@@ -625,7 +630,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                               title={`${r.name} (${modeText})`}
                             >
                               {renderCountryBadge(targetUnlock?.country, "sm")}
-                              <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                              <span className="truncate max-w-[110px] sm:max-w-[150px]">
                                 {targetUnlock?.name || "解锁节点"}
                               </span>
                             </span>
@@ -634,14 +639,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-[10px] text-ink-muted flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rule-active" />
-                        <span>未挂载解锁机 · 流量全直连</span>
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="text-[10px] text-ink-muted flex items-center gap-1.5 truncate min-w-0">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rule-active shrink-0" />
+                        <span className="truncate">未挂载解锁机 · 流量全直连</span>
                       </span>
                       <button
                         onClick={() => handleQuickAttach(mn.id)}
-                        className="text-[10px] px-2 py-0.5 rounded bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30 transition-all font-mono cursor-pointer"
+                        className="text-[10px] px-2.5 py-1 min-h-[28px] rounded bg-accent/10 text-accent hover:bg-accent/20 border border-accent/30 transition-all font-mono cursor-pointer shrink-0 touch-manipulation flex items-center justify-center"
                       >
                         + 挂载解锁
                       </button>
@@ -655,7 +660,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
       </div>
 
       {/* Part 3: Active Chained Relays List */}
-      <div className="p-6 rounded-2xl bg-paper-2 border border-rule space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl bg-paper-2 border border-rule space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Lightning weight="bold" className="w-5 h-5 text-accent" />
@@ -683,15 +688,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             return (
               <div
                 key={r.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-paper border border-rule hover:border-rule-active transition-all shadow-xs gap-4"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-xl bg-paper border border-rule hover:border-rule-active transition-all shadow-xs gap-3.5 sm:gap-4"
               >
-                <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0 mt-0.5 sm:mt-0">
                     <ArrowsLeftRight weight="bold" className="w-4 h-4" />
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold text-ink font-sans">
                         {r.name}
                       </span>
@@ -718,15 +723,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </div>
 
                     {/* Path Visualization with Country Badges */}
-                    <div className="flex items-center gap-2 mt-2 text-xs font-mono">
-                      <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1.5 font-semibold">
+                    <div className="flex items-center gap-2 mt-2 text-xs font-mono flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md bg-paper-3 text-accent border border-accent/20 flex items-center gap-1.5 font-semibold shrink-0">
                         {renderCountryBadge(main?.country, "sm")}
-                        <span>{main?.name || "主力机"}</span>
+                        <span className="truncate max-w-[130px] sm:max-w-none">{main?.name || "主力机"}</span>
                       </span>
-                      <span className="text-ink-muted text-xs">➔</span>
-                      <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1.5 font-semibold">
+                      <span className="text-ink-muted text-xs shrink-0">➔</span>
+                      <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/25 flex items-center gap-1.5 font-semibold shrink-0">
                         {renderCountryBadge(unlock?.country, "sm")}
-                        <span>{unlock?.name || "解锁机"}</span>
+                        <span className="truncate max-w-[130px] sm:max-w-none">{unlock?.name || "解锁机"}</span>
                       </span>
                     </div>
 
@@ -796,7 +801,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-rule/50">
+                <div className="flex items-center gap-4 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-rule/50 w-full sm:w-auto">
                   <div className="text-left sm:text-right">
                     <span className="text-[11px] text-ink-muted block">综合链路时延</span>
                     <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
@@ -805,17 +810,17 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleEditRelay(r)}
-                      className="p-2 rounded-lg text-ink-muted hover:text-accent hover:bg-accent/10 border border-transparent hover:border-accent/20 transition-all cursor-pointer"
+                      className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-ink-muted hover:text-accent hover:bg-accent/10 border border-transparent hover:border-accent/20 transition-all cursor-pointer touch-manipulation"
                       title="编辑链路与分流服务"
                     >
                       <PencilSimple className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setDeletingRelay(r)}
-                      className="p-2 rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                      className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer touch-manipulation"
                       title="解除该链式代理"
                     >
                       <Trash className="w-4 h-4" />
@@ -1247,7 +1252,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           )}
 
           {/* Actions */}
-          <div className="pt-4 border-t border-rule flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-rule flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
             <Button
               type="button"
               variant="ghost"
@@ -1256,6 +1261,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                 setIsModalOpen(false);
                 setEditingRelay(null);
               }}
+              className="w-full sm:w-auto justify-center min-h-[38px] sm:min-h-0"
             >
               取消
             </Button>
@@ -1265,6 +1271,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               size="sm"
               loading={submitting}
               disabled={!mainId || !unlockId}
+              className="w-full sm:w-auto justify-center min-h-[38px] sm:min-h-0"
             >
               {editingRelay ? "保存分流设置" : "保存并下发链式规则"}
             </Button>
@@ -1322,13 +1329,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
             </div>
           )}
 
-          <div className="pt-3 border-t border-rule flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-rule flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               disabled={isDeleting}
               onClick={() => setDeletingRelay(null)}
+              className="w-full sm:w-auto justify-center min-h-[38px] sm:min-h-0"
             >
               取消
             </Button>
@@ -1349,6 +1357,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   setIsDeleting(false);
                 }
               }}
+              className="w-full sm:w-auto justify-center min-h-[38px] sm:min-h-0"
             >
               确认删除链路
             </Button>

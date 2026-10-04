@@ -59,28 +59,28 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
   const down = formatSpeed(totalDownSpeed);
 
   return (
-    <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Card 1: Traffic Usage */}
-      <div className="telemetry-card p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+    <div ref={containerRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* Card 1: Traffic Usage (Full width on mobile, 1 col on desktop) */}
+      <div className="telemetry-card col-span-2 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider">本月流量消耗</span>
-            <Database className="w-4 h-4 text-accent" />
+            <span className="font-mono uppercase tracking-wider truncate">本月流量消耗</span>
+            <Database className="w-4 h-4 text-accent shrink-0 ml-1" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
             <RollingCounter
               value={usedGB}
               decimals={1}
-              className="text-2xl font-bold text-ink"
+              className="text-xl sm:text-2xl font-bold text-ink"
             />
-            <span className="text-xs text-ink-muted font-mono">/ {limitGB} GB</span>
+            <span className="text-xs text-ink-muted font-mono truncate">/ {limitGB} GB</span>
           </div>
         </div>
 
         <div className="mt-4">
           <div className="flex justify-between text-[11px] font-mono text-ink-muted mb-1">
-            <span>配额占比</span>
-            <span className={trafficPct > 85 ? "text-status-warning font-semibold" : "text-ink"}>
+            <span className="truncate">配额占比</span>
+            <span className={trafficPct > 85 ? "text-status-danger font-semibold" : "text-ink"}>
               {trafficPct.toFixed(1)}%
             </span>
           </div>
@@ -99,76 +99,76 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
         </div>
       </div>
 
-      {/* Card 2: Live Speed */}
-      <div className="telemetry-card p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+      {/* Card 2: Live Speed (Half width on mobile) */}
+      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider">实时吞吐带宽</span>
-            <Lightning className="w-4 h-4 text-emerald-400" />
+            <span className="font-mono uppercase tracking-wider truncate">实时吞吐带宽</span>
+            <Lightning className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <div className="flex items-center gap-1">
-              <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 min-w-0">
+              <ArrowDown className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <RollingCounter
                 value={down.val}
                 decimals={1}
                 suffix={` ${down.unit}`}
-                className="text-xl font-bold text-ink"
+                className="text-base sm:text-xl font-bold text-ink truncate"
               />
             </div>
-            <div className="flex items-center gap-1 text-ink-muted">
-              <ArrowUp className="w-3 h-3 text-sky-400" />
+            <div className="flex items-center gap-1 text-ink-muted min-w-0">
+              <ArrowUp className="w-3 h-3 text-sky-400 shrink-0" />
               <RollingCounter
                 value={up.val}
                 decimals={1}
                 suffix={` ${up.unit}`}
-                className="text-xs font-mono"
+                className="text-xs font-mono truncate"
               />
             </div>
           </div>
         </div>
 
         <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono text-ink-muted">
-          <span>采样率</span>
-          <span className="text-emerald-400 font-medium">3s 动态上报</span>
+          <span className="truncate">采样率</span>
+          <span className="text-emerald-400 font-medium whitespace-nowrap">3s 动态</span>
         </div>
       </div>
 
-      {/* Card 3: Node Health */}
-      <div className="telemetry-card p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+      {/* Card 3: Node Health (Half width on mobile) */}
+      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider">在管 VPS 节点</span>
-            <HardDrives className="w-4 h-4 text-purple-400" />
+            <span className="font-mono uppercase tracking-wider truncate">在管 VPS 节点</span>
+            <HardDrives className="w-4 h-4 text-purple-400 shrink-0 ml-1" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-ink font-mono">{onlineCount}</span>
-            <span className="text-xs text-ink-muted font-mono">/ {totalCount} 台在线</span>
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-bold text-ink font-mono">{onlineCount}</span>
+            <span className="text-xs text-ink-muted font-mono truncate">/ {totalCount} 在线</span>
           </div>
         </div>
 
         <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono">
-          <span className="text-ink-muted">协议模式</span>
-          <span className="text-accent font-semibold">VLESS Reality</span>
+          <span className="text-ink-muted truncate">协议模式</span>
+          <span className="text-accent font-semibold whitespace-nowrap">Reality</span>
         </div>
       </div>
 
-      {/* Card 4: Relay Status */}
-      <div className="telemetry-card p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between">
+      {/* Card 4: Relay Status (Full width on mobile, 1 col on desktop) */}
+      <div className="telemetry-card col-span-2 sm:col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider">链式解锁代理</span>
-            <ShareNetwork className="w-4 h-4 text-purple-400" />
+            <span className="font-mono uppercase tracking-wider truncate">链式解锁代理</span>
+            <ShareNetwork className="w-4 h-4 text-purple-400 shrink-0 ml-1" />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-ink font-mono">{relaysCount}</span>
-            <span className="text-xs text-ink-muted font-mono">条链式链路</span>
+          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-bold text-ink font-mono">{relaysCount}</span>
+            <span className="text-xs text-ink-muted font-mono truncate">条链式链路</span>
           </div>
         </div>
 
         <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono">
-          <span className="text-ink-muted">分流引擎</span>
-          <span className="text-purple-400 font-semibold">Xray 智能路由 (AI/流媒体)</span>
+          <span className="text-ink-muted truncate">分流引擎</span>
+          <span className="text-purple-400 font-semibold truncate ml-1">Xray 智能路由</span>
         </div>
       </div>
     </div>

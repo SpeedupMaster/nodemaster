@@ -614,7 +614,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Universal Subscription Hero Card */}
-      <div className="p-6 rounded-xl bg-paper-2 border border-rule relative overflow-hidden shadow-sm">
+      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -628,20 +628,20 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap w-full md:w-auto">
             <a
               href={oneClickClashUrl}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 md:py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm touch-manipulation min-h-[38px] md:min-h-0"
             >
-              <Sparkle weight="fill" className="w-3.5 h-3.5" />
-              一键导入 Clash
+              <Sparkle weight="fill" className="w-3.5 h-3.5 shrink-0" />
+              <span>一键导入 Clash</span>
             </a>
             <a
               href={oneClickEgernUrl}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-paper-3 text-ink font-semibold text-xs border border-rule hover:bg-paper-2 hover:border-accent/40 transition-colors shadow-sm"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 md:py-1.5 rounded-md bg-paper-3 text-ink font-semibold text-xs border border-rule hover:bg-paper-2 hover:border-accent/40 transition-colors shadow-sm touch-manipulation min-h-[38px] md:min-h-0"
             >
-              <Sparkle weight="fill" className="w-3.5 h-3.5 text-accent" />
-              一键导入 Egern
+              <Sparkle weight="fill" className="w-3.5 h-3.5 text-accent shrink-0" />
+              <span>一键导入 Egern</span>
             </a>
           </div>
         </div>
@@ -660,20 +660,22 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
               <Button
                 variant="secondary"
                 size="sm"
+                className="flex-1 sm:flex-initial justify-center min-h-[36px] sm:min-h-0 touch-manipulation"
                 onClick={handleOpenEdit}
-                icon={<PencilSimple className="w-3.5 h-3.5 text-accent" />}
+                icon={<PencilSimple className="w-3.5 h-3.5 text-accent shrink-0" />}
               >
                 自定义链接
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
+                className="flex-1 sm:flex-initial justify-center min-h-[36px] sm:min-h-0 touch-manipulation"
                 onClick={handleCopyLink}
-                icon={copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                icon={copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               >
                 {copiedLink ? "已复制链接" : "复制订阅链接"}
               </Button>
@@ -797,99 +799,112 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
       </div>
 
       {/* Subscription Format & View Mode Switcher */}
-      <div className="p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
         {/* Top Header & Actions Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rule">
-          <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule">
-            {[
-              { id: "clash", label: "Clash Meta / Mihomo (YAML)" },
-              { id: "singbox", label: "Sing-box (JSON)" },
-              { id: "egern", label: "Egern (YAML)" },
-              { id: "base64", label: "Shadowrocket / 通用 (Base64)" },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setFormat(item.id as any);
-                  if (item.id !== "clash" && item.id !== "egern") setViewMode("code");
-                }}
-                className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
-                  format === item.id
-                    ? "bg-paper-2 text-ink shadow-sm border border-rule"
-                    : "text-ink-muted hover:text-ink"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+        <div className="flex flex-col gap-3 pb-3.5 border-b border-rule">
+          {/* Format Selection Row: Horizontal scrollable tab list on mobile */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="overflow-x-auto no-scrollbar flex items-center gap-1 bg-paper p-1 rounded-lg border border-rule w-full sm:w-auto shrink-0">
+              {[
+                { id: "clash", label: "Clash Meta / Mihomo (YAML)", mobileLabel: "Clash Meta" },
+                { id: "singbox", label: "Sing-box (JSON)", mobileLabel: "Sing-box" },
+                { id: "egern", label: "Egern (YAML)", mobileLabel: "Egern" },
+                { id: "base64", label: "Shadowrocket / 通用 (Base64)", mobileLabel: "Shadowrocket" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setFormat(item.id as any);
+                    if (item.id !== "clash" && item.id !== "egern") setViewMode("code");
+                  }}
+                  className={`px-3 py-1.5 sm:py-1 text-xs rounded-md font-medium transition-all whitespace-nowrap shrink-0 touch-manipulation cursor-pointer ${
+                    format === item.id
+                      ? "bg-paper-2 text-ink shadow-sm border border-rule font-semibold text-accent"
+                      : "text-ink-muted hover:text-ink border border-transparent"
+                  }`}
+                >
+                  <span className="hidden sm:inline">{item.label}</span>
+                  <span className="sm:hidden">{item.mobileLabel}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Mode Switcher */}
-            {(format === "clash" || format === "egern") && (
-              <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule mr-1">
+          {/* Mode Switcher and Action Tools Row */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            {/* View Mode Switcher: 策略组面板 / 源码预览 */}
+            {(format === "clash" || format === "egern") ? (
+              <div className="flex items-center gap-1 bg-paper p-1 rounded-lg border border-rule shrink-0 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setViewMode("visual")}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded transition-all font-medium ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-1 text-xs rounded-md transition-all font-medium whitespace-nowrap touch-manipulation cursor-pointer ${
                     viewMode === "visual"
                       ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
-                      : "text-ink-secondary hover:text-ink hover:bg-paper-2"
+                      : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
                   }`}
                 >
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-3.5 h-3.5 shrink-0" />
                   <span>策略组面板</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("code")}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded transition-all font-medium ${
+                  className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 sm:py-1 text-xs rounded-md transition-all font-medium whitespace-nowrap touch-manipulation cursor-pointer ${
                     viewMode === "code"
                       ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
-                      : "text-ink-secondary hover:text-ink hover:bg-paper-2"
+                      : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
                   }`}
                 >
-                  <Code className="w-3.5 h-3.5" />
+                  <Code className="w-3.5 h-3.5 shrink-0" />
                   <span>源码预览</span>
                 </button>
               </div>
+            ) : (
+              <div />
             )}
 
-            {format === "egern" && (
-              <a
-                href={oneClickEgernUrl}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
-              >
-                <Sparkle weight="fill" className="w-3.5 h-3.5" />
-                导入 Egern
-              </a>
-            )}
-            {format === "clash" && (
-              <a
-                href={oneClickClashUrl}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm"
-              >
-                <Sparkle weight="fill" className="w-3.5 h-3.5" />
-                导入 Clash
-              </a>
-            )}
+            {/* Action Tools: Import, Copy, Download */}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+              {format === "egern" && (
+                <a
+                  href={oneClickEgernUrl}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                >
+                  <Sparkle weight="fill" className="w-3.5 h-3.5 shrink-0" />
+                  <span>导入 Egern</span>
+                </a>
+              )}
+              {format === "clash" && (
+                <a
+                  href={oneClickClashUrl}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-paper font-semibold text-xs hover:bg-accent-hover transition-colors shadow-sm whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                >
+                  <Sparkle weight="fill" className="w-3.5 h-3.5 shrink-0" />
+                  <span>导入 Clash</span>
+                </a>
+              )}
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyContent}
-              icon={copiedContent ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            >
-              {copiedContent ? "已复制配置内容" : "复制内容"}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleDownload}
-              icon={<DownloadSimple className="w-3.5 h-3.5" />}
-            >
-              下载配置文件
-            </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCopyContent}
+                className="flex-1 sm:flex-initial justify-center whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                icon={copiedContent ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+              >
+                {copiedContent ? "已复制" : "复制内容"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleDownload}
+                className="flex-1 sm:flex-initial justify-center whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                icon={<DownloadSimple className="w-3.5 h-3.5 shrink-0" />}
+              >
+                <span className="hidden sm:inline">下载配置文件</span>
+                <span className="sm:hidden">下载配置</span>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -897,9 +912,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         {viewMode === "visual" && (format === "clash" || format === "egern") ? (
           <div className="space-y-4">
             {/* Filter and Fold Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-paper border border-rule text-xs">
-              {/* Category Filter Tabs */}
-              <div className="flex items-center gap-1 bg-paper-3/60 p-1 rounded-md border border-rule">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 sm:p-3 rounded-xl bg-paper border border-rule text-xs">
+              {/* Category Filter Tabs: Horizontal scroll on mobile */}
+              <div className="overflow-x-auto no-scrollbar flex items-center gap-1 bg-paper-3/60 p-1 rounded-lg border border-rule w-full sm:w-auto shrink-0">
                 {[
                   { id: "all", label: `全部策略组 (${POLICY_GROUPS_CONFIG.length})` },
                   { id: "core", label: "核心出口 (7)" },
@@ -910,10 +925,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => setActiveCategory(tab.id as any)}
-                    className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium whitespace-nowrap shrink-0 transition-all touch-manipulation cursor-pointer ${
                       activeCategory === tab.id
-                        ? "bg-accent/15 text-accent border border-accent/30 shadow-sm font-semibold"
-                        : "text-ink-muted hover:text-ink"
+                        ? "bg-accent/15 text-accent border border-accent/40 shadow-xs font-semibold"
+                        : "text-ink-muted hover:text-ink border border-transparent"
                     }`}
                   >
                     {tab.label}
@@ -922,36 +937,40 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
               </div>
 
               {/* Search & Collapse Controls */}
-              <div className="flex items-center gap-2">
-                <div className="relative">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
                   <MagnifyingGlass className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="搜索策略组..."
-                    className="w-36 sm:w-44 pl-8 pr-2.5 py-1 text-xs rounded bg-paper-2 border border-rule text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent"
+                    className="w-full sm:w-44 pl-8 pr-2.5 py-1.5 sm:py-1 text-xs rounded-md bg-paper-2 border border-rule text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent"
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={expandAll}
-                  className="flex items-center gap-1 px-2 py-1 rounded bg-paper-2 border border-rule hover:bg-paper-hover text-ink-muted hover:text-ink text-xs transition-colors"
-                  title="展开全部卡片"
-                >
-                  <ArrowsOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">展开全部</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={collapseAll}
-                  className="flex items-center gap-1 px-2 py-1 rounded bg-paper-2 border border-rule hover:bg-paper-hover text-ink-muted hover:text-ink text-xs transition-colors"
-                  title="折叠全部卡片"
-                >
-                  <ArrowsIn className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">折叠全部</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={expandAll}
+                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-md bg-paper-2 border border-rule hover:bg-paper-hover text-ink-muted hover:text-ink text-xs transition-colors touch-manipulation cursor-pointer"
+                    title="展开全部卡片"
+                    aria-label="展开全部卡片"
+                  >
+                    <ArrowsOut className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">展开全部</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={collapseAll}
+                    className="flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-1 rounded-md bg-paper-2 border border-rule hover:bg-paper-hover text-ink-muted hover:text-ink text-xs transition-colors touch-manipulation cursor-pointer"
+                    title="折叠全部卡片"
+                    aria-label="折叠全部卡片"
+                  >
+                    <ArrowsIn className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">折叠全部</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -976,7 +995,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                     <div>
                       {/* Card Header (Icon, Name, Type, and Collapse Toggle) */}
                       <div
-                        className="flex items-center justify-between gap-2 cursor-pointer select-none group/hdr"
+                        className="flex items-center justify-between gap-2 cursor-pointer select-none group/hdr touch-manipulation py-0.5"
                         onClick={() => toggleCollapse(group.id)}
                       >
                         {/* Left: Icon, Title & Type */}
@@ -1047,7 +1066,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                                 e.stopPropagation();
                                 setSelectedMap((prev) => ({ ...prev, [group.id]: p.name }));
                               }}
-                              className={`h-11 px-2.5 py-1.5 rounded-md border text-left transition-all flex flex-col justify-between select-none ${
+                              className={`h-11 px-2.5 py-1.5 rounded-md border text-left transition-all flex flex-col justify-between select-none touch-manipulation cursor-pointer ${
                                 isSelected
                                   ? "bg-accent/15 border-accent text-accent shadow-sm ring-1 ring-accent/30"
                                   : "bg-paper-2 border-rule text-ink hover:bg-paper-hover hover:border-rule-active"
@@ -1084,9 +1103,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         ) : (
           /* 2. RAW CONFIGURATION SOURCE PREVIEW (YAML / JSON) */
           <div className="relative rounded-md bg-paper border border-rule overflow-hidden">
-            <div className="px-4 py-2 bg-paper-3/40 border-b border-rule flex items-center justify-between text-[11px] font-mono text-ink-muted">
+            <div className="px-3.5 py-2 bg-paper-3/40 border-b border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-mono text-ink-muted">
               <span>实时渲染结果 ({format.toUpperCase()})</span>
-              <span>自适应规则分流 • TUN/Fake-IP 预设</span>
+              <span className="hidden sm:inline">自适应规则分流 • TUN/Fake-IP 预设</span>
             </div>
 
             <pre className="p-4 text-xs font-mono text-ink-secondary overflow-x-auto max-h-[500px] leading-relaxed select-all">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
 import { Select } from "../common/Select";
@@ -76,30 +76,113 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
   const [tagsStr, setTagsStr] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const initialValuesRef = useRef<any>(null);
+
   // Sync state when node changes or modal opens
   useEffect(() => {
     if (node && isOpen) {
-      setName(node.name || "");
-      setIp(node.ip || "");
-      setPort(String(node.port || (node.type === "unlock" ? 8388 : 443)));
-      setCountry(node.country || "HK");
-      setCountryName(node.countryName || "中国香港");
-      setBandwidthMbps(String(node.bandwidthMbps || 1000));
-      setTrafficLimitGB(
-        String(Math.round((node.trafficLimitBytes || 1073741824000) / (1024 * 1024 * 1024)))
+      const initName = node.name || "";
+      const initIp = node.ip || "";
+      const initPort = String(node.port || (node.type === "unlock" ? 8388 : 443));
+      const initCountry = node.country || "HK";
+      const initCountryName = node.countryName || "中国香港";
+      const initBandwidth = String(node.bandwidthMbps || 1000);
+      const initTrafficLimit = String(
+        Math.round((node.trafficLimitBytes || 1073741824000) / (1024 * 1024 * 1024))
       );
-      setTrafficResetDay(String(node.trafficResetDay || 1));
-      setCostAmount(node.costAmount !== undefined ? String(node.costAmount) : "");
-      setCostCurrency(node.costCurrency || "CNY");
-      setCostPeriod(node.costPeriod || "monthly");
-      setExpiresAt(node.expiresAt || "");
-      setAutoRenew(Boolean(node.autoRenew));
-      setSni(node.reality?.serverName || node.sni || "www.microsoft.com");
-      setSsMethod(node.shadowsocks?.method || "2022-blake3-aes-128-gcm");
-      setSsPassword(node.shadowsocks?.password || "");
-      setTagsStr(node.tags?.join(", ") || "");
+      const initTrafficResetDay = String(node.trafficResetDay || 1);
+      const initCostAmount = node.costAmount !== undefined ? String(node.costAmount) : "";
+      const initCostCurrency = node.costCurrency || "CNY";
+      const initCostPeriod = node.costPeriod || "monthly";
+      const initExpiresAt = node.expiresAt || "";
+      const initAutoRenew = Boolean(node.autoRenew);
+      const initSni = node.reality?.serverName || node.sni || "www.microsoft.com";
+      const initSsMethod = node.shadowsocks?.method || "2022-blake3-aes-128-gcm";
+      const initSsPassword = node.shadowsocks?.password || "";
+      const initTags = node.tags?.join(", ") || "";
+
+      setName(initName);
+      setIp(initIp);
+      setPort(initPort);
+      setCountry(initCountry);
+      setCountryName(initCountryName);
+      setBandwidthMbps(initBandwidth);
+      setTrafficLimitGB(initTrafficLimit);
+      setTrafficResetDay(initTrafficResetDay);
+      setCostAmount(initCostAmount);
+      setCostCurrency(initCostCurrency);
+      setCostPeriod(initCostPeriod);
+      setExpiresAt(initExpiresAt);
+      setAutoRenew(initAutoRenew);
+      setSni(initSni);
+      setSsMethod(initSsMethod);
+      setSsPassword(initSsPassword);
+      setTagsStr(initTags);
+
+      initialValuesRef.current = {
+        name: initName,
+        ip: initIp,
+        port: initPort,
+        country: initCountry,
+        countryName: initCountryName,
+        bandwidthMbps: initBandwidth,
+        trafficLimitGB: initTrafficLimit,
+        trafficResetDay: initTrafficResetDay,
+        costAmount: initCostAmount,
+        costCurrency: initCostCurrency,
+        costPeriod: initCostPeriod,
+        expiresAt: initExpiresAt,
+        autoRenew: initAutoRenew,
+        sni: initSni,
+        ssMethod: initSsMethod,
+        ssPassword: initSsPassword,
+        tagsStr: initTags,
+      };
     }
   }, [node, isOpen]);
+
+  const isDirty = useMemo(() => {
+    if (!initialValuesRef.current || !isOpen) return false;
+    const init = initialValuesRef.current;
+    return (
+      name !== init.name ||
+      ip !== init.ip ||
+      port !== init.port ||
+      country !== init.country ||
+      countryName !== init.countryName ||
+      bandwidthMbps !== init.bandwidthMbps ||
+      trafficLimitGB !== init.trafficLimitGB ||
+      trafficResetDay !== init.trafficResetDay ||
+      costAmount !== init.costAmount ||
+      costCurrency !== init.costCurrency ||
+      costPeriod !== init.costPeriod ||
+      expiresAt !== init.expiresAt ||
+      autoRenew !== init.autoRenew ||
+      sni !== init.sni ||
+      ssMethod !== init.ssMethod ||
+      ssPassword !== init.ssPassword ||
+      tagsStr !== init.tagsStr
+    );
+  }, [
+    isOpen,
+    name,
+    ip,
+    port,
+    country,
+    countryName,
+    bandwidthMbps,
+    trafficLimitGB,
+    trafficResetDay,
+    costAmount,
+    costCurrency,
+    costPeriod,
+    expiresAt,
+    autoRenew,
+    sni,
+    ssMethod,
+    ssPassword,
+    tagsStr,
+  ]);
 
   if (!node) return null;
 
@@ -163,15 +246,39 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
       title="编辑 VPS 节点配置"
       subtitle={`修改节点 ${node.name} 的网络连接属性与规格配额`}
       maxWidth="xl"
+      isDirty={isDirty}
+      discardTitle="放弃未保存的修改？"
+      discardMessage="检测到您已修改了节点配置。如果现在退出，所有未保存的输入都将丢失。"
+      footer={({ requestClose }) => (
+        <div className="flex items-center justify-end gap-3 w-full">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={requestClose}
+            className="flex-1 sm:flex-initial min-h-[44px] px-5 touch-manipulation text-ink-muted hover:text-ink"
+          >
+            取消
+          </Button>
+          <Button
+            type="submit"
+            form="edit-node-form"
+            variant="primary"
+            loading={submitting}
+            className="flex-1 sm:flex-initial min-h-[44px] px-6 touch-manipulation font-semibold shadow-sm"
+          >
+            保存修改
+          </Button>
+        </div>
+      )}
     >
-      <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+      <form id="edit-node-form" onSubmit={handleSubmit} className="space-y-4 text-sm">
         {/* Node Profile Meta Bar */}
-        <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-paper-3/50 border border-rule text-xs font-mono">
-          <div className="flex items-center gap-2">
-            <span className="text-ink-muted">节点 ID:</span>
-            <span className="text-ink font-medium">{node.id}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-paper-3/50 border border-rule text-xs font-mono">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-ink-muted shrink-0">节点 ID:</span>
+            <span className="text-ink font-medium truncate">{node.id}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span
               className={`px-2 py-0.5 rounded font-medium text-[10px] border ${
                 isUnlock
@@ -198,8 +305,8 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         </div>
 
         {/* IP & Port */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
             <label className="block text-xs font-medium text-ink-muted mb-1">
               公网 IP 地址 *
             </label>
@@ -224,13 +331,13 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         </div>
 
         {/* Region & Bandwidth */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 地理位置
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { code: "HK", name: "中国香港", label: "HK" },
                   { code: "JP", name: "日本东京", label: "JP" },
@@ -246,7 +353,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                         setCountry(r.code);
                         setCountryName(r.name);
                       }}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -270,11 +377,11 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 标称峰值带宽
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "500M", val: "500" },
                   { label: "1Gbps", val: "1000" },
@@ -287,7 +394,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={p.val}
                       type="button"
                       onClick={() => setBandwidthMbps(p.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -310,13 +417,13 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         </div>
 
         {/* Traffic Quota & Reset Day */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 月度流量配额
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "500G", val: "500" },
                   { label: "1T", val: "1000" },
@@ -329,7 +436,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={q.val}
                       type="button"
                       onClick={() => setTrafficLimitGB(q.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -351,11 +458,11 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 流量重置日
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "1日", val: "1" },
                   { label: "15日", val: "15" },
@@ -367,7 +474,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={d.val}
                       type="button"
                       onClick={() => setTrafficResetDay(d.val)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -392,13 +499,13 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         </div>
 
         {/* VPS Cost & Billing Period */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 VPS 费用金额
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "¥ 人民币", val: "CNY" },
                   { label: "$ 美元", val: "USD" },
@@ -410,7 +517,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={c.val}
                       type="button"
                       onClick={() => setCostCurrency(c.val as any)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -437,11 +544,11 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
                 付款周期
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0">
                 {[
                   { label: "月付", val: "monthly" },
                   { label: "季付", val: "quarterly" },
@@ -453,7 +560,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={p.val}
                       type="button"
                       onClick={() => setCostPeriod(p.val as any)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"
@@ -478,9 +585,9 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         </div>
 
         {/* VPS Expiration Date & Auto-Renew Switch */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
                 <CalendarBlank className="w-3.5 h-3.5 text-accent" />
                 <span>VPS 到期日期</span>
@@ -499,7 +606,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
           </div>
 
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
               <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">
                 <ArrowsClockwise className="w-3.5 h-3.5 text-accent" />
                 <span>自动续费</span>
@@ -511,7 +618,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
             <button
               type="button"
               onClick={() => setAutoRenew(!autoRenew)}
-              className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none ${
+              className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none touch-manipulation ${
                 autoRenew
                   ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15"
                   : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
@@ -547,11 +654,11 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         {/* Dynamic Protocol Fields: Direct (Reality SNI) vs Unlock (Shadowsocks Key) */}
         {!isUnlock ? (
           <div>
-            <div className="h-5 flex items-center justify-between mb-1.5 min-w-0">
-              <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap">
-                SNI 伪装域名 (Server Name Indication) *
+            <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+              <label className="text-xs font-medium text-ink-muted truncate">
+                SNI 伪装域名 <span className="hidden sm:inline text-ink-muted/80">(Server Name Indication)</span> *
               </label>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink-0 max-w-[65%] sm:max-w-none">
                 {[
                   "www.microsoft.com",
                   "www.apple.com",
@@ -565,7 +672,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
                       key={domain}
                       type="button"
                       onClick={() => setSni(domain)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none ${
+                      className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
                         isActive
                           ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                           : "bg-paper-3 text-ink-secondary hover:text-accent hover:border-accent/40 border-rule"
@@ -584,7 +691,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
               placeholder="例如: www.microsoft.com"
               suffixText="SNI"
             />
-            <p className="text-[11px] text-ink-muted mt-1">
+            <p className="text-[11px] text-ink-muted mt-1 leading-relaxed">
               修改后将同步更新客户端 VLESS 连接与 Xray 服务端握手借用域名
             </p>
           </div>
@@ -645,16 +752,6 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
             onChange={(e) => setTagsStr(e.target.value)}
             placeholder="原生IP, 流媒体解锁, OpenAI"
           />
-        </div>
-
-        {/* Submit Actions */}
-        <div className="pt-4 border-t border-rule flex items-center justify-end gap-3">
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            取消
-          </Button>
-          <Button type="submit" variant="primary" size="sm" loading={submitting}>
-            保存修改
-          </Button>
         </div>
       </form>
     </Modal>

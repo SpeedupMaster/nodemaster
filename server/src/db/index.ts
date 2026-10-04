@@ -517,7 +517,7 @@ class Database {
         if (this.data.nodes) {
           for (const n of this.data.nodes) {
             if (!n.xrayVersion) {
-              n.xrayVersion = "v1.8.24";
+              n.xrayVersion = "v26.3.27";
               changed = true;
             }
           }

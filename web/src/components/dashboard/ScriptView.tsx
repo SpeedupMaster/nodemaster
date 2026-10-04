@@ -84,10 +84,10 @@ export const ScriptView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overview Card */}
-      <div className="p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
         <div className="flex items-center gap-2.5">
           <Terminal weight="bold" className="w-5 h-5 text-accent" />
-          <h2 className="text-base font-semibold text-ink">
+          <h2 className="text-sm sm:text-base font-semibold text-ink">
             VPS 代理节点、系统探针与 BBR 深度网络调优部署中心
           </h2>
         </div>
@@ -112,13 +112,13 @@ export const ScriptView: React.FC = () => {
             <label className="text-xs font-medium text-ink-secondary mb-1.5 block">
               部署模式:
             </label>
-            <div className="grid grid-cols-2 max-w-md p-1 bg-paper border border-rule rounded-lg gap-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md p-1 bg-paper border border-rule rounded-lg gap-1.5">
               <button
                 type="button"
                 onClick={() => setDeployMode("all")}
-                className={`py-1.5 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                className={`py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
                   deployMode === "all"
-                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm"
+                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
                     : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
                 }`}
               >
@@ -128,9 +128,9 @@ export const ScriptView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDeployMode("probe_only")}
-                className={`py-1.5 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                className={`py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
                   deployMode === "probe_only"
-                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm"
+                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
                     : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
                 }`}
               >
@@ -147,8 +147,8 @@ export const ScriptView: React.FC = () => {
               内核性能优化参数附加:
             </span>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors touch-manipulation">
                 <input
                   type="checkbox"
                   checked={enableBbr}
@@ -158,7 +158,7 @@ export const ScriptView: React.FC = () => {
                 <span className="text-ink-secondary font-medium">--bbr (开启 BBR+FQ 深度调优)</span>
               </label>
 
-              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors">
+              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors touch-manipulation">
                 <input
                   type="checkbox"
                   checked={enableIpv4First}
@@ -172,38 +172,39 @@ export const ScriptView: React.FC = () => {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-mono text-ink-secondary">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
+            <span className="text-xs font-mono text-ink-secondary leading-relaxed">
               通用纳管部署指令模板 (请将 &lt;NODE_TOKEN&gt; 替换为节点专属 Token):
             </span>
             <Button
               variant="secondary"
               size="sm"
               onClick={handleCopyCmd}
-              icon={copiedGeneric ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              className="self-end sm:self-auto shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+              icon={copiedGeneric ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
             >
               {copiedGeneric ? "已复制命令" : "复制命令"}
             </Button>
           </div>
-          <div className="p-3.5 rounded-md bg-paper border border-rule font-mono text-xs text-accent select-all break-all">
+          <div className="p-3.5 rounded-lg bg-paper border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
             {genericCmd}
           </div>
         </div>
       </div>
 
       {/* TCP/BBR 跨境性能调优独立专区 (tcp-dashboard) */}
-      <div className="p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Lightning weight="fill" className="w-5 h-5 text-emerald-400" />
+      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <Lightning weight="fill" className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-base font-semibold text-ink flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2 flex-wrap">
                 <span>TCP-Dashboard 跨境网络深度优化套件</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
                   vpsing.de
                 </span>
               </h3>
-              <p className="text-xs text-ink-muted mt-0.5">
+              <p className="text-xs text-ink-muted mt-0.5 leading-relaxed">
                 基于 666shen/tcp-dashboard 开源项目深度融合，针对高丢包跨境物理链路与流媒体/代理节点量身打磨
               </p>
             </div>
@@ -213,16 +214,16 @@ export const ScriptView: React.FC = () => {
             href="https://github.com/666shen/tcp-dashboard"
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all"
+            className="self-start sm:self-auto text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all touch-manipulation min-h-[34px] sm:min-h-0"
           >
             <span>GitHub 仓库</span>
-            <ArrowSquareOut className="w-3.5 h-3.5" />
+            <ArrowSquareOut className="w-3.5 h-3.5 shrink-0" />
           </a>
         </div>
 
         {/* 6 大调优特性网格 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>BBR + FQ 拥塞算法</span>
@@ -232,7 +233,7 @@ export const ScriptView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>5% 物理内存动态缓冲</span>
@@ -242,7 +243,7 @@ export const ScriptView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>1,048,576 句柄与连接池</span>
@@ -252,7 +253,7 @@ export const ScriptView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>Reality / HY2 专项补丁</span>
@@ -262,7 +263,7 @@ export const ScriptView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>网卡 RPS/RSS 多队列均衡</span>
@@ -272,7 +273,7 @@ export const ScriptView: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-3 rounded-lg bg-paper border border-rule space-y-1">
+          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
             <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>SSH 终端快捷指令「t」</span>
@@ -285,42 +286,44 @@ export const ScriptView: React.FC = () => {
 
         {/* 独立执行命令 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-          <div className="p-3.5 rounded-lg bg-paper border border-rule space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-paper border border-rule space-y-2">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>官方开源一键命令 (推荐):</span>
               </span>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleCopyTuneOfficial}
-                icon={copiedTuneOfficial ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                className="shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                icon={copiedTuneOfficial ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               >
                 {copiedTuneOfficial ? "已复制" : "复制"}
               </Button>
             </div>
-            <div className="p-2.5 rounded bg-paper-2 border border-rule font-mono text-xs text-emerald-400 select-all break-all">
+            <div className="p-2.5 rounded-lg bg-paper-2 border border-rule font-mono text-xs text-emerald-400 select-all break-all leading-relaxed">
               {tuneOfficialCmd}
             </div>
           </div>
 
-          <div className="p-3.5 rounded-lg bg-paper border border-rule space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="p-3.5 rounded-xl bg-paper border border-rule space-y-2">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-accent" />
+                <Terminal className="w-3.5 h-3.5 text-accent shrink-0" />
                 <span>NodeMaster 面板镜像源:</span>
               </span>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleCopyTunePanel}
-                icon={copiedTunePanel ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                className="shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+                icon={copiedTunePanel ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               >
                 {copiedTunePanel ? "已复制" : "复制"}
               </Button>
             </div>
-            <div className="p-2.5 rounded bg-paper-2 border border-rule font-mono text-xs text-accent select-all break-all">
+            <div className="p-2.5 rounded-lg bg-paper-2 border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
               {tunePanelCmd}
             </div>
           </div>
@@ -328,57 +331,62 @@ export const ScriptView: React.FC = () => {
       </div>
 
       {/* Script Source Preview */}
-      <div className="p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-rule">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 className="text-sm font-semibold text-ink">
-                下发脚本源码在线预览
-              </h3>
-              <p className="text-xs text-ink-muted mt-0.5">
-                主控端动态分发，原生兼容 Debian 11/12、Ubuntu 20/22/24、CentOS 7/8/9、Rocky Linux
-              </p>
-            </div>
+      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-rule">
+          <div>
+            <h3 className="text-sm font-semibold text-ink">
+              下发脚本源码在线预览
+            </h3>
+            <p className="text-xs text-ink-muted mt-0.5 leading-relaxed">
+              主控端动态分发，原生兼容 Debian 11/12、Ubuntu 20/22/24、CentOS 7/8/9、Rocky Linux
+            </p>
+          </div>
 
+          {/* Script Selector Tabs & Copy Button */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
             {/* 切换预览的脚本 */}
-            <div className="flex bg-paper border border-rule rounded-lg p-0.5 gap-1">
+            <div className="flex items-center bg-paper border border-rule rounded-lg p-1 gap-1 flex-1 sm:flex-initial">
               <button
                 type="button"
                 onClick={() => setActivePreview("install")}
-                className={`px-2.5 py-1 rounded text-xs font-medium cursor-pointer transition-all ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium cursor-pointer transition-all whitespace-nowrap touch-manipulation text-center ${
                   activePreview === "install"
-                    ? "bg-accent/15 text-accent border border-accent/30 shadow-sm"
-                    : "text-ink-secondary hover:text-ink"
+                    ? "bg-accent/15 text-accent border border-accent/40 shadow-xs font-semibold"
+                    : "text-ink-secondary hover:text-ink border border-transparent"
                 }`}
               >
-                install.sh (联合纳管)
+                <span className="hidden sm:inline">install.sh (联合纳管)</span>
+                <span className="sm:hidden">install.sh (纳管)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActivePreview("tcp_tune")}
-                className={`px-2.5 py-1 rounded text-xs font-medium cursor-pointer transition-all ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium cursor-pointer transition-all whitespace-nowrap touch-manipulation text-center ${
                   activePreview === "tcp_tune"
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm"
-                    : "text-ink-secondary hover:text-ink"
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-xs font-semibold"
+                    : "text-ink-secondary hover:text-ink border border-transparent"
                 }`}
               >
-                tcp-tune.sh (TCP 调优)
+                <span className="hidden sm:inline">tcp-tune.sh (TCP 调优)</span>
+                <span className="sm:hidden">tcp-tune.sh (调优)</span>
               </button>
             </div>
-          </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleCopyScript}
-            icon={copiedScript ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-          >
-            {copiedScript ? "已复制脚本" : "复制代码"}
-          </Button>
+            {/* 复制代码按钮 */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleCopyScript}
+              className="whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
+              icon={copiedScript ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+            >
+              {copiedScript ? "已复制" : "复制代码"}
+            </Button>
+          </div>
         </div>
 
-        <div className="relative rounded-md bg-paper border border-rule overflow-hidden">
-          <pre className="p-4 text-xs font-mono text-ink-secondary overflow-x-auto max-h-[460px] leading-relaxed select-all">
+        <div className="relative rounded-lg bg-paper border border-rule overflow-hidden">
+          <pre className="p-3.5 sm:p-4 text-xs font-mono text-ink-secondary overflow-x-auto max-h-[460px] leading-relaxed select-all">
             {activePreview === "install"
               ? scriptContent || "正在获取 install.sh 脚本源码..."
               : tcpTuneContent || "正在获取 tcp-tune.sh 脚本源码..."}

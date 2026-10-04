@@ -17,6 +17,7 @@ import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
 import { NodeDetailModal } from "./components/probe/NodeDetailModal";
 import { GlobalTooltip } from "./components/common/Tooltip";
 import { TrafficAnalyticsView } from "./components/traffic/TrafficAnalyticsView";
+import { Broadcast, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
 import { NodeItem } from "./types";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
@@ -63,6 +64,7 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   const handleSelectTab = useCallback((tab: string) => {
@@ -130,9 +132,19 @@ export function App() {
     );
   }, { dependencies: [currentTab] });
 
+  const formatSpeed = (bytesPerSec: number) => {
+    if (bytesPerSec > 1024 * 1024) {
+      return { val: bytesPerSec / (1024 * 1024), unit: "MB/s" };
+    }
+    return { val: bytesPerSec / 1024, unit: "KB/s" };
+  };
+
+  const mobileUp = formatSpeed(totalUpSpeed);
+  const mobileDown = formatSpeed(totalDownSpeed);
+
   return (
     <div className="flex min-h-screen bg-paper text-ink">
-      {/* N3 Side-rail Navigation */}
+      {/* N3 Side-rail Navigation & Mobile Drawer */}
       <Sidebar
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
@@ -141,6 +153,8 @@ export function App() {
         totalDownSpeed={totalDownSpeed}
         onlineCount={onlineNodesCount}
         totalCount={nodes.length}
+        isMobileOpen={isMobileNavOpen}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
       />
 
       {/* Main Workbench Viewport */}
@@ -150,9 +164,32 @@ export function App() {
           onOpenAddModal={() => setIsAddNodeOpen(true)}
           onRefresh={fetchData}
           loading={loading}
+          onToggleMobileMenu={() => setIsMobileNavOpen((prev) => !prev)}
+          onOpenMobileMenu={() => setIsMobileNavOpen(true)}
+          isMobileMenuOpen={isMobileNavOpen}
         />
 
-        <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+        {/* Mobile Global Real-time Throughput (Sticky below Header on mobile < 768px) */}
+        <div className="md:hidden sticky top-16 z-10 bg-paper-2/95 backdrop-blur-md border-b border-rule px-4 py-2 flex items-center justify-between text-xs select-none">
+          <div className="flex items-center gap-1.5 font-mono text-ink-muted">
+            <Broadcast className="w-3.5 h-3.5 text-accent animate-pulse" />
+            <span className="text-[11px] font-medium">全局吞吐</span>
+          </div>
+          <div className="flex items-center gap-3.5 font-mono text-xs">
+            <div className="flex items-center gap-1 text-sky-400">
+              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span className="text-[10px] text-ink-muted">上行:</span>
+              <span className="font-semibold">{mobileUp.val.toFixed(1)} {mobileUp.unit}</span>
+            </div>
+            <div className="flex items-center gap-1 text-emerald-400">
+              <ArrowDownRight className="w-3.5 h-3.5" />
+              <span className="text-[10px] text-ink-muted">下行:</span>
+              <span className="font-semibold">{mobileDown.val.toFixed(1)} {mobileDown.unit}</span>
+            </div>
+          </div>
+        </div>
+
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6">
           <div ref={mainContentRef}>
             {currentTab === "dashboard" && (
               <div className="space-y-6">

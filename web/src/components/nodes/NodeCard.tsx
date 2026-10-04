@@ -397,7 +397,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           </Tooltip>
 
           {onViewVersion && (
-            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "v1.8.24"})`}>
+            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "v26.3.27"})`}>
               <button
                 onClick={onViewVersion}
                 className="p-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer"

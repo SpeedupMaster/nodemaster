@@ -79,8 +79,8 @@ export const NodeList: React.FC<NodeListProps> = ({
   return (
     <div className="space-y-4">
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-paper-2 p-3 rounded-lg border border-rule">
-        <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-paper-2 p-2.5 sm:p-3 rounded-lg border border-rule">
+        <div className="flex items-center gap-1 bg-paper p-1 rounded-md border border-rule w-full sm:w-auto overflow-x-auto shrink-0 pb-0.5 sm:pb-0">
           {[
             { id: "all", label: "全部节点" },
             { id: "direct", label: "主力直连" },
@@ -90,7 +90,7 @@ export const NodeList: React.FC<NodeListProps> = ({
             <button
               key={t.id}
               onClick={() => setTypeFilter(t.id)}
-              className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
+              className={`px-3 py-1 text-xs rounded font-medium transition-colors shrink-0 cursor-pointer ${
                 typeFilter === t.id
                   ? "bg-paper-2 text-ink shadow-sm border border-rule"
                   : "text-ink-muted hover:text-ink"
@@ -101,7 +101,7 @@ export const NodeList: React.FC<NodeListProps> = ({
           ))}
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button
             variant="secondary"
             size="sm"

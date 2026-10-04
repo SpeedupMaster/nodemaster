@@ -18,6 +18,7 @@ import {
 import { LatencyTask, NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { Input } from "../common/Input";
+import { Modal } from "../common/Modal";
 import { Tooltip } from "../common/Tooltip";
 
 interface LatencyMonitorViewProps {
@@ -223,7 +224,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
         <div>
           <h2 className="text-xl font-bold text-ink tracking-tight">延迟监测</h2>
           <p className="text-xs text-ink-muted mt-1">
@@ -231,32 +232,32 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
           <Tooltip content="一键恢复默认三网测速目标预设">
             <button
               onClick={handleResetPresets}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-md bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer touch-manipulation min-h-[38px] sm:min-h-0"
             >
-              <ArrowsClockwise className="w-3.5 h-3.5" />
-              <span>重置三网测试点</span>
+              <ArrowsClockwise className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">重置三网测试点</span>
             </button>
           </Tooltip>
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer touch-manipulation min-h-[38px] sm:min-h-0"
           >
-            <Plus className="w-4 h-4" />
-            <span>新建监控任务</span>
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="truncate">新建监控任务</span>
           </button>
         </div>
       </div>
 
       {/* View Mode Tabs */}
-      <div className="border-b border-rule flex items-center justify-between">
+      <div className="border-b border-rule flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-6">
           <button
             onClick={() => setActiveTab("tasks")}
-            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative ${
+            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative whitespace-nowrap touch-manipulation ${
               activeTab === "tasks"
                 ? "text-accent font-semibold"
                 : "text-ink-muted hover:text-ink"
@@ -269,7 +270,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
           </button>
           <button
             onClick={() => setActiveTab("servers")}
-            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative ${
+            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative whitespace-nowrap touch-manipulation ${
               activeTab === "servers"
                 ? "text-accent font-semibold"
                 : "text-ink-muted hover:text-ink"
@@ -281,7 +282,9 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
             )}
           </button>
         </div>
-        <div className="text-xs text-ink-muted font-mono pb-2.5 flex items-center gap-2">
+
+        {/* Desktop Meta Info */}
+        <div className="hidden sm:flex items-center gap-2 text-xs text-ink-muted font-mono pb-2.5">
           <span>共 {tasks.length} 个监测任务</span>
           <span>·</span>
           <span>采样周期 60s</span>
@@ -293,10 +296,17 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
         </div>
       </div>
 
-      {/* Tab 1: Task View (Table view matching user screenshot) */}
+      {/* Mobile Sub Meta (Shown only on small screens) */}
+      <div className="sm:hidden -mt-3 flex items-center justify-between text-[11px] text-ink-muted font-mono px-0.5">
+        <span>共 {tasks.length} 个任务 · 采样周期 60s</span>
+        <span className="text-ink-secondary">点击卡片快捷操作</span>
+      </div>
+
+      {/* Tab 1: Task View */}
       {activeTab === "tasks" && (
         <div className="space-y-4">
-          <div className="rounded-lg bg-paper-2 border border-rule overflow-hidden shadow-xs">
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block rounded-lg bg-paper-2 border border-rule overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -344,70 +354,70 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                           </Tooltip>
                         </td>
 
-                      {/* Name */}
-                      <td className="py-3 px-4 font-sans whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-ink text-xs">
-                            {task.name}
-                          </span>
-                          {!task.enabled && (
-                            <span className="text-[10px] px-1 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule">
-                              已暂停
+                        {/* Name */}
+                        <td className="py-3 px-4 font-sans whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-ink text-xs">
+                              {task.name}
                             </span>
-                          )}
-                        </div>
-                      </td>
+                            {!task.enabled && (
+                              <span className="text-[10px] px-1 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule">
+                                已暂停
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
-                      {/* Assigned Servers */}
-                      <td className="py-3 px-4 font-sans whitespace-nowrap">
-                        {renderServersSummary(task.nodeIds)}
-                      </td>
+                        {/* Assigned Servers */}
+                        <td className="py-3 px-4 font-sans whitespace-nowrap">
+                          {renderServersSummary(task.nodeIds)}
+                        </td>
 
-                      {/* Target Address */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="text-ink font-mono text-xs select-all">
-                          {task.target}
-                        </span>
-                      </td>
+                        {/* Target Address */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className="text-ink font-mono text-xs select-all">
+                            {task.target}
+                          </span>
+                        </td>
 
-                      {/* Protocol Type */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                          {task.type}
-                        </span>
-                      </td>
+                        {/* Protocol Type */}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                            {task.type}
+                          </span>
+                        </td>
 
-                      {/* Interval */}
-                      <td className="py-3 px-3 whitespace-nowrap text-ink-secondary">
-                        {task.intervalSec || 60}
-                      </td>
+                        {/* Interval */}
+                        <td className="py-3 px-3 whitespace-nowrap text-ink-secondary">
+                          {task.intervalSec || 60}
+                        </td>
 
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Tooltip content="编辑任务">
-                            <button
-                              onClick={() => openEditModal(task)}
-                              className="p-1.5 rounded-md hover:bg-paper-3 text-ink-muted hover:text-ink transition-colors cursor-pointer"
-                            >
-                              <PencilSimple className="w-4 h-4" />
-                            </button>
-                          </Tooltip>
-                          <Tooltip content="删除任务">
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`确定删除任务「${task.name}」吗？`)) {
-                                  onDeleteTask(task.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-md hover:bg-rose-500/10 text-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </button>
-                          </Tooltip>
-                        </div>
-                      </td>
-                    </tr>
+                        {/* Actions */}
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Tooltip content="编辑任务">
+                              <button
+                                onClick={() => openEditModal(task)}
+                                className="p-1.5 rounded-md hover:bg-paper-3 text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                              >
+                                <PencilSimple className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip content="删除任务">
+                              <button
+                                onClick={() => {
+                                 if (window.confirm(`确定删除任务「${task.name}」吗？`)) {
+                                    onDeleteTask(task.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-md hover:bg-rose-500/10 text-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
 
@@ -423,11 +433,89 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
             </div>
           </div>
 
+          {/* Mobile Card Stream (< md) */}
+          <div className="md:hidden space-y-3">
+            {tasks.map((task) => (
+              <div
+                key={task.id}
+                className="p-3.5 rounded-xl bg-paper-2 border border-rule hover:border-rule-active transition-all space-y-2.5 shadow-xs"
+              >
+                {/* Top row: Name + Badges + Actions */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-ink text-sm leading-tight break-words">
+                        {task.name}
+                      </span>
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 font-semibold shrink-0">
+                        {task.type}
+                      </span>
+                      {!task.enabled && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule shrink-0">
+                          已暂停
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Target Address */}
+                    <div className="text-xs font-mono text-ink-secondary mt-1.5 break-all select-all flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 shrink-0 text-ink-muted" />
+                      <span>{task.target}</span>
+                    </div>
+                  </div>
+
+                  {/* Mobile Action Buttons (34x34 touch-friendly targets) */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => openEditModal(task)}
+                      className="w-8 h-8 rounded-lg bg-paper-3 hover:bg-paper-hover active:scale-95 text-ink-secondary hover:text-ink flex items-center justify-center border border-rule transition-all cursor-pointer touch-manipulation"
+                      title="编辑任务"
+                      aria-label="编辑任务"
+                    >
+                      <PencilSimple className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`确定删除任务「${task.name}」吗？`)) {
+                          onDeleteTask(task.id);
+                        }
+                      }}
+                      className="w-8 h-8 rounded-lg bg-paper-3 hover:bg-rose-500/10 active:scale-95 text-ink-secondary hover:text-rose-400 flex items-center justify-center border border-rule transition-all cursor-pointer touch-manipulation"
+                      title="删除任务"
+                      aria-label="删除任务"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom row: Assigned Servers + Interval */}
+                <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-xs text-ink-muted">
+                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                    <HardDrives className="w-3.5 h-3.5 shrink-0 text-ink-muted" />
+                    <div className="truncate">
+                      {renderServersSummary(task.nodeIds)}
+                    </div>
+                  </div>
+                  <div className="shrink-0 font-mono text-[11px] text-ink-secondary">
+                    周期: {task.intervalSec || 60}s
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {tasks.length === 0 && (
+              <div className="py-8 px-4 rounded-xl bg-paper-2 border border-rule text-center text-xs text-ink-muted">
+                暂无监测任务，点击上方「新建监控任务」或「重置三网测试点」快速开始。
+              </div>
+            )}
+          </div>
+
           {/* Bottom Storage Footprint Notice (7-day retention) */}
-          <div className="flex items-center gap-2 text-xs text-ink-muted px-1">
-            <Info className="w-3.5 h-3.5 shrink-0 text-accent" />
+          <div className="flex items-start sm:items-center gap-2 text-xs text-ink-muted px-1 leading-relaxed">
+            <Info className="w-3.5 h-3.5 shrink-0 text-accent mt-0.5 sm:mt-0" />
             <span>
-              预计需要磁盘空间: {(tasks.length * 2.02).toFixed(2)} MB/天, 根据设置的 7 天保存时间, 需要使用 {(tasks.length * 2.02 * 7).toFixed(2)} MB 磁盘空间.
+              预计需要磁盘空间: {(tasks.length * 2.02).toFixed(2)} MB/天，根据设置的 7 天保存时间，需使用 {(tasks.length * 2.02 * 7).toFixed(2)} MB 磁盘空间。
             </span>
           </div>
         </div>
@@ -483,7 +571,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
 
                 <button
                   onClick={() => onOpenNodeDetail(node)}
-                  className="w-full py-2 px-3 rounded-md bg-paper-3 hover:bg-paper-hover text-ink text-xs font-medium border border-rule flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  className="w-full py-2.5 px-3 rounded-lg bg-paper-3 hover:bg-paper-hover text-ink text-xs font-medium border border-rule flex items-center justify-center gap-1.5 transition-colors cursor-pointer touch-manipulation min-h-[38px]"
                 >
                   <ArrowSquareOut className="w-3.5 h-3.5 text-accent" />
                   <span>查看详细延迟与时序图表</span>
@@ -495,180 +583,172 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
       )}
 
       {/* Modal: Create or Edit Latency Task */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-paper-2 border border-rule rounded-xl w-full max-w-lg shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-rule">
-              <h3 className="text-base font-semibold text-ink">
-                {editingTask ? "编辑监测任务" : "新建延迟监测任务"}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-md text-ink-muted hover:text-ink transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingTask ? "编辑监测任务" : "新建延迟监测任务"}
+        subtitle="配置探测协议、测试目标与指派探针服务器"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-9rem)]">
+            <div>
+              <label className="block text-xs font-medium text-ink-secondary mb-1">
+                任务名称 <span className="text-rose-400">*</span>
+              </label>
+              <Input
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="例如: 广东移动 / 香港BGP优化测速点"
+                required
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-ink-secondary mb-1">
+                目标地址 (Host:Port 或 IP) <span className="text-rose-400">*</span>
+              </label>
+              <Input
+                value={formTarget}
+                onChange={(e) => setFormTarget(e.target.value)}
+                placeholder="例如: gd-cm-v4.ip.zstaticcdn.com:80 或 1.1.1.1:53"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-ink-secondary mb-1">
-                  任务名称 <span className="text-rose-400">*</span>
+                  协议类型
+                </label>
+                <div className="flex items-center gap-2 bg-paper p-1 rounded-md border border-rule">
+                  {(["tcp", "icmp"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormType(t)}
+                      className={`flex-1 py-1.5 text-xs font-mono uppercase rounded transition-colors cursor-pointer touch-manipulation ${
+                        formType === t
+                          ? "bg-paper-2 text-accent font-semibold shadow-xs"
+                          : "text-ink-muted hover:text-ink"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-ink-secondary mb-1">
+                  探测间隔 (秒)
                 </label>
                 <Input
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="例如: 广东移动 / 香港BGP优化测速点"
+                  type="number"
+                  min={10}
+                  max={3600}
+                  value={formInterval}
+                  onChange={(e) => setFormInterval(Number(e.target.value))}
                   required
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-medium text-ink-secondary mb-1">
-                  目标地址 (Host:Port 或 IP) <span className="text-rose-400">*</span>
+            <div>
+              <div className="flex items-center justify-between mb-1.5 gap-2">
+                <label className="block text-xs font-medium text-ink-secondary truncate">
+                  指派探针服务器 <span className="text-ink-muted text-[11px] font-normal">(留空默认全部)</span>
                 </label>
-                <Input
-                  value={formTarget}
-                  onChange={(e) => setFormTarget(e.target.value)}
-                  placeholder="例如: gd-cm-v4.ip.zstaticcdn.com:80 或 1.1.1.1:53"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-ink-secondary mb-1">
-                    协议类型
-                  </label>
-                  <div className="flex items-center gap-2 bg-paper p-1 rounded-md border border-rule">
-                    {(["tcp", "icmp"] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setFormType(t)}
-                        className={`flex-1 py-1.5 text-xs font-mono uppercase rounded transition-colors cursor-pointer ${
-                          formType === t
-                            ? "bg-paper-2 text-accent font-semibold shadow-xs"
-                            : "text-ink-muted hover:text-ink"
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-ink-secondary mb-1">
-                    探测间隔 (秒)
-                  </label>
-                  <Input
-                    type="number"
-                    min={10}
-                    max={3600}
-                    value={formInterval}
-                    onChange={(e) => setFormInterval(Number(e.target.value))}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-ink-secondary">
-                    指派运行探针节点 (留空默认指派全部服务器)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={toggleSelectAllNodes}
-                    className="text-xs text-accent hover:text-accent-hover font-medium cursor-pointer transition-colors"
-                  >
-                    {nodes.length > 0 && formNodeIds.length === nodes.length
-                      ? "取消全选"
-                      : "选择所有节点"}
-                  </button>
-                </div>
-
-                <div className="max-h-44 overflow-y-auto p-2 bg-paper rounded-md border border-rule space-y-1">
-                  {/* Master Select All Row */}
-                  <label className="flex items-center justify-between p-1.5 rounded hover:bg-paper-hover text-xs text-ink cursor-pointer transition-colors border-b border-rule/50 pb-2 mb-1 select-none">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={nodes.length > 0 && formNodeIds.length === nodes.length}
-                        ref={(el) => {
-                          if (el) {
-                            el.indeterminate =
-                              formNodeIds.length > 0 && formNodeIds.length < nodes.length;
-                          }
-                        }}
-                        onChange={toggleSelectAllNodes}
-                        className="rounded border-rule text-accent focus:ring-accent"
-                      />
-                      <span className="font-semibold text-accent">选择所有节点</span>
-                    </div>
-                    <span className="text-ink-muted text-[11px] font-mono">
-                      {formNodeIds.length === 0
-                        ? "默认全部"
-                        : `${formNodeIds.length}/${nodes.length} 已选`}
-                    </span>
-                  </label>
-
-                  {nodes.map((node) => {
-                    const isChecked = formNodeIds.includes(node.id);
-                    return (
-                      <label
-                        key={node.id}
-                        className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-hover text-xs text-ink cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleNodeSelection(node.id)}
-                          className="rounded border-rule text-accent focus:ring-accent"
-                        />
-                        <span className="font-semibold">{node.name}</span>
-                        <span className="text-ink-muted text-[11px] font-mono">
-                          ({node.ip})
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center gap-2 text-xs text-ink cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formEnabled}
-                    onChange={(e) => setFormEnabled(e.target.checked)}
-                    className="rounded border-rule text-accent focus:ring-accent"
-                  />
-                  <span>启用该监测任务</span>
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-rule">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-md bg-paper-3 hover:bg-paper-hover text-ink text-xs font-medium border border-rule transition-colors cursor-pointer"
+                  onClick={toggleSelectAllNodes}
+                  className="text-xs text-accent hover:text-accent-hover font-medium cursor-pointer transition-colors touch-manipulation whitespace-nowrap shrink-0"
                 >
-                  取消
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {isSubmitting ? "保存中..." : editingTask ? "保存更改" : "创建任务"}
+                  {nodes.length > 0 && formNodeIds.length === nodes.length
+                    ? "取消全选"
+                    : "选择所有节点"}
                 </button>
               </div>
-            </form>
+
+              <div className="max-h-48 overflow-y-auto p-2 bg-paper rounded-lg border border-rule space-y-1">
+                {/* Master Select All Row */}
+                <label className="flex items-center justify-between p-2 rounded hover:bg-paper-hover text-xs text-ink cursor-pointer transition-colors border-b border-rule/50 pb-2 mb-1 select-none touch-manipulation">
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={nodes.length > 0 && formNodeIds.length === nodes.length}
+                      ref={(el) => {
+                        if (el) {
+                          el.indeterminate =
+                            formNodeIds.length > 0 && formNodeIds.length < nodes.length;
+                        }
+                      }}
+                      onChange={toggleSelectAllNodes}
+                      className="w-4 h-4 rounded border-rule text-accent focus:ring-accent"
+                    />
+                    <span className="font-semibold text-accent">选择所有节点</span>
+                  </div>
+                  <span className="text-ink-muted text-[11px] font-mono">
+                    {formNodeIds.length === 0
+                      ? "默认全部"
+                      : `${formNodeIds.length}/${nodes.length} 已选`}
+                  </span>
+                </label>
+
+                {nodes.map((node) => {
+                  const isChecked = formNodeIds.includes(node.id);
+                  return (
+                    <label
+                      key={node.id}
+                      className="flex items-center gap-2.5 p-2 rounded hover:bg-paper-hover text-xs text-ink cursor-pointer transition-colors touch-manipulation select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleNodeSelection(node.id)}
+                        className="w-4 h-4 rounded border-rule text-accent focus:ring-accent"
+                      />
+                      <span className="font-semibold text-ink">{node.name}</span>
+                      <span className="text-ink-muted text-[11px] font-mono">
+                        ({node.ip})
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2.5 text-xs text-ink cursor-pointer touch-manipulation select-none">
+                <input
+                  type="checkbox"
+                  checked={formEnabled}
+                  onChange={(e) => setFormEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded border-rule text-accent focus:ring-accent"
+                />
+                <span>启用该监测任务</span>
+              </label>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 sm:py-4 border-t border-rule bg-paper-2/95">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 rounded-md bg-paper-3 hover:bg-paper-hover text-ink text-xs font-medium border border-rule transition-colors cursor-pointer touch-manipulation min-h-[38px]"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer disabled:opacity-50 touch-manipulation min-h-[38px]"
+            >
+              {isSubmitting ? "保存中..." : editingTask ? "保存更改" : "创建任务"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
