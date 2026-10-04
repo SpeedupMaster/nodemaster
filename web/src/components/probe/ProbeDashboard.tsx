@@ -307,6 +307,18 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                             {node.arch || "x86_64"}
                           </span>
                           <span className="shrink-0">{node.tcpCount || 120} TCP</span>
+                          {node.tcpCongestion && (
+                            <span
+                              className={`px-1 py-0.2 rounded text-[10px] font-mono border shrink-0 ${
+                                node.tcpCongestion.toLowerCase() === "bbr"
+                                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                                  : "text-ink-muted bg-paper-3 border-rule"
+                              }`}
+                              title={`TCP 算法: ${node.tcpCongestion}`}
+                            >
+                              {node.tcpCongestion.toUpperCase()}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -476,6 +488,18 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <span>{node.ip}:{node.port}</span>
                       <span>•</span>
                       <span>{node.os || "Debian 12"}</span>
+                      {node.tcpCongestion && (
+                        <>
+                          <span>•</span>
+                          <span className={`text-[10px] font-mono px-1 py-0.2 rounded border ${
+                            node.tcpCongestion.toLowerCase() === "bbr"
+                              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
+                              : "text-ink-muted bg-paper-3 border-rule"
+                          }`}>
+                            {node.tcpCongestion.toUpperCase()}
+                          </span>
+                        </>
+                      )}
                       <span>•</span>
                       <span className="text-emerald-400 font-medium">
                         {node.bandwidthMbps ? `${node.bandwidthMbps >= 1000 ? node.bandwidthMbps / 1000 + " Gbps" : node.bandwidthMbps + " Mbps"}` : "1 Gbps"}

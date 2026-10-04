@@ -365,6 +365,16 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-sans">
                   {node.os || "Debian 12"}
                 </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border font-mono font-medium ${
+                    (node.tcpCongestion || "bbr").toLowerCase() === "bbr"
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                      : "bg-paper-3 text-ink-muted border-rule"
+                  }`}
+                  title="TCP 拥塞算法与内核调优状态"
+                >
+                  TCP: {(node.tcpCongestion || "bbr").toUpperCase()}
+                </span>
               </div>
               <div className="text-[11px] font-mono text-ink-muted flex items-center gap-2 mt-1">
                 <span className="flex items-center gap-1">

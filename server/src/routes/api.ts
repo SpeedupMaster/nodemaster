@@ -428,6 +428,7 @@ apiRouter.post("/nodes/telemetry", (req, res) => {
   if (telemetry.arch) updates.arch = telemetry.arch;
   if (typeof telemetry.tcpCount === "number") updates.tcpCount = telemetry.tcpCount;
   if (typeof telemetry.udpCount === "number") updates.udpCount = telemetry.udpCount;
+  if (telemetry.tcpCongestion) updates.tcpCongestion = telemetry.tcpCongestion;
   if (telemetry.xrayVersion) updates.xrayVersion = telemetry.xrayVersion;
 
   db.updateNode(node.id, updates);
@@ -487,6 +488,21 @@ apiRouter.get("/install.sh", (req, res) => {
     return res.send(raw.replaceAll("{{DEFAULT_PANEL_URL}}", panelUrl));
   }
   res.status(500).send("# Error: install.sh template missing");
+});
+
+// -------------------------------------------------------------
+// 6.1 TCP / BBR Dashboard & Tuning Script (Standalone)
+// -------------------------------------------------------------
+apiRouter.get("/tcp-tune.sh", (req, res) => {
+  const panelUrl = `${req.protocol}://${req.get("host")}`;
+  const scriptPath = path.resolve(__dirname, "../../data/tcp-tune.sh");
+  if (fs.existsSync(scriptPath)) {
+    const raw = fs.readFileSync(scriptPath, "utf-8");
+    res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
+    return res.send(raw.replaceAll("{{DEFAULT_PANEL_URL}}", panelUrl));
+  }
+  // Redirect to official upstream
+  return res.redirect("https://raw.githubusercontent.com/666shen/tcp-dashboard/main/tcp.sh");
 });
 
 // -------------------------------------------------------------

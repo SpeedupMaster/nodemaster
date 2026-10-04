@@ -58,6 +58,7 @@ export interface NodeItem {
   tcpCount?: number;
   udpCount?: number;
   xrayVersion?: string;
+  tcpCongestion?: string;
 }
 
 export interface XrayVersionNodeStatus {

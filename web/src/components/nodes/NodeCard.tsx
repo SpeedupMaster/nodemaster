@@ -111,6 +111,28 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                   </span>
                 </>
               )}
+              {node.tcpCongestion && (
+                <>
+                  <span className="shrink-0">•</span>
+                  <Tooltip
+                    content={`TCP 拥塞算法: ${node.tcpCongestion.toUpperCase()} (${
+                      node.tcpCongestion.toLowerCase() === "bbr"
+                        ? "已开启 BBR 硬件级跨境加速"
+                        : "系统默认"
+                    })`}
+                  >
+                    <span
+                      className={`text-[10px] font-medium font-mono shrink-0 px-1.5 py-0.2 rounded border cursor-help ${
+                        node.tcpCongestion.toLowerCase() === "bbr"
+                          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
+                          : "text-ink-muted bg-paper-3 border-rule"
+                      }`}
+                    >
+                      {node.tcpCongestion.toUpperCase()}
+                    </span>
+                  </Tooltip>
+                </>
+              )}
               {node.bandwidthMbps && (
                 <>
                   <span className="shrink-0">•</span>
