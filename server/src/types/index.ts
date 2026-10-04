@@ -59,6 +59,12 @@ export interface NodeItem {
   udpCount?: number;
   xrayVersion?: string;
   tcpCongestion?: string;
+  // Dynamic Hot Sync
+  configVersion?: number;
+  appliedConfigVersion?: number;
+  configSyncStatus?: "synced" | "pending" | "failed";
+  configSyncError?: string;
+  configSyncedAt?: number;
 }
 
 export interface XrayVersionNodeStatus {

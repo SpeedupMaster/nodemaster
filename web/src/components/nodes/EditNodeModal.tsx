@@ -10,6 +10,7 @@ import {
   Key,
   ArrowsClockwise,
   CalendarBlank,
+  Lightning,
 } from "@phosphor-icons/react";
 
 interface EditNodeModalProps {
@@ -752,6 +753,19 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
             onChange={(e) => setTagsStr(e.target.value)}
             placeholder="原生IP, 流媒体解锁, OpenAI"
           />
+        </div>
+
+        {/* Hot Sync Engine Banner */}
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-ink-secondary">
+          <Lightning className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-semibold text-emerald-300 block">
+              VPS 全自动热同步已激活 (Zero-Touch Hot Reload)
+            </span>
+            <span className="text-[11px] text-ink-muted leading-relaxed block">
+              修改端口、SNI 或密钥后点击「保存修改」，主控将通知 VPS 探针在 3 秒内拉取并平滑热重载 Xray 守护进程，无需登录 SSH 终端敲命令。
+            </span>
+          </div>
         </div>
       </form>
     </Modal>

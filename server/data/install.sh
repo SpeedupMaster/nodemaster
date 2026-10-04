@@ -104,6 +104,8 @@ if [ "$MODE" != "probe_only" ]; then
 
   if [ -n "${NODE_ID}" ]; then
     curl -fsSL "${PANEL_URL}/api/nodes/${NODE_ID}/xray-config" | jq '.data' > /etc/nodemaster/config.json 2>/dev/null || true
+    INIT_CONFIG_VER=$(echo "${NODE_INFO}" | jq -r '.data.configVersion // empty')
+    [ -n "$INIT_CONFIG_VER" ] && echo "$INIT_CONFIG_VER" > /etc/nodemaster/config_version || true
   fi
 
   cat <<EOF > /etc/systemd/system/nodemaster-proxy.service
@@ -276,6 +278,14 @@ PREV_RX=0
 PREV_TX=0
 PREV_TIME=$(date +%s)
 
+# Local Config Version Tracker
+APPLIED_VER=0
+if [ -f /etc/nodemaster/config_version ]; then
+  APPLIED_VER=$(cat /etc/nodemaster/config_version 2>/dev/null || echo 0)
+fi
+LAST_SYNC_STATUS=""
+LAST_SYNC_ERR=""
+
 # OS Info Detection
 OS_NAME="Linux"
 if [ -f /etc/os-release ]; then
@@ -363,10 +373,18 @@ while true; do
     [ -n "$XRAY_RAW" ] && XRAY_VER="v${XRAY_RAW#v}"
   fi
 
-  # Report to Panel
+  # 8. Report to Panel with Applied Config Version
+  PAYLOAD_SYNC=""
+  if [ -n "$LAST_SYNC_STATUS" ]; then
+    PAYLOAD_SYNC=",\"syncReport\":{\"status\":\"${LAST_SYNC_STATUS}\",\"version\":${APPLIED_VER:-0},\"error\":\"${LAST_SYNC_ERR}\"}"
+    LAST_SYNC_STATUS=""
+    LAST_SYNC_ERR=""
+  fi
+
   PAYLOAD=$(cat <<JSON_PAYLOAD
 {
   "token": "${TOKEN}",
+  "appliedConfigVersion": ${APPLIED_VER:-0}${PAYLOAD_SYNC},
   "cpuUsage": ${CPU_USAGE},
   "memUsage": ${MEM_USAGE},
   "memTotalBytes": ${MEM_TOTAL_BYTES},
@@ -388,9 +406,38 @@ while true; do
 JSON_PAYLOAD
 )
 
-  curl -s -X POST "${PANEL_URL}/api/nodes/telemetry" \
+  RESP=$(curl -s -X POST "${PANEL_URL}/api/nodes/telemetry" \
     -H "Content-Type: application/json" \
-    -d "$PAYLOAD" >/dev/null 2>&1 || true
+    -d "$PAYLOAD" 2>/dev/null || echo "")
+
+  # 9. Hot Sync Engine: Check if panel requests config reload
+  if [ -n "$RESP" ]; then
+    SYNC_ACTION=$(echo "$RESP" | jq -r '.sync.action // empty' 2>/dev/null || true)
+    TARGET_VER=$(echo "$RESP" | jq -r '.sync.targetVersion // empty' 2>/dev/null || true)
+
+    if [ "$SYNC_ACTION" = "RELOAD_CONFIG" ] && [ -n "$TARGET_VER" ] && [ "$TARGET_VER" != "$APPLIED_VER" ]; then
+      CONF_URL=$(echo "$RESP" | jq -r '.sync.configUrl // empty' 2>/dev/null || true)
+      [ -z "$CONF_URL" ] && CONF_URL="/api/nodes/by-token/${TOKEN}/xray-config"
+
+      NEW_CONF=$(curl -fsSL "${PANEL_URL}${CONF_URL}" 2>/dev/null || true)
+      if [ -n "$NEW_CONF" ]; then
+        echo "$NEW_CONF" | jq '.data' > /tmp/nodemaster-new-config.json 2>/dev/null || true
+        # Validate Xray syntax before applying to prevent service crash
+        if [ -s /tmp/nodemaster-new-config.json ] && /usr/local/bin/xray -test -c /tmp/nodemaster-new-config.json >/dev/null 2>&1; then
+          mv /tmp/nodemaster-new-config.json /etc/nodemaster/config.json
+          systemctl restart nodemaster-proxy 2>/dev/null || true
+          APPLIED_VER="$TARGET_VER"
+          echo "$APPLIED_VER" > /etc/nodemaster/config_version
+          LAST_SYNC_STATUS="success"
+          LAST_SYNC_ERR=""
+        else
+          LAST_SYNC_STATUS="error"
+          LAST_SYNC_ERR="Xray config validation test failed"
+          rm -f /tmp/nodemaster-new-config.json
+        fi
+      fi
+    fi
+  fi
 
   sleep 3
 done

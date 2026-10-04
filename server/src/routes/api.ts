@@ -157,9 +157,14 @@ apiRouter.put("/nodes/:id", (req, res) => {
   }
   if (status !== undefined) updates.status = status;
 
-  // Protocol specific updates
+  // Protocol specific updates & Hot Sync detection
+  let isConfigChanged = false;
+  if (port !== undefined && Number(port) !== existing.port) {
+    isConfigChanged = true;
+  }
+
   if (existing.protocol === "vless-reality" || existing.type === "direct") {
-    if (sni !== undefined) {
+    if (sni !== undefined && sni !== existing.sni) {
       updates.sni = sni;
       if (existing.reality) {
         updates.reality = {
@@ -167,19 +172,35 @@ apiRouter.put("/nodes/:id", (req, res) => {
           serverName: sni,
         };
       }
+      isConfigChanged = true;
     }
   } else if (existing.protocol === "shadowsocks" || existing.type === "unlock") {
     if (req.body.shadowsocks) {
+      const newMethod = req.body.shadowsocks.method || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm";
+      const newPassword = req.body.shadowsocks.password || existing.shadowsocks?.password || "";
+      if (newMethod !== existing.shadowsocks?.method || newPassword !== existing.shadowsocks?.password) {
+        isConfigChanged = true;
+      }
       updates.shadowsocks = {
-        method: req.body.shadowsocks.method || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm",
-        password: req.body.shadowsocks.password || existing.shadowsocks?.password || "",
+        method: newMethod,
+        password: newPassword,
       };
     } else if (ssMethod !== undefined || ssPassword !== undefined) {
+      const newMethod = ssMethod || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm";
+      const newPassword = ssPassword || existing.shadowsocks?.password || "";
+      if (newMethod !== existing.shadowsocks?.method || newPassword !== existing.shadowsocks?.password) {
+        isConfigChanged = true;
+      }
       updates.shadowsocks = {
-        method: ssMethod || existing.shadowsocks?.method || "2022-blake3-aes-128-gcm",
-        password: ssPassword || existing.shadowsocks?.password || "",
+        method: newMethod,
+        password: newPassword,
       };
     }
+  }
+
+  if (isConfigChanged) {
+    updates.configVersion = Date.now();
+    updates.configSyncStatus = "pending";
   }
 
   const updated = db.updateNode(req.params.id, updates);
@@ -195,15 +216,13 @@ apiRouter.delete("/nodes/:id", (req, res) => {
   res.json({ success: true, message: "节点已删除" });
 });
 
-apiRouter.get("/nodes/:id/xray-config", (req, res) => {
-  const node = db.getNodeById(req.params.id);
-  if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
-
+// Helper to assemble server-side Xray config for a node
+export function getNodeXrayConfig(node: NodeItem) {
   let targetUnlock: NodeItem | undefined;
   let unlockMode: "ai_media" | "all" | "custom" = "ai_media";
 
   // Check if this node is paired with an Unlock Node
-  const relay = db.getRelays().find(r => r.mainNodeId === node.id || r.transitNodeId === node.id);
+  const relay = db.getRelays().find((r) => r.mainNodeId === node.id || r.transitNodeId === node.id);
   if (relay) {
     const unlockId = relay.unlockNodeId || relay.exitNodeId;
     if (unlockId) {
@@ -212,8 +231,44 @@ apiRouter.get("/nodes/:id/xray-config", (req, res) => {
     }
   }
 
-  const config = generateXrayServerConfig(node, targetUnlock, unlockMode, relay);
+  return generateXrayServerConfig(node, targetUnlock, unlockMode, relay);
+}
+
+apiRouter.get("/nodes/:id/xray-config", (req, res) => {
+  const node = db.getNodeById(req.params.id);
+  if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
+  const config = getNodeXrayConfig(node);
   res.json({ success: true, data: config });
+});
+
+apiRouter.get("/nodes/by-token/:token/xray-config", (req, res) => {
+  const node = db.getNodeByToken(req.params.token);
+  if (!node) return res.status(404).json({ success: false, message: "Token 无效或节点不存在" });
+  const config = getNodeXrayConfig(node);
+  res.json({ success: true, data: config });
+});
+
+apiRouter.post("/nodes/:id/sync", (req, res) => {
+  const node = db.getNodeById(req.params.id);
+  if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
+
+  const newVersion = Date.now();
+  const updated = db.updateNode(node.id, {
+    configVersion: newVersion,
+    configSyncStatus: "pending",
+  });
+  if (!updated) return res.status(404).json({ success: false, message: "更新失败" });
+
+  wsHub.broadcastNodeUpdate(updated.id);
+  res.json({
+    success: true,
+    message: "已触发配置热同步，VPS 探针将在 3 秒内拉取并热重启代理服务",
+    data: {
+      nodeId: updated.id,
+      configVersion: newVersion,
+      status: "pending",
+    },
+  });
 });
 
 apiRouter.post("/nodes/:id/reset-traffic", (req, res) => {
@@ -430,7 +485,7 @@ apiRouter.get("/nodes/by-token/:token", (req, res) => {
 });
 
 apiRouter.post("/nodes/telemetry", (req, res) => {
-  const { token, ...telemetry } = req.body;
+  const { token, appliedConfigVersion, syncReport, ...telemetry } = req.body;
   if (!token) return res.status(400).json({ success: false, message: "缺少 token" });
   const node = db.getNodeByToken(token);
   if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
@@ -439,6 +494,29 @@ apiRouter.post("/nodes/telemetry", (req, res) => {
     lastSeen: Date.now(),
     status: "online",
   };
+
+  if (typeof appliedConfigVersion === "number") {
+    updates.appliedConfigVersion = appliedConfigVersion;
+  }
+
+  if (syncReport) {
+    if (syncReport.status === "success") {
+      updates.appliedConfigVersion = Number(syncReport.version) || updates.appliedConfigVersion;
+      updates.configSyncStatus = "synced";
+      updates.configSyncedAt = Date.now();
+      updates.configSyncError = undefined;
+    } else if (syncReport.status === "error") {
+      updates.configSyncStatus = "failed";
+      updates.configSyncError = String(syncReport.error || "配置热重载失败");
+    }
+  } else if (
+    node.configVersion &&
+    updates.appliedConfigVersion &&
+    updates.appliedConfigVersion >= node.configVersion
+  ) {
+    updates.configSyncStatus = "synced";
+    updates.configSyncedAt = Date.now();
+  }
 
   if (typeof telemetry.cpuUsage === "number") updates.cpuUsage = +telemetry.cpuUsage.toFixed(1);
   if (typeof telemetry.memUsage === "number") updates.memUsage = +telemetry.memUsage.toFixed(1);
@@ -460,7 +538,25 @@ apiRouter.post("/nodes/telemetry", (req, res) => {
 
   db.updateNode(node.id, updates);
   wsHub.broadcastNodeUpdate(node.id);
-  res.json({ success: true, message: "Telemetry updated" });
+
+  // Check if VPS agent needs to perform hot reload
+  const targetVersion = node.configVersion || 0;
+  const currentApplied = updates.appliedConfigVersion ?? node.appliedConfigVersion ?? 0;
+
+  let syncDirective: any = null;
+  if (targetVersion > 0 && targetVersion > currentApplied) {
+    syncDirective = {
+      action: "RELOAD_CONFIG",
+      targetVersion,
+      configUrl: `/api/nodes/by-token/${token}/xray-config`,
+    };
+  }
+
+  res.json({
+    success: true,
+    message: "Telemetry updated",
+    sync: syncDirective,
+  });
 });
 
 // -------------------------------------------------------------
@@ -515,6 +611,48 @@ apiRouter.get("/install.sh", (req, res) => {
     return res.send(raw.replaceAll("{{DEFAULT_PANEL_URL}}", panelUrl));
   }
   res.status(500).send("# Error: install.sh template missing");
+});
+
+// -------------------------------------------------------------
+// 6.05 One-Click Probe Hot Sync Activator Script
+// -------------------------------------------------------------
+apiRouter.get("/update-probe.sh", (req, res) => {
+  const panelUrl = `${req.protocol}://${req.get("host")}`;
+  const script = `#!/usr/bin/env bash
+# ==============================================================================
+# NodeMaster Probe Agent Updater & Hot Sync Activator
+# ==============================================================================
+set -e
+
+PANEL_URL="${panelUrl}"
+if [ -f /etc/nodemaster/agent.env ]; then
+  . /etc/nodemaster/agent.env
+fi
+
+echo "========================================================="
+echo "   NodeMaster 探针守护进程升级 (激活全自动配置热同步)   "
+echo "========================================================="
+echo "控制中心 : \${PANEL_URL}"
+
+if [ -z "\${TOKEN}" ]; then
+  echo "Error: /etc/nodemaster/agent.env 中未找到 TOKEN，请确保该 VPS 已纳管。"
+  exit 1
+fi
+
+echo "[1/2] 升级探针至支持全自动热重载版本..."
+curl -fsSL "\${PANEL_URL}/api/install.sh" | bash -s -- --panel "\${PANEL_URL}" --token "\${TOKEN}" --probe-only
+
+echo "[2/2] 校验探针运行状态..."
+if systemctl is-active --quiet nodemaster-probe; then
+  echo "✓ nodemaster-probe 探针守护进程升级成功！"
+  echo "✓ 全自动配置热同步已激活！今后在面板修改端口或 SNI 域名，VPS 将在 3 秒内全自动无感生效！"
+else
+  echo "⚠ 探针状态异常，请执行 systemctl status nodemaster-probe 查看日志"
+fi
+`;
+
+  res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
+  res.send(script);
 });
 
 // -------------------------------------------------------------

@@ -76,6 +76,18 @@ export const NodeList: React.FC<NodeListProps> = ({
     navigator.clipboard.writeText(url);
   };
 
+  const handleSyncNode = async (node: NodeItem) => {
+    try {
+      const res = await fetch(`/api/nodes/${node.id}/sync`, { method: "POST" });
+      const data = await res.json();
+      if (data.success && onRefreshData) {
+        onRefreshData();
+      }
+    } catch (e) {
+      console.error("触发节点配置同步失败:", e);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters & Search */}
@@ -139,6 +151,7 @@ export const NodeList: React.FC<NodeListProps> = ({
               onDelete={onDelete}
               onCopyUrl={handleCopyUrl}
               onViewVersion={() => setIsVersionModalOpen(true)}
+              onSyncConfig={handleSyncNode}
             />
           </div>
         ))}

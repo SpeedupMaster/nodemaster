@@ -14,6 +14,9 @@ import {
   PencilSimple,
   CalendarBlank,
   ShieldCheck,
+  ArrowsClockwise,
+  CheckCircle,
+  WarningCircle,
 } from "@phosphor-icons/react";
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
@@ -29,6 +32,7 @@ interface NodeCardProps {
   onDelete: (id: string) => void;
   onCopyUrl: (node: NodeItem) => void;
   onViewVersion?: () => void;
+  onSyncConfig?: (node: NodeItem) => void;
 }
 
 const getExpiryInfo = (expiresAt?: string) => {
@@ -54,6 +58,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   onDelete,
   onCopyUrl,
   onViewVersion,
+  onSyncConfig,
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -207,6 +212,30 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+            {node.configSyncStatus === "pending" && (
+              <Tooltip content="主控配置已更新，VPS 探针正在自动热拉取并平滑重载 Xray (约3秒内生效)...">
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse cursor-help">
+                  <ArrowsClockwise className="w-3 h-3 animate-spin" />
+                  <span>热同步中</span>
+                </span>
+              </Tooltip>
+            )}
+            {node.configSyncStatus === "synced" && (
+              <Tooltip content={`配置已全自动热同步至 VPS (${node.configSyncedAt ? new Date(node.configSyncedAt).toLocaleTimeString() : '已生效'})`}>
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 cursor-help">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>已热同步</span>
+                </span>
+              </Tooltip>
+            )}
+            {node.configSyncStatus === "failed" && (
+              <Tooltip content={`热同步异常: ${node.configSyncError || 'Xray 语法校验未通过'}`}>
+                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-rose-500/10 text-rose-400 border border-rose-500/30 cursor-help">
+                  <WarningCircle className="w-3 h-3" />
+                  <span>同步异常</span>
+                </span>
+              </Tooltip>
+            )}
             {node.status === "online" && (
               <Badge variant="online" pulse size="sm">
                 在线
@@ -427,6 +456,17 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               <ArrowClockwise className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
+
+          {onSyncConfig && (
+            <Tooltip content="一键热重载：立即同步最新配置至 VPS (无需登录 SSH)">
+              <button
+                onClick={() => onSyncConfig(node)}
+                className="p-1.5 rounded text-ink-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+              >
+                <ArrowsClockwise className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          )}
 
           <Tooltip content="删除节点">
             <button

@@ -27,6 +27,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
   const [copiedInstall, setCopiedInstall] = useState(false);
   const [copiedTuneOfficial, setCopiedTuneOfficial] = useState(false);
   const [copiedTunePanel, setCopiedTunePanel] = useState(false);
+  const [copiedUpdateProbe, setCopiedUpdateProbe] = useState(false);
   const [deployMode, setDeployMode] = useState<"all" | "probe_only">("all");
   const [enableBbr, setEnableBbr] = useState(true);
   const [enableIpv4First, setEnableIpv4First] = useState(false);
@@ -50,11 +51,18 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
   const installCmd = `curl -fsSL ${panelHost}/api/install.sh | bash -s -- ${args.join(" ")}`;
   const tuneOfficialCmd = `bash <(curl -sL tcp.vpsing.de)`;
   const tunePanelCmd = `curl -fsSL ${panelHost}/api/tcp-tune.sh | bash`;
+  const updateProbeCmd = `curl -fsSL ${panelHost}/api/update-probe.sh | bash`;
 
   const handleCopyInstall = () => {
     navigator.clipboard.writeText(installCmd);
     setCopiedInstall(true);
     setTimeout(() => setCopiedInstall(false), 2000);
+  };
+
+  const handleCopyUpdateProbe = () => {
+    navigator.clipboard.writeText(updateProbeCmd);
+    setCopiedUpdateProbe(true);
+    setTimeout(() => setCopiedUpdateProbe(false), 2000);
   };
 
   const handleCopyTuneOfficial = () => {
@@ -247,6 +255,34 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
             <div className="pt-2 border-t border-rule text-xs text-ink-muted flex items-center justify-between font-mono">
               <span>专属安全 Token:</span>
               <span className="text-ink-secondary">{node.token}</span>
+            </div>
+
+            {/* 已有节点一键激活全自动热同步 */}
+            <div className="p-3.5 rounded-lg bg-paper-3/40 border border-emerald-500/20 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-ink flex items-center gap-1.5">
+                  <Lightning className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>已有节点一键升级探针 (激活全自动配置热同步)</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyUpdateProbe}
+                  className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedUpdateProbe ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                  <span>{copiedUpdateProbe ? "已复制命令" : "复制升级命令"}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-ink-muted leading-relaxed">
+                若当前节点是先前上线的旧探针，登录 VPS 终端运行此命令即可无缝升级。升级后在面板修改端口或 SNI 域名，VPS 将在 3 秒内全自动平滑重载！
+              </p>
+              <div className="p-2.5 rounded bg-paper border border-rule font-mono text-[11px] text-ink-secondary select-all break-all">
+                {updateProbeCmd}
+              </div>
             </div>
           </div>
         )}
