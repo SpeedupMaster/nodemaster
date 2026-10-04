@@ -107,33 +107,38 @@ export function toSingboxOutbound(node: NodeItem, customHost?: string, customPor
 
 // Build Active Proxies List considering Relays and Chained Unlock Nodes
 export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
-  const result: { node: NodeItem; host: string; port: number; name: string }[] = [];
+  const result: { node: NodeItem; host: string; port: number; name: string; targetCountry?: string }[] = [];
 
-  // 1. All Direct & Unlock Nodes with valid Reality or Shadowsocks config
+  // 1. 仅将安全的主力直连节点 (VLESS-Reality 等免证书抗封锁协议) 作为单节点加入订阅
+  // 落地节点是 SS 协议 (Shadowsocks/Unlock)，直连极易被 GFW 主动探测并封锁，因此在直连订阅中隐藏，仅通过链式中转提供
   for (const n of nodes) {
-    if (n.status !== "offline" && (n.reality || n.shadowsocks)) {
+    const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock" || n.type === "exit";
+    if (n.status !== "offline" && !isNakedUnlock && n.reality) {
       result.push({
         node: n,
         host: n.ip,
         port: n.port,
         name: n.name,
+        targetCountry: n.country,
       });
     }
   }
 
-  // 2. Chained Unlock Pairs (Main Node -> Unlock Node)
+  // 2. 链式解锁节点对 (主力直连机 -> 落地解锁机)
+  // 客户端直连主力机 (VLESS-Reality 安全抗封锁)，由主力机在海外访问落地机，安全解锁流媒体与 AI
   for (const r of relays) {
     if (r.status !== "active") continue;
     const mainId = r.mainNodeId || r.transitNodeId;
     const unlockId = r.unlockNodeId || r.exitNodeId;
-    const main = nodes.find(n => n.id === mainId);
-    const unlock = nodes.find(n => n.id === unlockId);
-    if (main && unlock && (main.reality || main.shadowsocks)) {
+    const main = nodes.find((n) => n.id === mainId);
+    const unlock = nodes.find((n) => n.id === unlockId);
+    if (main && unlock && main.reality) {
       result.push({
         node: main,
         host: main.ip,
         port: main.port,
         name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
+        targetCountry: unlock.country || unlock.countryName,
       });
     }
   }
@@ -529,9 +534,9 @@ export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>,
 
   const proxyNames = proxiesData.map(p => p.name);
 
-  const usProxies = proxiesData.filter(p => isUSNode(p.name, p.node.country)).map(p => p.name);
-  const apacProxies = proxiesData.filter(p => isAPACNode(p.name, p.node.country)).map(p => p.name);
-  const euProxies = proxiesData.filter(p => isEUNode(p.name, p.node.country)).map(p => p.name);
+  const usProxies = proxiesData.filter(p => isUSNode(p.name, p.targetCountry || p.node.country)).map(p => p.name);
+  const apacProxies = proxiesData.filter(p => isAPACNode(p.name, p.targetCountry || p.node.country)).map(p => p.name);
+  const euProxies = proxiesData.filter(p => isEUNode(p.name, p.targetCountry || p.node.country)).map(p => p.name);
 
   // Policy groups
   const policyGroups: any[] = [

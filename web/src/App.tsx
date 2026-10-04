@@ -250,6 +250,7 @@ export function App() {
               <SubscriptionView
                 subscriptions={subscriptions}
                 nodes={nodes}
+                relays={relays}
                 onUpdateSubscription={updateSubscription}
               />
             )}

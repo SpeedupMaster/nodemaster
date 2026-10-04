@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { SubscriptionToken, NodeItem } from "../../types";
+import { SubscriptionToken, NodeItem, RelayLink } from "../../types";
 import { Button } from "../common/Button";
 import {
   LinkSimple,
@@ -20,12 +20,14 @@ import {
   ArrowsClockwise,
   FloppyDisk,
   X,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import { renderOfficialServiceLogo, hasOfficialLogo } from "../traffic/BrandIcons";
 
 interface SubscriptionViewProps {
   subscriptions: SubscriptionToken[];
   nodes: NodeItem[];
+  relays?: RelayLink[];
   onUpdateSubscription?: (id: string, updates: Partial<SubscriptionToken>) => Promise<any>;
 }
 
@@ -251,6 +253,7 @@ const POLICY_GROUPS_CONFIG: PolicyGroupCardData[] = [
 interface GroupProxyOption {
   name: string;
   type: string;
+  country?: string;
 }
 
 const formatProtocol = (proto?: string) => {
@@ -263,31 +266,31 @@ const formatProtocol = (proto?: string) => {
   return proto.toUpperCase();
 };
 
-const isUSNode = (n: NodeItem) => {
-  const name = n.name || "";
-  const country = (n.country || "").toUpperCase();
+const isUSProxy = (p: GroupProxyOption) => {
+  const name = p.name || "";
+  const country = (p.country || "").toUpperCase();
   if (country === "US" || country === "USA") return true;
   return /(\bUS\b|\bUSA\b|\[US\]|United States|美国|洛杉矶|硅谷|旧金山|西雅图|纽约|达拉斯|芝加哥|凤凰城|波特兰)/i.test(name);
 };
 
-const isAPACNode = (n: NodeItem) => {
-  const name = n.name || "";
-  const country = (n.country || "").toUpperCase();
+const isAPACProxy = (p: GroupProxyOption) => {
+  const name = p.name || "";
+  const country = (p.country || "").toUpperCase();
   if (["HK", "JP", "SG", "TW", "KR", "MO"].includes(country)) return true;
   return /(\bHK\b|\bJP\b|\bSG\b|\bTW\b|\bKR\b|\[HK\]|\[JP\]|\[SG\]|\[TW\]|\[KR\]|香港|日本|东京|大阪|新加坡|狮城|台湾|台北|韩国|首尔|亚太|Hong Kong|Japan|Singapore|Taiwan|Korea)/i.test(name);
 };
 
-const isEUNode = (n: NodeItem) => {
-  const name = n.name || "";
-  const country = (n.country || "").toUpperCase();
+const isEUProxy = (p: GroupProxyOption) => {
+  const name = p.name || "";
+  const country = (p.country || "").toUpperCase();
   if (["UK", "GB", "DE", "FR", "RU", "NL", "IT", "ES", "SE", "CH"].includes(country)) return true;
-  // 必须严格使用单词边界 \b，绝不裸写 DE/FR/NL 避免误匹配 Residential 里的 de
   return /(\bUK\b|\bGB\b|\bDE\b|\bFR\b|\bRU\b|\bNL\b|\bEUR\b|\[UK\]|\[GB\]|\[DE\]|\[FR\]|\[RU\]|\[NL\]|英国|伦敦|德国|法兰克福|法国|巴黎|俄罗斯|莫斯科|荷兰|阿姆斯特丹|欧洲|Britain|London|Germany|Frankfurt|France|Paris|Russia|Moscow|Netherlands)/i.test(name);
 };
 
 export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   subscriptions,
   nodes,
+  relays = [],
   onUpdateSubscription,
 }) => {
   const [selectedSubToken, setSelectedSubToken] = useState<string>("");
@@ -464,52 +467,71 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     setCollapsedSet(new Set());
   };
 
-  // Build the list of sub-proxies for a group
-  const getGroupProxies = (group: PolicyGroupCardData): GroupProxyOption[] => {
-    // 1. 自动选择 (URL-Test): 全部实体代理节点，绝不包含 DIRECT（避免直连导致测速偏差和漏IP）
-    if (group.id === "auto-test") {
-      return nodes.map((n) => ({
-        name: n.name,
-        type: formatProtocol(n.protocol),
-      }));
-    }
+  // 过滤出安全的订阅代理列表：严格隐藏 SS 协议落地机，仅保留安全直连节点与链式中转节点
+  const safeProxies: GroupProxyOption[] = useMemo(() => {
+    const list: GroupProxyOption[] = [];
 
-    // 2. 手动选择 (Selector): 用户可自由选择任意单个实体节点，亦可手动切 DIRECT
-    if (group.id === "manual-select") {
-      return [
-        ...nodes.map((n) => ({
+    // 1. 直连节点 (排除纯 Shadowsocks / unlock / exit 落地机)
+    nodes.forEach((n) => {
+      const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock" || n.type === "exit";
+      if (n.status !== "offline" && !isNakedUnlock && n.reality) {
+        list.push({
           name: n.name,
           type: formatProtocol(n.protocol),
-        })),
+          country: n.country,
+        });
+      }
+    });
+
+    // 2. 活跃中转/链式解锁节点
+    if (relays && relays.length > 0) {
+      relays.forEach((r) => {
+        if (r.status !== "active") return;
+        const mainId = r.mainNodeId || r.transitNodeId;
+        const unlockId = r.unlockNodeId || r.exitNodeId;
+        const main = nodes.find((n) => n.id === mainId);
+        const unlock = nodes.find((n) => n.id === unlockId);
+        if (main && unlock && main.reality) {
+          list.push({
+            name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
+            type: "Chained",
+            country: unlock.country,
+          });
+        }
+      });
+    }
+
+    return list;
+  }, [nodes, relays]);
+
+  // Build the list of sub-proxies for a group
+  const getGroupProxies = (group: PolicyGroupCardData): GroupProxyOption[] => {
+    // 1. 自动选择 (URL-Test): 全部安全代理节点（直连节点+链式解锁节点），绝不包含裸 SS 落地机与 DIRECT
+    if (group.id === "auto-test") {
+      return safeProxies;
+    }
+
+    // 2. 手动选择 (Selector): 用户可自由选择任意安全节点，亦可手动切 DIRECT
+    if (group.id === "manual-select") {
+      return [
+        ...safeProxies,
         { name: "DIRECT", type: "Direct" },
       ];
     }
 
-    // 3. 美国节点 (URL-Test): 仅包含真实美国实体代理节点，不包含 DIRECT
+    // 3. 美国节点 (URL-Test): 仅包含真实美国直连节点或目标为美国的链式解锁节点
     if (group.id === "us-auto") {
-      const usList = nodes.filter(isUSNode);
-      return usList.map((n) => ({
-        name: n.name,
-        type: formatProtocol(n.protocol),
-      }));
+      return safeProxies.filter(isUSProxy);
     }
 
-    // 4. 亚太节点 (URL-Test): 仅包含真实亚太实体代理节点，不包含 DIRECT
+    // 4. 亚太节点 (URL-Test): 仅包含真实亚太直连节点或目标为亚太的链式解锁节点
     if (group.id === "apac-auto") {
-      const apacList = nodes.filter(isAPACNode);
-      return apacList.map((n) => ({
-        name: n.name,
-        type: formatProtocol(n.protocol),
-      }));
+      return safeProxies.filter(isAPACProxy);
     }
 
-    // 5. 欧洲节点 (EU-Auto): 仅包含真实欧洲实体代理节点，严格排除美国住宅等误匹配，不包含 DIRECT
+    // 5. 欧洲节点 (EU-Auto): 仅包含真实欧洲直连节点或目标为欧洲的链式解锁节点
     if (group.id === "eu-auto") {
-      const euList = nodes.filter(isEUNode);
-      return euList.map((n) => ({
-        name: n.name,
-        type: formatProtocol(n.protocol),
-      }));
+      return safeProxies.filter(isEUProxy);
     }
 
     // 6. 广告拦截
@@ -828,6 +850,15 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Anti-GFW Exit Node Protection Banner */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-ink-secondary">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              <strong className="text-emerald-300">防封锁落地保护已生效：</strong>
+              Shadowsocks / 住宅解锁落地节点裸连极易被主动探测封锁，已在订阅中自动隐藏，仅通过 VLESS-Reality 链式隧道安全提供。
+            </span>
           </div>
 
           {/* Mode Switcher and Action Tools Row */}
