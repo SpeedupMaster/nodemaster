@@ -105,6 +105,7 @@ export function App() {
     deleteNode,
     resetTraffic,
     addRelay,
+    updateRelay,
     deleteRelay,
     addLatencyTask,
     updateLatencyTask,
@@ -203,6 +204,7 @@ export function App() {
                 nodes={nodes}
                 relays={relays}
                 onAddRelay={addRelay}
+                onUpdateRelay={updateRelay}
                 onDeleteRelay={deleteRelay}
               />
             )}

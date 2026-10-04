@@ -604,10 +604,25 @@ class Database {
     return this.data.relays;
   }
 
+  public getRelayById(id: string): RelayLink | undefined {
+    return this.data.relays.find(r => r.id === id);
+  }
+
   public addRelay(relay: RelayLink): RelayLink {
     this.data.relays.push(relay);
     this.save();
     return relay;
+  }
+
+  public updateRelay(id: string, updates: Partial<RelayLink>): RelayLink | null {
+    const idx = this.data.relays.findIndex(r => r.id === id);
+    if (idx === -1) return null;
+    this.data.relays[idx] = {
+      ...this.data.relays[idx],
+      ...updates,
+    };
+    this.save();
+    return this.data.relays[idx];
   }
 
   public deleteRelay(id: string): boolean {

@@ -1,6 +1,265 @@
 import crypto from "crypto";
-import { NodeItem, XrayRealityConfig, ShadowsocksConfig, RoutingRule } from "../types/index.js";
+import { NodeItem, XrayRealityConfig, ShadowsocksConfig, RoutingRule, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
+
+export interface ServiceDefinition {
+  id: string;
+  name: string;
+  category: "ai" | "streaming" | "social" | "gaming" | "finance" | "other";
+  categoryName: string;
+  geosite: string[];
+  domains: string[];
+  geoip?: string[];
+  ips?: string[];
+  description: string;
+}
+
+export const UNLOCK_SERVICES: ServiceDefinition[] = [
+  // --- AI 智能模型 ---
+  {
+    id: "openai",
+    name: "OpenAI / ChatGPT",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["openai", "category-ai-chat-!cn"],
+    domains: ["openai.com", "chatgpt.com", "oaistatic.com", "oaiusercontent.com", "sora.com"],
+    description: "ChatGPT, GPT-4o, Sora 视频与官方 API",
+  },
+  {
+    id: "anthropic",
+    name: "Claude / Anthropic",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["anthropic"],
+    domains: ["claude.ai", "anthropic.com"],
+    description: "Claude 3.5 Sonnet / Opus 网页端与 API",
+  },
+  {
+    id: "gemini",
+    name: "Google Gemini",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["google"],
+    domains: ["gemini.google.com", "generativelanguage.googleapis.com", "ai.google.dev", "aistudio.google.com"],
+    description: "Gemini 1.5 Pro, AI Studio 与 Google AI",
+  },
+  {
+    id: "copilot",
+    name: "Microsoft Copilot",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["microsoft"],
+    domains: ["copilot.microsoft.com", "edgeservices.bing.com", "sydnet.bing.com"],
+    description: "Windows / Edge Copilot 智能助手",
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity AI",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["perplexity"],
+    domains: ["perplexity.ai"],
+    description: "Perplexity 智能搜索与 AI 问答平台",
+  },
+  {
+    id: "midjourney",
+    name: "Midjourney",
+    category: "ai",
+    categoryName: "AI 智能模型",
+    geosite: ["midjourney"],
+    domains: ["midjourney.com"],
+    description: "Midjourney 图像生成平台与网页端",
+  },
+
+  // --- 全球主流流媒体 ---
+  {
+    id: "netflix",
+    name: "Netflix",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["netflix"],
+    domains: ["netflix.com", "netflix.net", "nflximg.net", "nflxvideo.net", "nflxext.com"],
+    description: "网飞原生剧集与 4K 非自制版权影片解锁",
+  },
+  {
+    id: "disney",
+    name: "Disney+",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["disney"],
+    domains: ["disneyplus.com", "disneystreaming.com", "disney-portal.my.onetrust.com", "dssott.com"],
+    description: "迪士尼+、皮克斯、漫威、星球大战与国家地理",
+  },
+  {
+    id: "youtube",
+    name: "YouTube / YouTube Music",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["youtube"],
+    domains: ["youtube.com", "googlevideo.com", "ytimg.com", "youtu.be", "youtubekids.com"],
+    description: "YouTube Premium 会员与免广告原生出口",
+  },
+  {
+    id: "tiktok",
+    name: "TikTok",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["tiktok"],
+    domains: ["tiktok.com", "tiktokv.com", "tiktokcdn.com", "byteoversea.com", "ibytedtos.com"],
+    description: "国际版抖音短视频与直播原生住宅出口",
+  },
+  {
+    id: "spotify",
+    name: "Spotify",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["spotify"],
+    domains: ["spotify.com", "scdn.co", "spoti.fi"],
+    description: "Spotify 全球音乐流媒体曲库与区域版权",
+  },
+  {
+    id: "hbo",
+    name: "Max / HBO Max",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["max"],
+    domains: ["max.com", "hbo.com", "hbomax.com", "hbonow.com"],
+    description: "华纳兄弟 Discovery 与 HBO 顶级剧集",
+  },
+  {
+    id: "primevideo",
+    name: "Amazon Prime Video",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["primevideo"],
+    domains: ["primevideo.com", "amazonvideo.com", "aiv-cdn.net"],
+    description: "亚马逊 Prime Video 影视解锁",
+  },
+  {
+    id: "hulu",
+    name: "Hulu",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["hulu"],
+    domains: ["hulu.com", "hulustream.com"],
+    description: "美国主流流媒体 Hulu 视频与美剧",
+  },
+  {
+    id: "appletv",
+    name: "Apple TV+ / Apple Music",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["apple"],
+    domains: ["tv.apple.com", "music.apple.com", "hls.itunes.apple.com"],
+    description: "苹果自制剧集 Apple TV+ 与高解析无损音乐",
+  },
+  {
+    id: "bilibili_overseas",
+    name: "哔哩哔哩 (港澳台/东南亚)",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["bilibili"],
+    domains: ["bilibili.com", "bilibili.tv"],
+    description: "解除 B 站番剧仅限港澳台或东南亚播放限制",
+  },
+  {
+    id: "bahamut",
+    name: "巴哈姆特动画疯",
+    category: "streaming",
+    categoryName: "全球流媒体",
+    geosite: ["bahamut"],
+    domains: ["gamer.com.tw"],
+    description: "台湾正版二次元动画新番同步流媒体",
+  },
+
+  // --- 社交与即时通讯 ---
+  {
+    id: "telegram",
+    name: "Telegram",
+    category: "social",
+    categoryName: "海外社交",
+    geosite: ["telegram"],
+    geoip: ["telegram"],
+    domains: ["t.me", "telegram.org", "telegra.ph", "cdn-telegram.org"],
+    description: "Telegram 极速代理与媒体文件下载",
+  },
+  {
+    id: "twitter",
+    name: "Twitter / X",
+    category: "social",
+    categoryName: "海外社交",
+    geosite: ["twitter"],
+    domains: ["x.com", "twitter.com", "twimg.com", "t.co"],
+    description: "推特/X 动态浏览与多媒体上传下载",
+  },
+  {
+    id: "discord",
+    name: "Discord",
+    category: "social",
+    categoryName: "海外社交",
+    geosite: ["discord"],
+    domains: ["discord.com", "discord.gg", "discordapp.com", "discordapp.net"],
+    description: "Discord 社区语音通话与频道聊天",
+  },
+  {
+    id: "reddit",
+    name: "Reddit",
+    category: "social",
+    categoryName: "海外社交",
+    geosite: ["reddit"],
+    domains: ["reddit.com", "redd.it", "redditmedia.com"],
+    description: "全球最大论坛 Reddit 社区与高清多媒体",
+  },
+  {
+    id: "instagram",
+    name: "Instagram / Threads",
+    category: "social",
+    categoryName: "海外社交",
+    geosite: ["instagram"],
+    domains: ["instagram.com", "threads.net", "cdninstagram.com"],
+    description: "Instagram 照片墙与 Meta Threads 社区",
+  },
+
+  // --- 跨境支付与金融 ---
+  {
+    id: "paypal",
+    name: "PayPal",
+    category: "finance",
+    categoryName: "跨境支付与金融",
+    geosite: ["paypal"],
+    domains: ["paypal.com", "paypalobjects.com"],
+    description: "PayPal 国际版风控防封号住宅 IP 伪装出口",
+  },
+  {
+    id: "stripe",
+    name: "Stripe",
+    category: "finance",
+    categoryName: "跨境支付与金融",
+    geosite: [],
+    domains: ["stripe.com", "stripe.network"],
+    description: "全球在线支付结算与商家后台防风控",
+  },
+
+  // --- 游戏平台 ---
+  {
+    id: "steam",
+    name: "Steam 社区与商店",
+    category: "gaming",
+    categoryName: "游戏平台",
+    geosite: ["steam"],
+    domains: ["steampowered.com", "steamcommunity.com", "steamgames.com"],
+    description: "Steam 外服商店锁区购买与社区讨论区访问",
+  },
+  {
+    id: "epic",
+    name: "Epic Games",
+    category: "gaming",
+    categoryName: "游戏平台",
+    geosite: ["epicgames"],
+    domains: ["epicgames.com"],
+    description: "Epic 商城外服领游戏与账号验证",
+  },
+];
 
 // Helper to generate reality credentials
 export function generateRealityCredentials(serverName = "www.microsoft.com"): XrayRealityConfig {
@@ -40,7 +299,8 @@ export function generateShadowsocksCredentials(
 export function generateXrayServerConfig(
   node: NodeItem,
   targetUnlockNode?: NodeItem,
-  unlockMode: "ai_media" | "all" = "ai_media"
+  unlockMode: "ai_media" | "all" | "custom" = "ai_media",
+  relay?: RelayLink
 ) {
   // Outbounds definition
   const outbounds: any[] = [
@@ -119,6 +379,57 @@ export function generateXrayServerConfig(
       type: "field",
       inboundTag: [`VLESS_REALITY_${node.id}`, `SS_${node.id}`],
       outboundTag: "UNLOCK_OUT",
+    });
+  } else if (targetUnlockNode && (unlockMode === "custom" || (relay && relay.customServices && relay.customServices.length > 0))) {
+    // 1. Basic security & private network interception
+    routingRules.push(
+      { type: "field", ip: ["geoip:private"], outboundTag: "BLOCK" },
+      { type: "field", domain: ["geosite:private"], outboundTag: "BLOCK" },
+      { type: "field", protocol: ["bittorrent"], outboundTag: "BLOCK" }
+    );
+
+    // 2. Custom selected services routing to UNLOCK_OUT
+    const selectedServices = relay?.customServices || [];
+    const matchedDomains: string[] = [];
+    const matchedIps: string[] = [];
+
+    for (const sId of selectedServices) {
+      const svc = UNLOCK_SERVICES.find((s) => s.id === sId);
+      if (svc) {
+        svc.geosite.forEach((g) => matchedDomains.push(g.startsWith("geosite:") ? g : `geosite:${g}`));
+        svc.domains.forEach((d) => matchedDomains.push(d.includes(":") ? d : `domain:${d}`));
+        if (svc.geoip) svc.geoip.forEach((g) => matchedIps.push(g.startsWith("geoip:") ? g : `geoip:${g}`));
+        if (svc.ips) svc.ips.forEach((ip) => matchedIps.push(ip));
+      }
+    }
+
+    if (relay?.customDomains && relay.customDomains.length > 0) {
+      relay.customDomains.forEach((d) => {
+        const trimmed = d.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith("geoip:") || /^\d+\.\d+\.\d+\.\d+/.test(trimmed)) {
+          matchedIps.push(trimmed);
+        } else {
+          matchedDomains.push(trimmed.includes(":") ? trimmed : `domain:${trimmed}`);
+        }
+      });
+    }
+
+    if (matchedDomains.length > 0 || matchedIps.length > 0) {
+      const customRule: any = {
+        type: "field",
+        outboundTag: "UNLOCK_OUT",
+      };
+      if (matchedDomains.length > 0) customRule.domain = Array.from(new Set(matchedDomains));
+      if (matchedIps.length > 0) customRule.ip = Array.from(new Set(matchedIps));
+      routingRules.push(customRule);
+    }
+
+    // 3. Fallback direct for all other traffic
+    routingRules.push({
+      type: "field",
+      inboundTag: [`VLESS_REALITY_${node.id}`, `SS_${node.id}`],
+      outboundTag: "DIRECT",
     });
   } else {
     // Load active routing rules from database

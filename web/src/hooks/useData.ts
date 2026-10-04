@@ -156,6 +156,18 @@ export function useData() {
     return res;
   };
 
+  const updateRelay = async (id: string, updates: Partial<RelayLink>) => {
+    const res = await fetch(`/api/relays/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    }).then((r) => r.json());
+    if (res.success && res.data) {
+      setRelays((prev) => prev.map((r) => (r.id === id ? res.data : r)));
+    }
+    return res;
+  };
+
   const deleteRelay = async (id: string) => {
     const res = await fetch(`/api/relays/${id}`, {
       method: "DELETE",
@@ -333,6 +345,7 @@ export function useData() {
     deleteNode,
     resetTraffic,
     addRelay,
+    updateRelay,
     deleteRelay,
     addLatencyTask,
     updateLatencyTask,

@@ -200,7 +200,7 @@ apiRouter.get("/nodes/:id/xray-config", (req, res) => {
   if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
 
   let targetUnlock: NodeItem | undefined;
-  let unlockMode: "ai_media" | "all" = "ai_media";
+  let unlockMode: "ai_media" | "all" | "custom" = "ai_media";
 
   // Check if this node is paired with an Unlock Node
   const relay = db.getRelays().find(r => r.mainNodeId === node.id || r.transitNodeId === node.id);
@@ -212,7 +212,7 @@ apiRouter.get("/nodes/:id/xray-config", (req, res) => {
     }
   }
 
-  const config = generateXrayServerConfig(node, targetUnlock, unlockMode);
+  const config = generateXrayServerConfig(node, targetUnlock, unlockMode, relay);
   res.json({ success: true, data: config });
 });
 
@@ -234,7 +234,7 @@ apiRouter.get("/relays", (req, res) => {
 });
 
 apiRouter.post("/relays", (req, res) => {
-  const { name, mainNodeId, unlockNodeId, mode, transitNodeId, exitNodeId } = req.body;
+  const { name, mainNodeId, unlockNodeId, mode, customServices, customDomains, transitNodeId, exitNodeId } = req.body;
   const mainId = mainNodeId || transitNodeId;
   const unlockId = unlockNodeId || exitNodeId;
 
@@ -261,6 +261,8 @@ apiRouter.post("/relays", (req, res) => {
     mainNodeId: mainId,
     unlockNodeId: unlockId,
     mode: mode || "ai_media",
+    customServices: customServices || [],
+    customDomains: customDomains || [],
     transitNodeId: mainId,
     exitNodeId: unlockId,
     transitPort: 443,
@@ -273,6 +275,31 @@ apiRouter.post("/relays", (req, res) => {
   db.addRelay(newRelay);
   wsHub.broadcastToWeb({ type: "RELAYS_UPDATE", relays: db.getRelays() });
   res.json({ success: true, data: newRelay });
+});
+
+apiRouter.put("/relays/:id", (req, res) => {
+  const { name, mainNodeId, unlockNodeId, mode, customServices, customDomains, status } = req.body;
+  const existing = db.getRelayById(req.params.id);
+  if (!existing) return res.status(404).json({ success: false, message: "中转链路不存在" });
+
+  const updates: Partial<RelayLink> = {};
+  if (name !== undefined) updates.name = name;
+  if (mainNodeId !== undefined) {
+    updates.mainNodeId = mainNodeId;
+    updates.transitNodeId = mainNodeId;
+  }
+  if (unlockNodeId !== undefined) {
+    updates.unlockNodeId = unlockNodeId;
+    updates.exitNodeId = unlockNodeId;
+  }
+  if (mode !== undefined) updates.mode = mode;
+  if (customServices !== undefined) updates.customServices = customServices;
+  if (customDomains !== undefined) updates.customDomains = customDomains;
+  if (status !== undefined) updates.status = status;
+
+  const updated = db.updateRelay(req.params.id, updates);
+  wsHub.broadcastToWeb({ type: "RELAYS_UPDATE", relays: db.getRelays() });
+  res.json({ success: true, data: updated });
 });
 
 apiRouter.delete("/relays/:id", (req, res) => {

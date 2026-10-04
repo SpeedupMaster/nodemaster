@@ -83,7 +83,9 @@ export interface RelayLink {
   name: string;
   mainNodeId: string;
   unlockNodeId: string;
-  mode?: "ai_media" | "all";
+  mode?: "ai_media" | "all" | "custom";
+  customServices?: string[];
+  customDomains?: string[];
   transitNodeId?: string;
   exitNodeId?: string;
   transitPort?: number;
