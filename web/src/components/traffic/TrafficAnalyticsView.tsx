@@ -402,7 +402,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
       {/* 中部图表分析区域：时序流量趋势 + 业务类别分布 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* 左侧 2/3: 时序流量趋势柱状堆叠图 */}
-        <div className="lg:col-span-2 p-3.5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
+        <div className="lg:col-span-2 p-3.5 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4 overflow-hidden min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
               <h3 className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-2">
@@ -539,7 +539,15 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                 )}
 
                 {/* 柱体列表 */}
-                <div className="relative z-10 w-full h-full flex items-end gap-1 sm:gap-1.5 px-0.5">
+                <div
+                  className={`relative z-10 w-full h-full flex items-end px-0.5 ${
+                    timeRange === "30d" || timeRange === "month"
+                      ? "gap-0.5 sm:gap-1"
+                      : timeRange === "7d"
+                      ? "gap-2 sm:gap-3"
+                      : "gap-1 sm:gap-1.5"
+                  }`}
+                >
                   {data?.timeSeries.map((p, idx) => {
                     const activeTotal = getPointActiveBytes(p);
                     const heightPct = Math.max(4, (activeTotal / niceMax) * 100);
@@ -580,12 +588,24 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                       return p.time;
                     })();
 
+                    // 自适应柱宽类：较长周期 (30天/本月) 收敛为弹性细柱，杜绝移动端或窄屏溢出
+                    const barWidthClass =
+                      timeRange === "30d" || timeRange === "month"
+                        ? "w-full max-w-[8px] sm:max-w-[12px]"
+                        : timeRange === "7d"
+                        ? "w-full max-w-[24px] sm:max-w-[36px]"
+                        : timeRange === "all"
+                        ? "w-full max-w-[16px] sm:max-w-[24px]"
+                        : "w-full max-w-[10px] sm:max-w-[14px]";
+
                     return (
                       <div
                         key={`${p.time}-${idx}`}
-                        className="flex-1 h-full flex flex-col justify-end items-center relative group cursor-pointer z-10"
+                        className="flex-1 min-w-0 h-full flex flex-col justify-end items-center relative group cursor-pointer z-10 touch-manipulation"
+                        onClick={() => setHoveredPointIdx(hoveredPointIdx === idx ? null : idx)}
                         onMouseEnter={() => setHoveredPointIdx(idx)}
                         onMouseLeave={() => setHoveredPointIdx(null)}
+                        onTouchStart={() => setHoveredPointIdx(idx)}
                       >
                         {/* Crosshair 十字准星纵向辅助线 */}
                         {isHovered && (
@@ -628,7 +648,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                         {chartMode === "stacked" && (
                           <div
                             style={{ height: `${heightPct}%` }}
-                            className={`w-2.5 sm:w-3.5 rounded-t-xs overflow-hidden flex flex-col justify-end divide-y divide-paper-2 border-t border-x border-white/10 shrink-0 transition-all duration-200 ${
+                            className={`${barWidthClass} rounded-t-xs overflow-hidden flex flex-col justify-end divide-y divide-paper-2 border-t border-x border-white/10 shrink-0 transition-all duration-200 ${
                               isHovered
                                 ? "brightness-110 ring-2 ring-accent/80 z-20"
                                 : isAnyHovered
@@ -653,9 +673,17 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
 
                         {/* X 轴刻度指示与正下方居中文本 (严格 8-pt 栅格：4px 刻度线 + 8px 空白，距离基线 12px) */}
                         {isTick ? (
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none pt-0">
+                          <div
+                            className={`absolute top-full flex flex-col pointer-events-none pt-0 ${
+                              idx === 0
+                                ? "left-0 items-start"
+                                : idx === (data?.timeSeries.length ?? 0) - 1
+                                ? "right-0 items-end"
+                                : "left-1/2 -translate-x-1/2 items-center"
+                            }`}
+                          >
                             <div className="w-[1.5px] h-1 bg-rule-active mb-2" />
-                            <span className="text-[10px] font-mono text-ink-muted whitespace-nowrap text-center leading-none">
+                            <span className="text-[10px] font-mono text-ink-muted whitespace-nowrap leading-none">
                               {p.time}
                             </span>
                           </div>
