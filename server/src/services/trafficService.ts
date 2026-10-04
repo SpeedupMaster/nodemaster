@@ -229,9 +229,9 @@ const SERVICE_DEFINITIONS = [
 ];
 
 const CATEGORY_META: Record<TrafficCategory, { name: string; color: string }> = {
-  streaming: { name: "流媒体串流", color: "#ef4444" },
-  ai: { name: "AI 智能应用", color: "#10b981" },
-  social: { name: "社交与通讯", color: "#0ea5e9" },
+  streaming: { name: "流媒体串流", color: "#3b82f6" },
+  ai: { name: "AI 智能应用", color: "#14b8a6" },
+  social: { name: "社交与通讯", color: "#f59e0b" },
   developer: { name: "开发与代码", color: "#8b5cf6" },
   system: { name: "系统服务", color: "#94a3b8" },
   direct: { name: "直连出站", color: "#059669" },
