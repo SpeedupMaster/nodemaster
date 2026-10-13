@@ -17,6 +17,7 @@ COPY web/package.json ./web/
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
+COPY shared/ ./shared/
 COPY server/ ./server/
 COPY web/ ./web/
 
@@ -51,6 +52,9 @@ COPY --from=builder /app/server/data ./server/data
 
 # Copy compiled frontend dist
 COPY --from=builder /app/web/dist ./web/dist
+
+# Copy shared definition files
+COPY --from=builder /app/shared ./shared
 
 # Expose default listening port
 EXPOSE 3880
