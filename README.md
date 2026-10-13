@@ -1,125 +1,216 @@
-﻿# NodeMaster — 多 VPS 节点管理与智能分流控制系统
+# NodeMaster — 多 VPS 节点全生命周期管理与自适应分流控制系统
 
-基于 **Hallmark** 设计系统规范（Modern-Minimal / Utilitarian 工程师暗黑控制台风格）、**GSAP** 高性能微交互与拓扑流光动效、以及 **Phosphor Icons** 构建的下一代多 VPS 节点生命周期管理、流量精准统计、中转链路组装与自适应订阅分发系统。
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19.0-61DAFB?logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/GSAP-3.12-88CE02?logo=greensock&logoColor=white" alt="GSAP" />
+  <img src="https://img.shields.io/badge/Node.js-24.x-339933?logo=nodedotjs&logoColor=white" alt="Node.js 24" />
+  <img src="https://img.shields.io/badge/Xray--core-Reality-1E90FF" alt="Xray Reality" />
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License MIT" />
+</p>
+
+**NodeMaster** 是一套专为运维工程师与高阶极客打造的下一代分布式 VPS 节点集中管控平台。遵循 **Hallmark Modern-Minimal** 工程控制台设计哲学，基于高性能 **GSAP 3** 拓扑流光与微交互引擎，实现多台云服务器硬件工况真实遥测、**VLESS-Reality** 免证书协议组网、**Dokodemo-door** 链式中转隧道、全客户端自适应智能订阅分发、多维度 Telegram 自动化告警与流量月度智能熔断。
+
+---
+
+## 📸 系统大屏与界面体验
+
+- **桌面端控制大屏**：高信息密度暗黑工况仪表盘、实时网络吞吐双向滚浪计数（Rolling Counter）、中转拓扑动态数据包流动链路。
+- **移动端沉浸式体验**：全新沉浸式无边框登录网关、严格遵循 **WCAG 2.2 AA** 高对比度无障碍标准、iOS 防自动缩放（16px+）、44px+ 拇指安全触控热区、原生底部抽屉（Bottom Sheet）密码恢复指引。
 
 ---
 
 ## ✨ 核心特性
 
-- **现代极客工程美学**：遵循 Hallmark Modern-Minimal 规范，基于 OKLCH 调色盘与冷灰基底构建，无 AI 假框装饰，Roman 字重与等宽数据混排，高密度信息呈现。
-- **GSAP 高性能动效**：
-  - 实时遥测数字翻牌动效（Rolling Counter，平滑展示带宽与流量递增）。
-  - 节点卡片交错弹性入场（Staggered reveals）。
-  - 中转链路 SVG 动态数据流流光动画（Flowing cables & packet pulses）。
-  - 在线状态呼吸灯与超额熔断警示。
-- **全协议代理底座**：
-  - 原生支持 **VLESS-Reality** 免证书协议（免域名配置、借用微软/苹果网站伪装、抗封锁、开箱即用）。
-  - 支持 **Dokodemo-door** 链式中转转发（前置优化机端口转发至海外落地机 Reality）。
-  - 自动生成服务端 `config.json` 与客户端标准 `vless://` URI。
-- **全客户端自适应智能订阅**：
-  - 订阅接口 `/api/sub/:token` 自动依据客户端 `User-Agent` 动态分流输出：
-    - **Clash Meta / Mihomo**：自动装配策略组（🚀 节点选择、♻️ 自动选择、🤖 AI Service、📺 流媒体视频、🎯 全球直连、🐟 漏网之鱼）及精细规则集。
-    - **Sing-box**：标准 JSON 出站与规则配置。
-    - **Shadowrocket / V2RayN / 通用**：Base64 编码的节点列表。
-  - 支持一键快捷导入 (`clash://install-config?url=...`) 与二维码直扫。
-- **30 秒一键纳管**：
-  - 添加节点后自动生成专属安全 Token 的 `curl -fsSL .../install.sh | bash` 命令。
-  - 自动识别 VPS 系统与架构 (x86_64 / arm64)，拉取 Xray-core 并注册守护服务。
-- **流量计量与自动熔断**：
-  - 周期性上报节点实时出入带宽与累计流量。
-  - 达到月度阈值（如 98%）自动触发熔断阻断入站，防止高额超额账单。
+### 1. 🛡️ 零信任安全网关与双模自适应登录
+- **单向 PBKDF2 强哈希**：密码采用 100,000 轮 PBKDF2 + 独立 Salt 单向散列，杜绝明文风险。
+- **原子隔离 JWT 会话**：基于 HMAC-SHA256 签名，密码修改或主动登出时触发 `sessionVersion` 原子递增，旧会话立即全网吊销。
+- **移动端与桌面端双模界面**：
+  - **移动端**：无物理卡片框边界的深邃网格全屏沉浸设计，配合触控友好的原生上滑底部抽屉（Bottom Sheet）。
+  - **桌面端**：典雅的 24px 毛玻璃悬浮卡片、双向鉴权状态指示与精致微光反馈。
+- **WCAG 2.2 AA 无障碍对比度**：输入框占位符（Placeholder）与图标对比度达 5.1:1，统一加粗视觉权重，支持全键盘（Tab/Enter/Space）无障碍对焦切换。
+
+### 2. ⚡ 全协议底座与 30 秒自动化纳管
+- **原生 VLESS-Reality**：原生支持免证书 Reality 伪装（借用 Microsoft、Apple 等主流网站 SNI），抗主动探测与长城封锁，开箱即用。
+- **链式中转与落地保护**：支持 Dokodemo-door 端口转发与链式隧道组装，由国内/前置优化机接入并中转至海外落地机，保护落地 IP 安全。
+- **极速一键部署脚本**：
+  - 后台添加节点后即刻生成专有 Token 的轻量纳管指令：`curl -fsSL .../install.sh | bash`。
+  - 自动识别操作系统架构（x86_64 / arm64），校验官方 SHA-256 二进制签名，自动部署守护服务。
+- **零中断热同步**：修改节点端口、监听参数或 SNI 伪装域名后，探针触发毫秒级平滑热重载，无需停机。
+
+### 3. 📊 真实硬件遥测与多节点探针矩阵
+- **真实网卡计数采集**：Python 3 轻量级守护探针直接读取 Linux `/proc/net/dev` 真实硬件流量，绝不使用模拟假数据。
+- **全维度节点工况监控**：实时呈现每台 VPS 的 CPU 占用率、物理内存用量、磁盘使用率、系统负载（Load Average）、TCP 活跃连接数与开机时长。
+- **三大运营商网络测速矩阵**：VPS 探针周期性发起针对中国电信、中国联通、中国移动全国多个主流节点测速，绘制真实 TCP / ICMP 延迟时序变化曲线。
+
+### 4. 🌐 客户端自适应智能订阅分发
+通过统一接入点 `/api/sub/:token`，系统根据客户端发起的 `User-Agent` 动态分流并自动渲染对应格式：
+- **Clash Meta / Mihomo**：自动组装策略组（🚀 节点选择、♻️ 自动选择、🤖 AI 专用服务、📺 流媒体分流、🎯 全球直连、🐟 漏网之鱼）及规则集。
+- **Sing-box**：渲染标准 JSON 出站配置、DNS 路由与出站分流规则。
+- **Shadowrocket / V2RayN / 通用客户端**：Base64 动态安全节点编码流。
+- **一键导入与配额管控**：支持 `clash://install-config?url=...` 快速唤醒、二维码直扫导入，可按订阅设置到期日（`expireAt`）与独立流量额度。
+
+### 5. 🤖 Telegram 自动化告警中心
+- **节点离线即时推报**：节点探针心跳中断（超 30 秒无遥测）自动推发 Telegram 报警。
+- **月度额度阈值预警**：流量用量达到预设阈值（如 80%、90%）即时下发推送提醒。
+- **VPS 续费到期提醒**：根据配置的服务器到期日提前 7 天每日告警，避免服务器因未续费被销毁。
+- **系统高负载告警**：支持 CPU 或内存超标（如 > 85%）持续告警。
+
+### 6. 🛑 流量精准计量与超额自动熔断保护
+- **全自动熔断器**：当月度总流量达到设定的阈值（例如 98%）时，自动下发断开入站指令，切断节点代理流量，防止产生巨额超额账单。
+- **智能月度重置日**：支持指定每月任意日期（如每月 1 日）定时重置，遇到 31 日在小月自动取当月最后一天，重置后自动恢复节点代理。
 
 ---
 
-## 🛠️ 技术栈
+## 🛠️ 技术架构
 
-- **前端控制台**：React 19 + Vite + TypeScript + Tailwind CSS
-- **动效引擎**：GSAP 3 + `@gsap/react` (`useGSAP` hook)
-- **图标系统**：`@phosphor-icons/react`
-- **设计规范**：Hallmark 1.1.0 (`modern-minimal`, `tokens.css`, 8-state components)
-- **后端服务**：Node.js 24 + TypeScript + Express + WebSocket (`ws`) + 原子 JSON 持久化
-- **工程结构**：pnpm Workspace Monorepo
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 NodeMaster 控制中台 (Web UI)                │
+│    React 19 + TypeScript + Tailwind CSS + GSAP 3 (Phosphor) │
+└──────────────────────────────┬──────────────────────────────┘
+                               │  REST API + WebSocket (双向遥测)
+┌──────────────────────────────▼──────────────────────────────┐
+│                NodeMaster API Server (Node.js 24)           │
+│        Express + ws Hub + PBKDF2/JWT + 原子持久化存储        │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │ 智能订阅分发                 │ 探针接入/指令下发
+               ▼                              ▼
+    ┌────────────────────┐         ┌─────────────────────────┐
+    │ 客户端自适应矩阵   │         │ VPS 节点矩阵 (Linux)    │
+    │  • Clash Meta      │         │  • Python 3 硬件探针    │
+    │  • Sing-box        │         │  • Xray-core (Reality)  │
+    │  • Shadowrocket    │         │  • Dokodemo-door 中转   │
+    └────────────────────┘         └─────────────────────────┘
+```
 
 ---
 
-## 🚀 启动与运行
+## 🚀 快速启动与部署
 
-### 1. 一键启动全栈服务 (生产模式)
+### 环境要求
+- **服务端**：Node.js >= 22.0.0（推荐 Node.js 24 LTS）、pnpm >= 9.0.0
+- **VPS 节点**：Linux（Debian 11+/Ubuntu 20.04+/CentOS 8+）、systemd、Python >= 3.6
 
-服务端已集成托管前端打包后的静态资源：
+### 1. 本地构建与生产模式运行
+
+服务端已内置静态资源托管，打包后仅需单端口对外开放：
 
 ```bash
-cd "F:\代码\nodemaster"
+# 1. 克隆代码仓库
+git clone https://github.com/your-username/nodemaster.git
+cd nodemaster
+
+# 2. 安装 Workspace 依赖
 pnpm install
+
+# 3. 编译前端与后端
 pnpm build
+
+# 4. 启动服务 (默认端口 3880)
 pnpm start
 ```
 
-浏览器访问：**http://localhost:3880**
+服务就绪后，在浏览器中访问：**`http://localhost:3880`**。
 
 ### 2. 本地开发模式 (支持前端热重载)
 
-同时启动 Vite 开发服务器 (5173 端口) 与后端 API 服务 (3880 端口)：
+同时启动 Vite 开发服务器（5173 端口）与后端 API（3880 端口）：
 
 ```bash
-cd "F:\代码\nodemaster"
 pnpm dev
 ```
+- 前端热更新地址：**`http://localhost:5173`**
+- 后端 API 服务地址：**`http://localhost:3880`**
 
-- 前端开发地址：**http://localhost:5173** (通过代理自动反向代理 API 与 WebSocket)
-- 后端服务地址：**http://localhost:3880**
+---
+
+## ⚙️ 环境变量与安全配置
+
+支持通过根目录 `.env` 或系统环境变量调整配置：
+
+| 环境变量 | 默认值 | 作用说明 |
+| :--- | :--- | :--- |
+| `PORT` | `3880` | 服务端监听端口 |
+| `HOST` | `0.0.0.0` | 绑定的监听 IP 地址 |
+| `NODEMASTER_DATA_DIR` | `server/data` | 数据持久化存储目录（含数据库与部署脚本） |
+| `NODEMASTER_ADMIN_PASSWORD` | *(自动生成随机)* | 首次部署管理员密码（长度至少 12 位）；若未设置，密码将保存至 `data/bootstrap-admin.txt` |
+| `JWT_SECRET` | *(自动派生)* | 会话签名密钥；未显式指定时由服务端初次启动自动生成强随机密钥 |
+
+---
+
+## 🔑 管理员账户与凭据恢复
+
+NodeMaster 遵循零信任安全原则，数据库绝不保存明文密码，且不提供公网邮件找回渠道。
+
+- **初始管理员账号**：`admin`
+- **获取初次密码**：
+  若启动时未配置 `NODEMASTER_ADMIN_PASSWORD` 环境变量，首次启动会在数据目录生成初始强随机凭据文件：
+  ```bash
+  cat server/data/bootstrap-admin.txt
+  ```
+  *初次登录后，请立即在右上角控制台菜单中修改密码，系统将自动失效并清理旧凭据。*
+- **忘记管理密码恢复**：
+  若遗忘密码，只需在宿主机环境变量中设置新密码并重启服务：
+  ```bash
+  export NODEMASTER_ADMIN_PASSWORD="YourNewStrongPassword"
+  pnpm start
+  ```
+
+---
+
+## 🖥️ 节点纳管与探针运行机制
+
+1. **添加节点**：在 Web 界面点击 **“添加节点”**，输入 VPS 名称、公网 IP、目标端口及 Reality 伪装域名（如 `www.apple.com`）。
+2. **复制纳管指令**：系统自动生成独占 Token 的安装命令，如：
+   ```bash
+   curl -fsSL "https://your-panel-domain.com/api/install.sh?token=xxx" | bash
+   ```
+3. **探针工作流**：
+   - 自动检测主机架构并安全拉取对应平台的最新 Xray-core 二进制。
+   - 注册系统 `systemd` 守护服务 `nodemaster-probe`。
+   - 探针以 10 秒为周期上报网卡吞吐差值，并与面板建立毫秒级双向 WebSocket 长连接。
 
 ---
 
 ## 📁 目录结构
 
-```
-F:\代码\nodemaster/
+```text
+nodemaster/
 ├── package.json              # Monorepo 根配置
-├── pnpm-workspace.yaml
-├── web/                      # 前端控制台 (React 19 + Vite + GSAP)
+├── pnpm-workspace.yaml       # pnpm 多模块工作区配置
+├── web/                      # 前端控制台 (React 19 + Vite + Tailwind + GSAP)
 │   ├── src/
-│   │   ├── styles/tokens.css # Hallmark OKLCH 变量与现代暗黑设计代币
 │   │   ├── components/
-│   │   │   ├── layout/       # Sidebar (N3), Header, Footer (Ft2)
-│   │   │   ├── dashboard/    # 概览大屏、流量进度、安装脚本
-│   │   │   ├── nodes/        # 节点卡片、配置查看、添加弹窗
-│   │   │   ├── topology/     # GSAP 中转拓扑图与链式流光
-│   │   │   ├── subscription/ # 自适应订阅分享与导出
-│   │   │   └── common/       # 8-state 按钮、徽章、数字翻牌
-│   │   ├── hooks/useData.ts  # WebSocket 双向遥测与 REST API
-│   │   └── App.tsx
-└── server/                   # 后端核心服务 (Express + WS + JSON)
-    └── src/
-        ├── db/               # 数据存储层与初始节点
-        ├── services/
-        │   ├── xrayConfig.ts # Reality 密钥生成与 Xray 配置组装
-        │   ├── subscription.ts # Clash/Sing-box/Base64 自适应订阅引擎
-        │   └── wsHub.ts      # WebSocket 双向通信与心跳遥测
-        ├── routes/api.ts     # REST API 与 install.sh 脚本下发
-        └── index.ts          # 入口服务 (3880端口)
+│   │   │   ├── auth/         # 登录网关、凭据找回底部抽屉、改密弹窗
+│   │   │   ├── dashboard/    # 概览大屏、流量进度统计、脚本配置
+│   │   │   ├── layout/       # 响应式侧边栏、顶部导航、页脚
+│   │   │   ├── nodes/        # 节点卡片、配置查看、添加节点弹窗
+│   │   │   ├── notifications/# Telegram 自动化报警配置面板
+│   │   │   ├── ping/         # 国内运营商多点延迟时序图表
+│   │   │   ├── probe/        # VPS 真实硬件工况探针卡片
+│   │   │   ├── subscription/ # 自适应客户端订阅分发与二维码
+│   │   │   ├── topology/     # GSAP 中转拓扑图与链路流光动效
+│   │   │   └── traffic/      # 全局业务流量统计与节点带宽分析
+│   │   ├── hooks/useData.ts  # 双向遥测、REST 聚合请求管理
+│   │   └── styles/           # Hallmark 设计代币与全局样式
+│   └── index.html
+└── server/                   # 后端核心引擎 (Node.js 24 + Express + ws)
+    ├── src/
+    │   ├── db/               # JSON 原子持久化与数据迁移
+    │   ├── routes/           # REST API 路由与自动化下发
+    │   ├── services/
+    │   │   ├── authService.ts      # PBKDF2 与 JWT 安全服务
+    │   │   ├── subscription.ts     # 多客户端订阅自适应转换引擎
+    │   │   ├── wsHub.ts            # WebSocket 遥测中心与心跳保活
+    │   │   └── xrayConfig.ts       # Reality / Dokodemo 密钥与配置装配
+    │   └── index.ts          # 入口服务与静态资源托管
+    └── data/                 # 节点数据、初始凭据、安装与探针脚本
 ```
 
+---
 
-## 安全迁移与真实遥测（2026-10-13）
+## 📄 开源许可证
 
-- 安装依赖、执行 `pnpm test` 和 `pnpm build`，再启动服务。Node.js 24；VPS 探针需要 Linux、systemd、Python 3。
-- 新部署不再插入示例节点、固定订阅或默认密码。可通过服务端环境变量 `NODEMASTER_ADMIN_PASSWORD` 设置至少 12 位的首次密码；否则生成随机密码写入数据目录的 `bootstrap-admin.txt`（登录后修改并删除该文件）。
-- 旧数据库启动时保留节点、链路和订阅；迁移固定 JWT 密钥及旧默认密码，旧会话全部失效。迁移会从已有 Reality 私钥重新派生正确公钥，需要客户端重新获取订阅。
-- 数据目录默认 `server/data`，可通过 `NODEMASTER_DATA_DIR` 覆盖。写入使用同目录临时文件和原子替换，并保存 `.bak`。数据库损坏时停止启动，保留原文件；由管理员核实备份后恢复。不要将真实数据库、备份或凭证文件提交到 Git；已经被 Git 跟踪的数据库需在保留本地文件的前提下移出版本管理，并处理历史中的旧凭证。
-- **已有 VPS 必须更新探针**：执行面板的探针升级命令，或在 VPS 上运行 `curl -fsSL "$PANEL_URL/api/update-probe.sh" | bash`，其中 `PANEL_URL` 为可访问的面板地址。旧 Bash 探针不支持新计数、停止指令与升级确认。
-- 新探针使用累计网卡计数与启动标识去重；首次接入或重启的首个样本建立基线，不补造缺失流量。断网期间的累计差值在恢复上报时计入恢复时段。旧模拟累计量会保留，核实后可在面板手动重置。
-- 心跳超过 30 秒标记离线。达到额度阈值后下发停止代理指令并移除入站；探针确认配置版本后才显示同步成功。月度重置按服务端本地时区，31 日在短月取当月最后一天；重置后下发恢复配置。
-- 历史数据来自真实采样，保留最近 35 天。网卡计数包含主机网络流量，不等同于 Xray 按用户计费；业务分类、请求数和活跃流没有采集时显示未采集，不再生成模拟曲线。延迟任务由 VPS 探针实际执行 TCP/ICMP 测量。
-- 订阅 `expireAt` 使用 Unix 秒，过期或已记录用量达到额度后拒绝下载。订阅访问限制不是独立用户计费，也不会撤销已经导出的共享节点凭证；该项目不提供按订阅用户的流量归属。
-- Xray 升级接口只排队，HTTP/WS 探针取得任务并确认真实版本后才完成；失败保留错误，管理员可重试。升级过程校验二进制版本和现有配置，启动失败回滚原二进制。配置重载失败同样恢复上一份配置。
-- 登出撤销当前管理员的全部会话，改密亦撤销旧会话。反向代理部署时应正确转发 HTTPS，并为面板和 VPS 通信提供 HTTPS。
-
-验证命令：`pnpm test`、`pnpm build`、`python -m unittest discover -s server/test -p '*_test.py'`；安装脚本可用 `bash -n server/data/install.sh` 与 `bash -n server/data/xray-upgrade.sh` 检查。
-
-## Reality / Xray 版本核对（2026-10-13）
-
-- Reality 由 Xray-core 提供；本项目的 `server/data/install.sh` 是自有部署脚本。官方 GitHub `XTLS/Xray-core/releases/latest` 本次返回正式版 `v26.3.27`（UTC 发布时间：2026-03-27 17:51:11），安装时动态查询，不固定该版本。
-- 安装及升级均校验官方 `.dgst` 文件中的 SHA-256、二进制实际版本；安装使用独立临时目录，在替换二进制前验证配置。升级通过服务重启生效，会短暂中断连接。
-- 版本查询缓存 15 分钟；查询失败不再冒充实时成功，`checkedAt` 表示成功查询时间。批量升级只处理已上报且低于目标版本的节点，跳过未知版本并避免降级。
-- 本地数据库的版本记录不等于 VPS 当前实况；请以探针的新上报或 VPS 执行 `/usr/local/bin/xray version` 的结果为准。
+本项目基于 [MIT License](LICENSE) 协议开源。
