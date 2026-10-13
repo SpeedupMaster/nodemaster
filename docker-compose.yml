@@ -1,0 +1,13 @@
+services:
+  nodemaster:
+    image: ghcr.io/speedupmaster/nodemaster:latest
+    container_name: nodemaster
+    restart: unless-stopped
+    ports:
+      - "3880:3880"
+    environment:
+      - PORT=3880
+      - HOST=0.0.0.0
+      # - NODEMASTER_ADMIN_PASSWORD=YourStrongPasswordHere
+    volumes:
+      - ./data:/app/server/data
