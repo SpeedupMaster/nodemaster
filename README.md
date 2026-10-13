@@ -7,7 +7,11 @@
   <img src="https://img.shields.io/badge/GSAP-3.12-88CE02?logo=greensock&logoColor=white" alt="GSAP" />
   <img src="https://img.shields.io/badge/Node.js-24.x-339933?logo=nodedotjs&logoColor=white" alt="Node.js 24" />
   <img src="https://img.shields.io/badge/Xray--core-Reality-1E90FF" alt="Xray Reality" />
+  <img src="https://img.shields.io/badge/Docker-ghcr.io-blue?logo=docker&logoColor=white" alt="Docker GHCR" />
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License MIT" />
+  <a href="https://github.com/SpeedupMaster/nodemaster/actions/workflows/docker-publish.yml">
+    <img src="https://github.com/SpeedupMaster/nodemaster/actions/workflows/docker-publish.yml/badge.svg" alt="Build and Publish Docker Image" />
+  </a>
 </p>
 
 **NodeMaster** 是一套专为运维工程师与高阶极客打造的下一代分布式 VPS 节点集中管控平台。遵循 **Hallmark Modern-Minimal** 工程控制台设计哲学，基于高性能 **GSAP 3** 拓扑流光与微交互引擎，实现多台云服务器硬件工况真实遥测、**VLESS-Reality** 免证书协议组网、**Dokodemo-door** 链式中转隧道、全客户端自适应智能订阅分发、多维度 Telegram 自动化告警与流量月度智能熔断。
@@ -89,17 +93,49 @@
 
 ## 🚀 快速启动与部署
 
-### 环境要求
+### 🐳 方式一：Docker 一键部署（极力推荐）
+
+官方预编译镜像托管于 GitHub Container Registry (GHCR)，原生支持 `linux/amd64` 与 `linux/arm64` 双架构。
+
+#### 1. 使用 Docker 运行
+
+```bash
+docker run -d \
+  --name nodemaster \
+  --restart unless-stopped \
+  -p 3880:3880 \
+  -v nodemaster_data:/app/server/data \
+  -e NODEMASTER_ADMIN_PASSWORD="YourStrongPassword123" \
+  ghcr.io/speedupmaster/nodemaster:latest
+```
+
+#### 2. 使用 Docker Compose
+
+仓库已内置 `docker-compose.yml`：
+
+```bash
+# 启动容器集群
+docker-compose up -d
+
+# 查看运行状态与日志
+docker-compose logs -f
+```
+
+---
+
+### 💻 方式二：源码安装运行
+
+#### 环境要求
 - **服务端**：Node.js >= 22.0.0（推荐 Node.js 24 LTS）、pnpm >= 9.0.0
 - **VPS 节点**：Linux（Debian 11+/Ubuntu 20.04+/CentOS 8+）、systemd、Python >= 3.6
 
-### 1. 本地构建与生产模式运行
+#### 1. 本地构建与生产模式运行
 
 服务端已内置静态资源托管，打包后仅需单端口对外开放：
 
 ```bash
 # 1. 克隆代码仓库
-git clone https://github.com/your-username/nodemaster.git
+git clone https://github.com/SpeedupMaster/nodemaster.git
 cd nodemaster
 
 # 2. 安装 Workspace 依赖
@@ -114,7 +150,7 @@ pnpm start
 
 服务就绪后，在浏览器中访问：**`http://localhost:3880`**。
 
-### 2. 本地开发模式 (支持前端热重载)
+#### 2. 本地开发模式 (支持前端热重载)
 
 同时启动 Vite 开发服务器（5173 端口）与后端 API（3880 端口）：
 
