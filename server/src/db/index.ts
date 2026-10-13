@@ -1,4 +1,7 @@
+import "dotenv/config";
 import fs from "fs";
+import { atomicWriteJson, deriveRealityPublicKey, billingPeriod } from "../services/security.js";
+import { historyStore } from "../services/historyStore.js";
 import path from "path";
 import crypto from "crypto";
 import {
@@ -17,7 +20,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../../data");
+const DATA_DIR = process.env.NODEMASTER_DATA_DIR || path.resolve(__dirname, "../../data");
 const DATA_FILE = path.join(DATA_DIR, "nodemaster_db.json");
 
 export interface DatabaseSchema {
@@ -35,7 +38,7 @@ export interface DatabaseSchema {
 const DEFAULT_CONFIG: SystemConfig = {
   port: 3880,
   host: "0.0.0.0",
-  jwtSecret: "nm_secret_key_8848_secure",
+  jwtSecret: "",
   panelUrl: "http://127.0.0.1:3880",
   autoCircuitBreaker: true,
   circuitBreakerThresholdPct: 98,
@@ -57,227 +60,6 @@ const DEFAULT_TELEGRAM_CONFIG: TelegramConfig = {
   memAlert: true,
   memThresholdPercent: 85,
 };
-
-const INITIAL_NODES: NodeItem[] = [
-  {
-    id: "node-hk-01",
-    name: "HK-BGP-Direct-01",
-    ip: "103.145.75.22",
-    port: 443,
-    type: "direct",
-    protocol: "vless-reality",
-    status: "online",
-    country: "HK",
-    countryName: "中国香港",
-    token: "token_hk_8848",
-    trafficUsedBytes: 184520394800, // ~171 GB
-    trafficLimitBytes: 1073741824000, // 1 TB
-    uplinkSpeedBytes: 1250000, // 1.2 MB/s
-    downlinkSpeedBytes: 4890000, // 4.8 MB/s
-    cpuUsage: 14.5,
-    memUsage: 28.2,
-    diskUsage: 35.1,
-    latencyMs: 38,
-    tags: ["香港", "主力直连", "低延迟BGP", "千兆带宽"],
-    bandwidthMbps: 1000,
-    trafficResetDay: 1,
-    costAmount: 38,
-    costCurrency: "CNY",
-    costPeriod: "monthly",
-    expiresAt: "2026-11-15",
-    autoRenew: true,
-    os: "Debian 12.5 (bookworm)",
-    arch: "x86_64",
-    uptime: "28天 14小时",
-    loadAvg: [0.15, 0.22, 0.18],
-    memTotalBytes: 2147483648,
-    memUsedBytes: 605552640,
-    diskTotalBytes: 42949672960,
-    diskUsedBytes: 15073280000,
-    tcpCount: 124,
-    udpCount: 16,
-    reality: {
-      uuid: "3d5f470a-7e3e-4b6e-8d5c-9d6cfba61a91",
-      flow: "xtls-rprx-vision",
-      serverName: "www.microsoft.com",
-      publicKey: "kM9f83Kk4r7lYm89Zp0wXq5Rt6Y7u8I9o0P1a2S3d4E",
-      privateKey: "0HYBx0ZqLf7JixE4KQDdLqyqy8RXsGCksrkitpNkeVg",
-      shortId: "e44d6fa55fa5c1c0",
-      fingerprint: "chrome",
-      dest: "www.microsoft.com:443"
-    },
-    lastSeen: Date.now(),
-    createdAt: Date.now() - 86400000 * 15
-  },
-  {
-    id: "node-jp-02",
-    name: "JP-TYO-Direct-02",
-    ip: "198.13.44.112",
-    port: 443,
-    type: "direct",
-    protocol: "vless-reality",
-    status: "online",
-    country: "JP",
-    countryName: "日本东京",
-    token: "token_jp_8848",
-    trafficUsedBytes: 312000000000, // ~290 GB
-    trafficLimitBytes: 1073741824000, // 1 TB
-    uplinkSpeedBytes: 890000,
-    downlinkSpeedBytes: 3450000,
-    cpuUsage: 18.2,
-    memUsage: 31.0,
-    diskUsage: 29.5,
-    latencyMs: 65,
-    tags: ["日本", "软银直连", "主力大带宽", "双向CN2"],
-    bandwidthMbps: 1000,
-    trafficResetDay: 1,
-    costAmount: 5.5,
-    costCurrency: "USD",
-    costPeriod: "monthly",
-    expiresAt: "2026-10-28",
-    autoRenew: false,
-    os: "Ubuntu 22.04.4 LTS",
-    arch: "x86_64",
-    uptime: "42天 8小时",
-    loadAvg: [0.42, 0.51, 0.45],
-    memTotalBytes: 4294967296,
-    memUsedBytes: 1331439861,
-    diskTotalBytes: 64424509440,
-    diskUsedBytes: 19005230284,
-    tcpCount: 218,
-    udpCount: 34,
-    reality: {
-      uuid: "5e8d9c12-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-      flow: "xtls-rprx-vision",
-      serverName: "addons.mozilla.org",
-      publicKey: "rY8z53Nn9o0lZn23Aq4xYr5Su6Z7v8J9p0Q1b2T3e4D",
-      privateKey: "2KMCx2ArMg9KjyF6LREeMrzrz0SYtHDltrliuQOleWi",
-      shortId: "6fa55fa5c1c0e44d",
-      fingerprint: "firefox",
-      dest: "addons.mozilla.org:443"
-    },
-    lastSeen: Date.now(),
-    createdAt: Date.now() - 86400000 * 10
-  },
-  {
-    id: "node-us-unlock-01",
-    name: "US-Residential-Unlock-01",
-    ip: "154.23.189.90",
-    port: 8388,
-    type: "unlock",
-    protocol: "shadowsocks",
-    status: "online",
-    country: "US",
-    countryName: "美国洛杉矶 (原生住宅)",
-    token: "token_us_unlock_8848",
-    trafficUsedBytes: 129496729600, // ~120 GB
-    trafficLimitBytes: 2147483648000, // 2 TB
-    uplinkSpeedBytes: 340000,
-    downlinkSpeedBytes: 1820000,
-    cpuUsage: 9.8,
-    memUsage: 22.4,
-    diskUsage: 41.0,
-    latencyMs: 145,
-    tags: ["美国家宽", "原生双ISP", "Shadowsocks", "OpenAI/流媒体全解锁"],
-    bandwidthMbps: 500,
-    trafficResetDay: 15,
-    costAmount: 18,
-    costCurrency: "USD",
-    costPeriod: "quarterly",
-    expiresAt: "2026-12-01",
-    autoRenew: true,
-    os: "Debian 12.5 (bookworm)",
-    arch: "x86_64",
-    uptime: "15天 2小时",
-    loadAvg: [0.08, 0.12, 0.10],
-    memTotalBytes: 1073741824,
-    memUsedBytes: 240518144,
-    diskTotalBytes: 26843545600,
-    diskUsedBytes: 11005853696,
-    tcpCount: 88,
-    udpCount: 12,
-    shadowsocks: {
-      method: "2022-blake3-aes-128-gcm",
-      password: "u0J9xK1L2m3N4o5P6q7R8s=="
-    },
-    lastSeen: Date.now(),
-    createdAt: Date.now() - 86400000 * 20
-  },
-  {
-    id: "node-uk-unlock-02",
-    name: "UK-London-Unlock-02",
-    ip: "185.220.101.55",
-    port: 8388,
-    type: "unlock",
-    protocol: "shadowsocks",
-    status: "online",
-    country: "GB",
-    countryName: "英国伦敦 (原生IP)",
-    token: "token_uk_unlock_8848",
-    trafficUsedBytes: 85200000000,
-    trafficLimitBytes: 1073741824000, // 1 TB
-    uplinkSpeedBytes: 210000,
-    downlinkSpeedBytes: 1150000,
-    cpuUsage: 8.5,
-    memUsage: 19.0,
-    diskUsage: 25.0,
-    latencyMs: 180,
-    tags: ["英国原生", "Shadowsocks", "BBC iPlayer", "全流媒体解锁"],
-    bandwidthMbps: 500,
-    trafficResetDay: 28,
-    costAmount: 45,
-    costCurrency: "EUR",
-    costPeriod: "annually",
-    expiresAt: "2027-03-20",
-    autoRenew: false,
-    os: "Alpine Linux 3.19",
-    arch: "aarch64",
-    uptime: "33天 19小时",
-    loadAvg: [0.18, 0.16, 0.14],
-    memTotalBytes: 2147483648,
-    memUsedBytes: 408021893,
-    diskTotalBytes: 34359738368,
-    diskUsedBytes: 8589934592,
-    tcpCount: 96,
-    udpCount: 14,
-    shadowsocks: {
-      method: "2022-blake3-aes-128-gcm",
-      password: "v1K0yL2M3n4O5p6Q7r8S9t=="
-    },
-    lastSeen: Date.now(),
-    createdAt: Date.now() - 86400000 * 8
-  }
-];
-
-const INITIAL_RELAYS: RelayLink[] = [
-  {
-    id: "relay-hk-us-ai",
-    name: "港美链式解锁 (香港主力 ➔ 美国家宽 AI/流媒体)",
-    mainNodeId: "node-hk-01",
-    unlockNodeId: "node-us-unlock-01",
-    mode: "ai_media",
-    transitNodeId: "node-hk-01",
-    exitNodeId: "node-us-unlock-01",
-    transitPort: 443,
-    status: "active",
-    trafficBytes: 85400000000,
-    latencyMs: 142,
-    createdAt: Date.now() - 86400000 * 7
-  }
-];
-
-const INITIAL_SUBSCRIPTIONS: SubscriptionToken[] = [
-  {
-    id: "sub-default",
-    name: "默认全量节点订阅",
-    token: "nodemaster_universal_sub_token_7788",
-    nodeIds: [], // 全部节点
-    trafficLimitBytes: 0, // 无限制
-    trafficUsedBytes: 674520394800,
-    expireAt: 0,
-    createdAt: Date.now() - 86400000 * 14
-  }
-];
 
 export const INITIAL_LATENCY_TASKS: LatencyTask[] = [
   {
@@ -370,23 +152,6 @@ export const INITIAL_LATENCY_TASKS: LatencyTask[] = [
     enabled: true,
     order: 9,
   },
-];
-
-const TASK_DEFAULT_COLORS: Record<string, string> = {
-  "广东移动": "#ef4444",
-  "广东联通": "#22c55e",
-  "广东电信": "#6366f1",
-  "湖北移动": "#06b6d4",
-  "湖北联通": "#38bdf8",
-  "湖北电信": "#a855f7",
-  "四川移动": "#f97316",
-  "四川联通": "#eab308",
-  "四川电信": "#ec4899",
-};
-
-const FALLBACK_PALETTE = [
-  "#10b981", "#3b82f6", "#8b5cf6", "#f43f5e",
-  "#14b8a6", "#f59e0b", "#06b6d4", "#64748b"
 ];
 
 export const INITIAL_ROUTING_RULES: RoutingRule[] = [
@@ -488,8 +253,9 @@ export const INITIAL_ROUTING_RULES: RoutingRule[] = [
   },
 ];
 
-class Database {
+export class Database {
   private data: DatabaseSchema;
+  private flushTimer?: NodeJS.Timeout;
 
   constructor() {
     if (!fs.existsSync(DATA_DIR)) {
@@ -500,12 +266,15 @@ class Database {
       try {
         const raw = fs.readFileSync(DATA_FILE, "utf-8");
         this.data = JSON.parse(raw);
+        if (!Array.isArray(this.data.nodes) || !Array.isArray(this.data.relays) || !Array.isArray(this.data.subscriptions) || !this.data.config) {
+          throw new Error("Invalid database schema");
+        }
         let changed = false;
-        if (!this.data.latencyTasks || this.data.latencyTasks.length === 0) {
+        if (!this.data.latencyTasks) {
           this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
           changed = true;
         }
-        if (!this.data.routingRules || this.data.routingRules.length === 0) {
+        if (!this.data.routingRules) {
           this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
           changed = true;
         }
@@ -521,21 +290,47 @@ class Database {
           this.data.admin = this.createDefaultAdmin();
           changed = true;
         }
-        if (this.data.nodes) {
-          for (const n of this.data.nodes) {
-            if (!n.xrayVersion) {
-              n.xrayVersion = "v26.3.27";
+        if (!this.data.config.jwtSecret || this.data.config.jwtSecret.length < 32 || this.data.config.jwtSecret === "nm_secret_key_8848_secure") {
+          this.data.config.jwtSecret = crypto.randomBytes(48).toString("base64url");
+          changed = true;
+        }
+        const admin = this.data.admin!;
+        const oldHash = crypto.pbkdf2Sync("admin123456", admin.salt, 100000, 64, "sha512").toString("hex");
+        if (admin.passwordHash === oldHash) {
+          this.data.admin = { ...this.createDefaultAdmin(), username: admin.username };
+          changed = true;
+        }
+        if (!this.data.admin!.sessionVersion) {
+          this.data.admin!.sessionVersion = crypto.randomUUID();
+          changed = true;
+        }
+        for (const n of this.data.nodes) {
+          if (n.reality) {
+            const publicKey = deriveRealityPublicKey(n.reality.privateKey);
+            if (publicKey !== n.reality.publicKey) {
+              n.reality.publicKey = publicKey;
               changed = true;
             }
           }
+          if (!n.trafficPeriodStart) {
+            n.trafficPeriodStart = billingPeriod(Date.now(), n.trafficResetDay || 1);
+            changed = true;
+          }
+          if (!n.agentSchemaVersion) {
+            n.agentSchemaVersion = 2;
+            n.configVersion = Date.now();
+            n.configSyncStatus = "pending";
+            n.status = n.status === "circuit_broken" ? n.status : "offline";
+            changed = true;
+          }
         }
         if (changed) {
+          const migrationBackup = `${DATA_FILE}.pre-migration.bak`;
+          if (!fs.existsSync(migrationBackup)) fs.copyFileSync(DATA_FILE, migrationBackup);
           this.save();
         }
       } catch (err) {
-        console.error("[Database] Corrupt DB file, initializing defaults", err);
-        this.data = this.createDefault();
-        this.save();
+        throw new Error(`Cannot load database ${DATA_FILE}; original retained. Restore a verified backup before restarting.`, { cause: err });
       }
     } else {
       this.data = this.createDefault();
@@ -545,21 +340,29 @@ class Database {
 
   private createDefaultAdmin(): AdminUser {
     const salt = crypto.randomBytes(16).toString("hex");
-    const passwordHash = crypto.pbkdf2Sync("admin123456", salt, 100000, 64, "sha512").toString("hex");
+    const password = process.env.NODEMASTER_ADMIN_PASSWORD || crypto.randomBytes(24).toString("base64url");
+    if (password.length < 12 || password === "admin123456") throw new Error("Initial admin password must contain at least 12 characters and cannot be the legacy password");
+    if (!process.env.NODEMASTER_ADMIN_PASSWORD) {
+      const credentialsPath = path.join(DATA_DIR, "bootstrap-admin.txt");
+      fs.writeFileSync(credentialsPath, password, { mode: 0o600 });
+      console.warn(`[Security] Initial admin password saved to ${credentialsPath}; change it after login and delete this file.`);
+    }
+    const passwordHash = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
     return {
       username: "admin",
       passwordHash,
       salt,
+      sessionVersion: crypto.randomUUID(),
       updatedAt: Date.now(),
     };
   }
 
   private createDefault(): DatabaseSchema {
     return {
-      nodes: INITIAL_NODES,
-      relays: INITIAL_RELAYS,
-      subscriptions: INITIAL_SUBSCRIPTIONS,
-      config: DEFAULT_CONFIG,
+      nodes: [],
+      relays: [],
+      subscriptions: [],
+      config: { ...DEFAULT_CONFIG, jwtSecret: crypto.randomBytes(48).toString("base64url") },
       latencyTasks: [...INITIAL_LATENCY_TASKS],
       routingRules: JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES)),
       telegramConfig: { ...DEFAULT_TELEGRAM_CONFIG },
@@ -569,18 +372,33 @@ class Database {
   }
 
   private save() {
-    try {
-      const tmp = `${DATA_FILE}.tmp.${Date.now()}`;
-      fs.writeFileSync(tmp, JSON.stringify(this.data, null, 2), "utf-8");
-      try {
-        fs.renameSync(tmp, DATA_FILE);
-      } catch {
-        fs.copyFileSync(tmp, DATA_FILE);
-        if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
-      }
-    } catch {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(this.data, null, 2), "utf-8");
+    clearTimeout(this.flushTimer);
+    this.flushTimer = undefined;
+    atomicWriteJson(DATA_FILE, this.data, true);
+  }
+
+  public flush() { this.save(); historyStore.flush(); }
+
+  private scheduleSave() {
+    if (this.flushTimer) return;
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = undefined;
+      try { this.save(); } catch (error) { console.error("Database flush failed", error); this.scheduleSave(); }
+    }, 1000);
+    this.flushTimer.unref();
+  }
+
+  public invalidateConfigs(nodeIds?: string[]) {
+    for (const node of this.data.nodes) {
+      if (nodeIds && !nodeIds.includes(node.id)) continue;
+      node.configVersion = Math.max(Date.now(), (node.configVersion || 0) + 1);
+      node.configSyncStatus = "pending";
     }
+    this.save();
+  }
+
+  public revokeSessions() {
+    this.updateAdmin({ sessionVersion: crypto.randomUUID() });
   }
 
   // Nodes API
@@ -602,11 +420,11 @@ class Database {
     return node;
   }
 
-  public updateNode(id: string, updates: Partial<NodeItem>): NodeItem | null {
+  public updateNode(id: string, updates: Partial<NodeItem>, defer = false): NodeItem | null {
     const idx = this.data.nodes.findIndex(n => n.id === id);
     if (idx === -1) return null;
     this.data.nodes[idx] = { ...this.data.nodes[idx], ...updates };
-    this.save();
+    if (defer) this.scheduleSave(); else this.save();
     return this.data.nodes[idx];
   }
 
@@ -614,7 +432,7 @@ class Database {
     const before = this.data.nodes.length;
     this.data.nodes = this.data.nodes.filter(n => n.id !== id);
     this.data.relays = this.data.relays.filter(r => r.transitNodeId !== id && r.exitNodeId !== id);
-    this.save();
+    this.invalidateConfigs();
     return this.data.nodes.length < before;
   }
 
@@ -629,7 +447,7 @@ class Database {
 
   public addRelay(relay: RelayLink): RelayLink {
     this.data.relays.push(relay);
-    this.save();
+    this.invalidateConfigs();
     return relay;
   }
 
@@ -640,14 +458,14 @@ class Database {
       ...this.data.relays[idx],
       ...updates,
     };
-    this.save();
+    this.invalidateConfigs();
     return this.data.relays[idx];
   }
 
   public deleteRelay(id: string): boolean {
     const before = this.data.relays.length;
     this.data.relays = this.data.relays.filter(r => r.id !== id);
-    this.save();
+    this.invalidateConfigs();
     return this.data.relays.length < before;
   }
 
@@ -776,150 +594,16 @@ class Database {
     return this.getLatencyTasks();
   }
 
-  // Node Latency History Simulator / Provider
   public getNodeLatencyHistory(nodeId: string, range = "1h"): NodeLatencyHistory[] {
-    const node = this.getNodeById(nodeId);
-    if (!node) return [];
-
-    const tasks = (this.data.latencyTasks || []).filter(
-      t => t.enabled && (t.nodeIds.length === 0 || t.nodeIds.includes(nodeId))
-    );
-
-    let pointsCount = 60;
-    let stepMs = 60 * 1000;
-    if (range === "6h") {
-      pointsCount = 72;
-      stepMs = 5 * 60 * 1000;
-    } else if (range === "12h") {
-      pointsCount = 72;
-      stepMs = 10 * 60 * 1000;
-    } else if (range === "1d") {
-      pointsCount = 96;
-      stepMs = 15 * 60 * 1000;
-    } else if (range === "3d") {
-      pointsCount = 108;
-      stepMs = 40 * 60 * 1000;
-    } else if (range === "7d") {
-      pointsCount = 112;
-      stepMs = 90 * 60 * 1000;
-    }
-
-    const now = Date.now();
-    const startTime = now - pointsCount * stepMs;
-
-    let nodeBase = node.latencyMs || 45;
-    if (node.country === "HK") nodeBase = 18;
-    else if (node.country === "JP") nodeBase = 58;
-    else if (node.country === "US") nodeBase = 145;
-
-    return tasks.map((task, tIdx) => {
-      let targetOffset = 0;
-      if (task.name.includes("广东")) targetOffset = 0;
-      else if (task.name.includes("湖北")) targetOffset = 15;
-      else if (task.name.includes("四川")) targetOffset = 25;
-      else targetOffset = 10;
-
-      if (task.name.includes("电信")) targetOffset -= 2;
-      else if (task.name.includes("联通")) targetOffset += 1;
-      else if (task.name.includes("移动")) targetOffset += 3;
-
-      const base = Math.max(10, nodeBase + targetOffset);
-      const color = TASK_DEFAULT_COLORS[task.name] || FALLBACK_PALETTE[tIdx % FALLBACK_PALETTE.length];
-
-      const history = [];
-      for (let i = 0; i < pointsCount; i++) {
-        const time = startTime + i * stepMs;
-        const wave = Math.sin((i / pointsCount) * Math.PI * 4 + tIdx) * 3;
-        const noise = Math.sin(i * 13 + tIdx * 7) * 1.5;
-        const spike = (i % 23 === 0) ? 4.5 : 0;
-        const lat = +(base + wave + noise + spike).toFixed(1);
-        history.push({
-          timestamp: time,
-          latencyMs: Math.max(5, lat),
-          lossRate: 0.0,
-          jitter: +(Math.abs(noise * 0.6) + 0.3).toFixed(1),
-        });
-      }
-
-      const latest = history[history.length - 1];
-      return {
-        nodeId,
-        taskId: task.id,
-        taskName: task.name,
-        color,
-        currentLatency: latest.latencyMs,
-        lossRate: 0.0,
-        jitter: latest.jitter,
-        history,
-      };
-    });
+    return historyStore.latencyHistory(nodeId, range, this.getLatencyTasks());
   }
-
-  // Node Hardware Load History Simulator
   public getNodeLoadHistory(nodeId: string, range = "1h") {
-    const node = this.getNodeById(nodeId);
-    if (!node) return null;
-
-    let pointsCount = 60;
-    let stepMs = 60 * 1000;
-    if (range === "6h") {
-      pointsCount = 72;
-      stepMs = 5 * 60 * 1000;
-    } else if (range === "12h") {
-      pointsCount = 72;
-      stepMs = 10 * 60 * 1000;
-    } else if (range === "1d") {
-      pointsCount = 96;
-      stepMs = 15 * 60 * 1000;
-    } else if (range === "3d") {
-      pointsCount = 108;
-      stepMs = 40 * 60 * 1000;
-    } else if (range === "7d") {
-      pointsCount = 112;
-      stepMs = 90 * 60 * 1000;
-    }
-
-    const now = Date.now();
-    const startTime = now - pointsCount * stepMs;
-
-    const timestamps: number[] = [];
-    const cpu: number[] = [];
-    const mem: number[] = [];
-    const disk: number[] = [];
-    const netIn: number[] = [];
-    const netOut: number[] = [];
-
-    const baseCpu = node.cpuUsage || 15;
-    const baseMem = node.memUsage || 25;
-    const baseDisk = node.diskUsage || 30;
-
-    for (let i = 0; i < pointsCount; i++) {
-      const t = startTime + i * stepMs;
-      timestamps.push(t);
-      const cpuWave = Math.sin((i / pointsCount) * Math.PI * 6) * 6 + (Math.sin(i * 17) * 3);
-      cpu.push(+(Math.min(99, Math.max(2, baseCpu + cpuWave))).toFixed(1));
-      const memWave = Math.sin((i / pointsCount) * Math.PI * 2) * 2 + (Math.sin(i * 7) * 1);
-      mem.push(+(Math.min(99, Math.max(5, baseMem + memWave))).toFixed(1));
-      disk.push(+baseDisk.toFixed(1));
-      const speedIn = Math.max(50, (node.downlinkSpeedBytes || 204800) + Math.sin(i * 5) * 80000);
-      const speedOut = Math.max(20, (node.uplinkSpeedBytes || 81920) + Math.sin(i * 3) * 30000);
-      netIn.push(Math.round(speedIn));
-      netOut.push(Math.round(speedOut));
-    }
-
-    return {
-      timestamps,
-      cpu,
-      mem,
-      disk,
-      netIn,
-      netOut,
-    };
+    return this.getNodeById(nodeId) ? historyStore.loadHistory(nodeId, range) : null;
   }
 
   // Routing Rules API
   public getRoutingRules(): RoutingRule[] {
-    if (!this.data.routingRules || this.data.routingRules.length === 0) {
+    if (!this.data.routingRules) {
       this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
       this.save();
     }
@@ -937,7 +621,7 @@ class Database {
       rule.priority = maxPriority + 1;
     }
     this.data.routingRules.push(rule);
-    this.save();
+    this.invalidateConfigs();
     return rule;
   }
 
@@ -950,7 +634,7 @@ class Database {
       ...updates,
       updatedAt: Date.now(),
     };
-    this.save();
+    this.invalidateConfigs();
     return this.data.routingRules[idx];
   }
 
@@ -962,7 +646,7 @@ class Database {
     this.data.routingRules.forEach((r, idx) => {
       r.priority = idx + 1;
     });
-    this.save();
+    this.invalidateConfigs();
     return this.data.routingRules.length < before;
   }
 
@@ -989,13 +673,13 @@ class Database {
     });
 
     this.data.routingRules = reordered;
-    this.save();
+    this.invalidateConfigs();
     return this.getRoutingRules();
   }
 
   public resetRoutingRules(): RoutingRule[] {
     this.data.routingRules = JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES));
-    this.save();
+    this.invalidateConfigs();
     return this.getRoutingRules();
   }
 

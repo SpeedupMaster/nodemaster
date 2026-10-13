@@ -1,4 +1,7 @@
 import { Router } from "express";
+import { validateRequest } from "../services/validation.js";
+import { ingestTelemetry, agentDirectives } from "../services/telemetryService.js";
+import { billingPeriod } from "../services/security.js";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
@@ -27,6 +30,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const apiRouter = Router();
+apiRouter.use(validateRequest);
+
 
 // -------------------------------------------------------------
 // 0. API Whitelist Middleware & Admin Authentication Gate
@@ -54,7 +59,7 @@ apiRouter.use((req, res, next) => {
   // 5. Automated installer and optimization shell scripts
   if (
     method === "GET" &&
-    (cleanPath === "/install.sh" ||
+    (cleanPath === "/probe.py" || cleanPath === "/install.sh" ||
       cleanPath === "/update-probe.sh" ||
       cleanPath === "/tcp-tune.sh" ||
       cleanPath === "/xray/upgrade.sh")
@@ -69,7 +74,14 @@ apiRouter.use((req, res, next) => {
 // -------------------------------------------------------------
 // 0.1 Authentication & Admin Account Management API
 // -------------------------------------------------------------
+const loginAttempts = new Map<string, { count: number; until: number }>();
 apiRouter.post("/auth/login", (req, res) => {
+  const key = req.ip || "unknown";
+  const now = Date.now();
+  for (const [ip, entry] of loginAttempts) if (entry.until <= now) loginAttempts.delete(ip);
+  const entry = loginAttempts.get(key) || { count: 0, until: now + 60000 };
+  if (entry.count >= 10) return res.status(429).json({ success: false, message: "登录尝试过多，请一分钟后重试" });
+  entry.count++; loginAttempts.set(key, entry);
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ success: false, message: "请输入用户名和密码" });
@@ -112,8 +124,8 @@ apiRouter.post("/auth/change-password", (req, res) => {
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ success: false, message: "原密码与新密码均不能为空" });
   }
-  if (newPassword.length < 6) {
-    return res.status(400).json({ success: false, message: "新密码长度不能少于 6 位" });
+  if (newPassword.length < 12 || newPassword === "admin123456") {
+    return res.status(400).json({ success: false, message: "新密码至少 12 位，不能使用旧默认密码" });
   }
 
   const admin = db.getAdmin();
@@ -122,7 +134,7 @@ apiRouter.post("/auth/change-password", (req, res) => {
   }
 
   const { hash, salt } = hashPassword(newPassword);
-  db.updateAdmin({ passwordHash: hash, salt });
+  db.updateAdmin({ passwordHash: hash, salt, sessionVersion: crypto.randomUUID() });
 
   const token = signToken({ sub: admin.username, role: "admin" });
   res.json({
@@ -139,6 +151,8 @@ apiRouter.post("/auth/change-password", (req, res) => {
 });
 
 apiRouter.post("/auth/logout", (req, res) => {
+  db.revokeSessions();
+  wsHub.closeRevokedClients();
   res.json({ success: true, message: "已安全退出登录" });
 });
 
@@ -184,18 +198,21 @@ apiRouter.post("/nodes", (req, res) => {
     port: targetPort,
     type: type || (isUnlock ? "unlock" : "direct"),
     protocol: nodeProtocol,
-    status: "online",
+    status: "offline",
+    configVersion: Date.now(),
+    configSyncStatus: "pending",
+    trafficPeriodStart: billingPeriod(Date.now(), Number(trafficResetDay) || 1),
     country: country || "US",
     countryName: countryName || (isUnlock ? "美国原生住宅" : "海外主力节点"),
     token,
     trafficUsedBytes: 0,
-    trafficLimitBytes: Number(trafficLimitBytes) || (isUnlock ? 2147483648000 : 1073741824000), // 2TB or 1TB default
+    trafficLimitBytes: trafficLimitBytes === undefined ? (isUnlock ? 2147483648000 : 1073741824000) : Number(trafficLimitBytes), // 2TB or 1TB default
     uplinkSpeedBytes: 0,
     downlinkSpeedBytes: 0,
-    cpuUsage: 5.0,
-    memUsage: 15.0,
-    diskUsage: 20.0,
-    latencyMs: isUnlock ? 140 : 45,
+    cpuUsage: 0,
+    memUsage: 0,
+    diskUsage: 0,
+    latencyMs: 0,
     reality,
     shadowsocks,
     bandwidthMbps: Number(bandwidthMbps) || 1000,
@@ -205,7 +222,7 @@ apiRouter.post("/nodes", (req, res) => {
     costPeriod: req.body.costPeriod || "monthly",
     expiresAt: req.body.expiresAt || undefined,
     autoRenew: req.body.autoRenew !== undefined ? Boolean(req.body.autoRenew) : false,
-    lastSeen: Date.now(),
+    lastSeen: 0,
     createdAt: Date.now(),
     tags: tags && tags.length > 0 ? tags : defaultTags,
     sni: !isUnlock ? (sni || "www.microsoft.com") : undefined,
@@ -279,6 +296,7 @@ apiRouter.put("/nodes/:id", (req, res) => {
 
   // Protocol specific updates & Hot Sync detection
   let isConfigChanged = false;
+  if (status !== undefined && status !== existing.status) isConfigChanged = true;
   if (port !== undefined && Number(port) !== existing.port) {
     isConfigChanged = true;
   }
@@ -290,6 +308,7 @@ apiRouter.put("/nodes/:id", (req, res) => {
         updates.reality = {
           ...existing.reality,
           serverName: sni,
+          dest: `${sni}:443`,
         };
       }
       isConfigChanged = true;
@@ -319,12 +338,16 @@ apiRouter.put("/nodes/:id", (req, res) => {
   }
 
   if (isConfigChanged) {
-    updates.configVersion = Date.now();
+    updates.configVersion = Math.max(Date.now(), (existing.configVersion || 0) + 1);
     updates.configSyncStatus = "pending";
   }
 
   const updated = db.updateNode(req.params.id, updates);
   if (!updated) return res.status(404).json({ success: false, message: "节点更新失败" });
+  if (isConfigChanged || ip !== undefined) {
+    const dependents = db.getRelays().filter(r => (r.unlockNodeId || r.exitNodeId) === updated.id).map(r => r.mainNodeId || r.transitNodeId!);
+    if (dependents.length) db.invalidateConfigs(dependents);
+  }
   wsHub.broadcastNodeUpdate(updated.id);
   res.json({ success: true, data: updated });
 });
@@ -342,7 +365,7 @@ export function getNodeXrayConfig(node: NodeItem) {
   let unlockMode: "ai_media" | "all" | "custom" = "ai_media";
 
   // Check if this node is paired with an Unlock Node
-  const relay = db.getRelays().find((r) => r.mainNodeId === node.id || r.transitNodeId === node.id);
+  const relay = db.getRelays().find((r) => r.status === "active" && (r.mainNodeId === node.id || r.transitNodeId === node.id));
   if (relay) {
     const unlockId = relay.unlockNodeId || relay.exitNodeId;
     if (unlockId) {
@@ -372,7 +395,7 @@ apiRouter.post("/nodes/:id/sync", (req, res) => {
   const node = db.getNodeById(req.params.id);
   if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
 
-  const newVersion = Date.now();
+  const newVersion = Math.max(Date.now(), (node.configVersion || 0) + 1);
   const updated = db.updateNode(node.id, {
     configVersion: newVersion,
     configSyncStatus: "pending",
@@ -392,9 +415,14 @@ apiRouter.post("/nodes/:id/sync", (req, res) => {
 });
 
 apiRouter.post("/nodes/:id/reset-traffic", (req, res) => {
+  const current = db.getNodeById(req.params.id);
+  if (!current) return res.status(404).json({ success: false, message: "节点不存在" });
   const updated = db.updateNode(req.params.id, {
     trafficUsedBytes: 0,
-    status: "online",
+    trafficPeriodStart: billingPeriod(Date.now(), current.trafficResetDay || 1),
+    status: Date.now() - current.lastSeen < 30000 ? "online" : "offline",
+    configVersion: Math.max(Date.now(), (current.configVersion || 0) + 1),
+    configSyncStatus: "pending",
   });
   if (!updated) return res.status(404).json({ success: false, message: "节点不存在" });
   wsHub.broadcastNodeUpdate(updated.id);
@@ -417,7 +445,9 @@ apiRouter.post("/relays", (req, res) => {
     return res.status(400).json({ success: false, message: "主力连接节点与目标解锁机为必选项" });
   }
 
+  if (mainId === unlockId || !db.getNodeById(mainId) || !db.getNodeById(unlockId)) return res.status(400).json({ success: false, message: "链路端点无效" });
   const existingRelays = db.getRelays();
+  if (existingRelays.some(r => r.status === "active" && (r.mainNodeId || r.transitNodeId) === mainId)) return res.status(400).json({ success: false, message: "每个主力节点只能有一条活动链路" });
   const duplicate = existingRelays.find(
     (r) =>
       (r.mainNodeId === mainId || r.transitNodeId === mainId) &&
@@ -456,6 +486,11 @@ apiRouter.put("/relays/:id", (req, res) => {
   const { name, mainNodeId, unlockNodeId, mode, customServices, customDomains, status } = req.body;
   const existing = db.getRelayById(req.params.id);
   if (!existing) return res.status(404).json({ success: false, message: "中转链路不存在" });
+
+  const main = mainNodeId || existing.mainNodeId || existing.transitNodeId;
+  const unlock = unlockNodeId || existing.unlockNodeId || existing.exitNodeId;
+  if (!main || !unlock || main === unlock || !db.getNodeById(main) || !db.getNodeById(unlock)) return res.status(400).json({ success: false, message: "链路端点无效" });
+  if ((status || existing.status) === "active" && db.getRelays().some(r => r.id !== existing.id && r.status === "active" && (r.mainNodeId || r.transitNodeId) === main)) return res.status(400).json({ success: false, message: "每个主力节点只能有一条活动链路" });
 
   const updates: Partial<RelayLink> = {};
   if (name !== undefined) updates.name = name;
@@ -554,6 +589,9 @@ apiRouter.get("/sub/:token", (req, res) => {
     return res.status(404).send("Subscription not found or expired.");
   }
 
+  if (sub.expireAt > 0 && sub.expireAt <= Math.floor(Date.now() / 1000)) return res.status(403).send("Subscription expired.");
+  if (sub.trafficLimitBytes > 0 && sub.trafficUsedBytes >= sub.trafficLimitBytes) return res.status(403).send("Subscription quota exceeded.");
+
   // Filter nodes if sub specifies nodeIds
   let allNodes = db.getNodes();
   if (sub.nodeIds && sub.nodeIds.length > 0) {
@@ -605,78 +643,13 @@ apiRouter.get("/nodes/by-token/:token", (req, res) => {
 });
 
 apiRouter.post("/nodes/telemetry", (req, res) => {
-  const { token, appliedConfigVersion, syncReport, ...telemetry } = req.body;
-  if (!token) return res.status(400).json({ success: false, message: "缺少 token" });
-  const node = db.getNodeByToken(token);
-  if (!node) return res.status(404).json({ success: false, message: "节点不存在" });
-
-  const updates: Partial<NodeItem> = {
-    lastSeen: Date.now(),
-    status: "online",
-  };
-
-  if (typeof appliedConfigVersion === "number") {
-    updates.appliedConfigVersion = appliedConfigVersion;
-  }
-
-  if (syncReport) {
-    if (syncReport.status === "success") {
-      updates.appliedConfigVersion = Number(syncReport.version) || updates.appliedConfigVersion;
-      updates.configSyncStatus = "synced";
-      updates.configSyncedAt = Date.now();
-      updates.configSyncError = undefined;
-    } else if (syncReport.status === "error") {
-      updates.configSyncStatus = "failed";
-      updates.configSyncError = String(syncReport.error || "配置热重载失败");
-    }
-  } else if (
-    node.configVersion &&
-    updates.appliedConfigVersion &&
-    updates.appliedConfigVersion >= node.configVersion
-  ) {
-    updates.configSyncStatus = "synced";
-    updates.configSyncedAt = Date.now();
-  }
-
-  if (typeof telemetry.cpuUsage === "number") updates.cpuUsage = +telemetry.cpuUsage.toFixed(1);
-  if (typeof telemetry.memUsage === "number") updates.memUsage = +telemetry.memUsage.toFixed(1);
-  if (typeof telemetry.diskUsage === "number") updates.diskUsage = +telemetry.diskUsage.toFixed(1);
-  if (typeof telemetry.memTotalBytes === "number") updates.memTotalBytes = telemetry.memTotalBytes;
-  if (typeof telemetry.memUsedBytes === "number") updates.memUsedBytes = telemetry.memUsedBytes;
-  if (typeof telemetry.diskTotalBytes === "number") updates.diskTotalBytes = telemetry.diskTotalBytes;
-  if (typeof telemetry.diskUsedBytes === "number") updates.diskUsedBytes = telemetry.diskUsedBytes;
-  if (typeof telemetry.uplinkSpeedBytes === "number") updates.uplinkSpeedBytes = telemetry.uplinkSpeedBytes;
-  if (typeof telemetry.downlinkSpeedBytes === "number") updates.downlinkSpeedBytes = telemetry.downlinkSpeedBytes;
-  if (telemetry.loadAvg) updates.loadAvg = telemetry.loadAvg;
-  if (telemetry.uptime) updates.uptime = telemetry.uptime;
-  if (telemetry.os) updates.os = telemetry.os;
-  if (telemetry.arch) updates.arch = telemetry.arch;
-  if (typeof telemetry.tcpCount === "number") updates.tcpCount = telemetry.tcpCount;
-  if (typeof telemetry.udpCount === "number") updates.udpCount = telemetry.udpCount;
-  if (telemetry.tcpCongestion) updates.tcpCongestion = telemetry.tcpCongestion;
-  if (telemetry.xrayVersion) updates.xrayVersion = telemetry.xrayVersion;
-
-  db.updateNode(node.id, updates);
-  wsHub.broadcastNodeUpdate(node.id);
-
-  // Check if VPS agent needs to perform hot reload
-  const targetVersion = node.configVersion || 0;
-  const currentApplied = updates.appliedConfigVersion ?? node.appliedConfigVersion ?? 0;
-
-  let syncDirective: any = null;
-  if (targetVersion > 0 && targetVersion > currentApplied) {
-    syncDirective = {
-      action: "RELOAD_CONFIG",
-      targetVersion,
-      configUrl: `/api/nodes/by-token/${token}/xray-config`,
-    };
-  }
-
-  res.json({
-    success: true,
-    message: "Telemetry updated",
-    sync: syncDirective,
-  });
+  const node = db.getNodeByToken(req.body.token);
+  if (!node) return res.status(401).json({ success: false, message: "无效节点凭证" });
+  try {
+    const updated = ingestTelemetry(node.id, req.body);
+    wsHub.broadcastNodeUpdate(node.id);
+    res.json({ success: true, ...agentDirectives(updated) });
+  } catch (error: any) { res.status(400).json({ success: false, message: error.message }); }
 });
 
 // -------------------------------------------------------------
@@ -711,17 +684,24 @@ apiRouter.post("/nodes/batch-upgrade-xray", async (req, res) => {
 });
 
 apiRouter.get("/xray/upgrade.sh", async (req, res) => {
+  try {
   const panelUrl = `${req.protocol}://${req.get("host")}`;
-  const matrix = await getXrayVersionMatrix();
-  const targetVer = (req.query.version as string) || matrix.latestVersion;
+  const targetVer = (req.query.version as string) || (await getXrayVersionMatrix()).latestVersion;
+  if (!/^v?\d+\.\d+\.\d+$/.test(targetVer)) return res.status(400).send("Invalid version");
   const script = generateUpgradeScript(panelUrl, targetVer);
   res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
   res.send(script);
+  } catch (error: any) {
+    res.status(503).json({ success: false, message: error.message || "升级脚本暂不可用" });
+  }
 });
 
 // -------------------------------------------------------------
 // 6. Dual Deployment Installer Script (Proxy Node + Probe Agent)
 // -------------------------------------------------------------
+apiRouter.get("/probe.py", (req, res) => {
+  res.type("text/plain").sendFile(path.resolve(__dirname, "../../data/probe.py"));
+});
 apiRouter.get("/install.sh", (req, res) => {
   const panelUrl = `${req.protocol}://${req.get("host")}`;
   const scriptPath = path.resolve(__dirname, "../../data/install.sh");
@@ -900,7 +880,8 @@ apiRouter.get("/traffic/services", (req, res) => {
 });
 
 apiRouter.get("/traffic/export", (req, res) => {
-  const range = (req.query.range as any) || "month";
+  const requested = String(req.query.range || "month");
+  const range = (["today", "7d", "30d", "month", "all"].includes(requested) ? requested : "month") as "today" | "7d" | "30d" | "month" | "all";
   const summary = trafficService.getTrafficAnalytics(range);
   res.setHeader(
     "Content-Disposition",

@@ -22,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(() => getStoredToken());
   const [user, setUser] = useState<AdminUser | null>(() => getStoredUser());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getStoredToken());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Validate session on startup
@@ -67,6 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Listen to 401 unauthorized events from any api request
   useEffect(() => {
     const handleUnauthorized = () => {
+      setStoredToken(null);
+      setStoredUser(null);
       setToken(null);
       setUser(null);
       setIsAuthenticated(false);

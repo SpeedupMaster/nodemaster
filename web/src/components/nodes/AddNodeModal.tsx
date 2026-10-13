@@ -39,6 +39,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
   const [autoRenew, setAutoRenew] = useState<boolean>(false);
   const [tagsStr, setTagsStr] = useState("主力直连, 原生IP, 千兆带宽");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleTypeChange = (newType: "direct" | "unlock") => {
     setType(newType);
@@ -64,6 +65,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
     e.preventDefault();
     if (!name || !ip) return;
 
+    setSubmitError(null);
     setSubmitting(true);
     try {
       const tags = tagsStr
@@ -71,7 +73,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         .map((t) => t.trim())
         .filter(Boolean);
 
-      await onSubmit({
+      const result = await onSubmit({
         name,
         ip,
         port: Number(port) || (type === "unlock" ? 8388 : 443),
@@ -93,6 +95,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
         ssPassword: type === "unlock" ? ssPassword : undefined,
       });
 
+      if (result?.success === false) throw new Error(result.message || "保存失败");
+
       // Reset form
       setName("");
       setIp("");
@@ -102,7 +106,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       setExpiresAt("");
       setAutoRenew(false);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
+      setSubmitError(err.message || "保存失败，请稍后重试");
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -168,6 +173,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       maxWidth="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+        {submitError && <p role="alert" className="text-sm text-red-400">{submitError}</p>}
         {/* Node Name */}
         <div>
           <label className="block text-xs font-medium text-ink-muted mb-1">

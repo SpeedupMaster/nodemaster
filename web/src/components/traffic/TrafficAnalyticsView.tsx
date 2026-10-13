@@ -121,8 +121,15 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
     fetchAnalytics(timeRange);
   }, [timeRange]);
 
-  const handleExport = () => {
-    window.open(`/api/traffic/export?range=${timeRange}`, "_blank");
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`/api/traffic/export?range=${timeRange}`);
+      if (!response.ok) throw new Error("导出失败，请重新登录后重试");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url; link.download = `nodemaster-traffic-${timeRange}.json`; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error: any) { window.alert(error.message || "导出失败"); }
   };
 
   // Filtered services
@@ -241,7 +248,7 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
             </span>
           </div>
           <p className="text-xs text-ink-muted mt-0.5 hidden sm:block">
-            实时统计各应用服务流量消耗、分流命中走向及全网 VPS 节点分流承载矩阵
+            统计来自探针网卡累计计数；未采集业务分类、请求数与活跃流，不使用推算数据。历史保留 35 天。
           </p>
         </div>
 
@@ -252,8 +259,8 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
               { id: "today", label: "今日 (24h)", short: "今日" },
               { id: "7d", label: "近 7 天", short: "7天" },
               { id: "30d", label: "近 30 天", short: "30天" },
-              { id: "month", label: "本月计费期", short: "本月" },
-              { id: "all", label: "全部累计", short: "全部" },
+              { id: "month", label: "本自然月", short: "本月" },
+              { id: "all", label: "已保留历史", short: "全部" },
             ].map((t) => (
               <button
                 key={t.id}
@@ -386,14 +393,14 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
             </div>
             <div className="mt-1.5 sm:mt-2 flex items-baseline gap-1 truncate">
               <span className="text-lg sm:text-2xl font-bold font-mono text-ink tracking-tight truncate">
-                {data ? data.totalRequests.toLocaleString() : "--"}
+                {"未采集"}
               </span>
               <span className="text-[10px] sm:text-xs font-mono text-ink-muted shrink-0">次</span>
             </div>
           </div>
           <div className="mt-2 sm:mt-2.5 text-[10px] sm:text-[11px] font-mono text-ink-muted flex items-center gap-1 truncate">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="text-accent font-semibold font-mono">{data?.activeStreams || 0}</span>
+            <span className="text-accent font-semibold font-mono">{"--"}</span>
             <span>个活跃连接</span>
           </div>
         </div>

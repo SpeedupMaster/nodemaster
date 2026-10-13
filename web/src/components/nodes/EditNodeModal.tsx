@@ -17,7 +17,7 @@ interface EditNodeModalProps {
   node: NodeItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (id: string, updates: Partial<NodeItem>) => Promise<void> | void;
+  onSubmit: (id: string, updates: Partial<NodeItem>) => Promise<any> | any;
 }
 
 const countryOptions = [
@@ -76,6 +76,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
   const [ssPassword, setSsPassword] = useState("");
   const [tagsStr, setTagsStr] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const initialValuesRef = useRef<any>(null);
 
@@ -201,6 +202,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
     e.preventDefault();
     if (!name.trim() || !ip.trim()) return;
 
+    setSubmitError(null);
     setSubmitting(true);
     try {
       const tags = tagsStr
@@ -208,7 +210,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         .map((t) => t.trim())
         .filter(Boolean);
 
-      await onSubmit(node.id, {
+      const result = await onSubmit(node.id, {
         name,
         ip,
         port: Number(port) || node.port,
@@ -217,10 +219,10 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
         bandwidthMbps: Number(bandwidthMbps) || 1000,
         trafficLimitBytes: Number(trafficLimitGB) * 1024 * 1024 * 1024,
         trafficResetDay: Number(trafficResetDay) || 1,
-        costAmount: costAmount.trim() !== "" ? Number(costAmount) : undefined,
+        costAmount: costAmount.trim() !== "" ? Number(costAmount) : null,
         costCurrency,
         costPeriod,
-        expiresAt: expiresAt.trim() || undefined,
+        expiresAt: expiresAt.trim() || null,
         autoRenew,
         tags,
         sni: !isUnlock ? sni : undefined,
@@ -232,8 +234,10 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
           : undefined,
       });
 
+      if (result?.success === false) throw new Error(result.message || "保存失败");
       onClose();
-    } catch (err) {
+    } catch (err: any) {
+      setSubmitError(err.message || "保存失败，请稍后重试");
       console.error("更新节点失败:", err);
     } finally {
       setSubmitting(false);
@@ -273,6 +277,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
       )}
     >
       <form id="edit-node-form" onSubmit={handleSubmit} className="space-y-4 text-sm">
+        {submitError && <p role="alert" className="text-sm text-red-400">{submitError}</p>}
         {/* Node Profile Meta Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-paper-3/50 border border-rule text-xs font-mono">
           <div className="flex items-center gap-2 min-w-0">

@@ -113,7 +113,7 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
   // 落地节点是 SS 协议 (Shadowsocks/Unlock)，直连极易被 GFW 主动探测并封锁，因此在直连订阅中隐藏，仅通过链式中转提供
   for (const n of nodes) {
     const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock" || n.type === "exit";
-    if (n.status !== "offline" && !isNakedUnlock && n.reality) {
+    if (n.status === "online" && !isNakedUnlock && n.reality) {
       result.push({
         node: n,
         host: n.ip,
@@ -132,7 +132,7 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
     const unlockId = r.unlockNodeId || r.exitNodeId;
     const main = nodes.find((n) => n.id === mainId);
     const unlock = nodes.find((n) => n.id === unlockId);
-    if (main && unlock && main.reality) {
+    if (main && unlock && main.status === "online" && unlock.status === "online" && main.reality) {
       result.push({
         node: main,
         host: main.ip,

@@ -27,3 +27,10 @@ Thumbs.db
 data/*.tmp.*
 
 *.tsbuildinfo
+
+# Runtime credentials, telemetry and backups must never be committed.
+server/data/nodemaster_db.json
+server/data/*.bak
+server/data/bootstrap-admin.txt
+server/data/telemetry-history.json
+__pycache__/

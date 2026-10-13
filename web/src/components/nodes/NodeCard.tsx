@@ -148,7 +148,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                   </span>
                 </>
               )}
-              {node.costAmount !== undefined && node.costAmount > 0 && (
+              {node.costAmount != null && node.costAmount > 0 && (
                 <>
                   <span className="shrink-0">•</span>
                   <span className="text-amber-400/90 text-[11px] font-medium font-mono shrink-0 flex items-center">
@@ -426,7 +426,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           </Tooltip>
 
           {onViewVersion && (
-            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "v26.3.27"})`}>
+            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "尚未上报"})`}>
               <button
                 onClick={onViewVersion}
                 className="p-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer"

@@ -4,6 +4,7 @@
 # Integrated with tcp-dashboard (https://github.com/666shen/tcp-dashboard)
 # ==============================================================================
 set -e
+umask 077
 
 PANEL_URL=""
 TOKEN=""
@@ -28,6 +29,12 @@ if [ -z "$PANEL_URL" ]; then
   PANEL_URL="{{DEFAULT_PANEL_URL}}"
 fi
 
+if [[ ! "$TOKEN" =~ ^[a-zA-Z0-9_-]+$ ]] || [[ ! "$PANEL_URL" =~ ^https?://[a-zA-Z0-9.:/_-]+$ ]]; then
+  echo "Invalid token or panel URL"; exit 1
+fi
+if ! command -v systemctl >/dev/null 2>&1; then
+  echo "This installer requires systemd"; exit 1
+fi
 if [ -z "$TOKEN" ]; then
   echo "Error: --token is required."
   echo "Usage: curl -fsSL ${PANEL_URL}/api/install.sh | bash -s -- --panel ${PANEL_URL} --token <YOUR_TOKEN> [--probe-only] [--bbr] [--ipv4-first]"
@@ -45,7 +52,7 @@ if [ "$ENABLE_BBR" = "1" ]; then
 fi
 echo "========================================================="
 echo "Panel Master : ${PANEL_URL}"
-echo "Node Token   : ${TOKEN}"
+echo "Node Token   : [configured]"
 echo "Deploy Mode  : ${MODE}"
 if [ "$ENABLE_BBR" = "1" ]; then
   echo "TCP/BBR Tune : 已启用 (BBR+FQ, 5%内存缓冲, 104.8w句柄, RPS网卡分发)"
@@ -71,39 +78,52 @@ CURRENT_STEP=1
 echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 安装必要系统依赖 (curl, jq, unzip, tar, ethtool, iptables)..."
 CURRENT_STEP=$((CURRENT_STEP + 1))
 if command -v apt-get >/dev/null 2>&1; then
-  apt-get update -qq && apt-get install -y -qq curl jq unzip tar ethtool iptables >/dev/null 2>&1 || true
+  apt-get update -qq && apt-get install -y -qq curl jq unzip tar ethtool iptables python3 iputils-ping >/dev/null 2>&1
 elif command -v yum >/dev/null 2>&1; then
-  yum install -y -q curl jq unzip tar ethtool iptables >/dev/null 2>&1 || true
+  yum install -y -q curl jq unzip tar ethtool iptables python3 iputils >/dev/null 2>&1
 elif command -v apk >/dev/null 2>&1; then
-  apk add --no-cache curl jq unzip tar bash ethtool iptables >/dev/null 2>&1 || true
+  apk add --no-cache curl jq unzip tar bash ethtool iptables python3 iputils >/dev/null 2>&1
 fi
+for required in curl jq unzip python3 sha256sum; do command -v "$required" >/dev/null || { echo "Missing dependency: $required" >&2; exit 1; }; done
 
 echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 获取主控节点配置与初始化运行目录..."
 CURRENT_STEP=$((CURRENT_STEP + 1))
 mkdir -p /etc/nodemaster /usr/local/bin /var/log/nodemaster
 
-NODE_INFO=$(curl -fsSL "${PANEL_URL}/api/nodes/by-token/${TOKEN}" || echo "")
+NODE_INFO=$(curl -fsSL --connect-timeout 10 --max-time 30 "${PANEL_URL}/api/nodes/by-token/${TOKEN}")
+echo "$NODE_INFO" | jq -e 'select(.success == true) | .data.id' >/dev/null
 NODE_ID=$(echo "${NODE_INFO}" | jq -r '.data.id // empty')
 NODE_TYPE=$(echo "${NODE_INFO}" | jq -r '.data.type // "direct"')
 
 # --- Part A: 部署代理服务内核 (仅在全量模式执行) ---
 if [ "$MODE" != "probe_only" ]; then
   echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 部署代理节点服务 (Xray-core / Shadowsocks)..."
-  # 优先拉取 XTLS/Xray-core 官方最新 Release (如 v26.3.27)，网络超时则回退至稳定版 v26.3.27
-  XRAY_LATEST_VER=$(curl -fsSL --connect-timeout 4 https://api.github.com/repos/XTLS/Xray-core/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
-  if [ -z "${XRAY_LATEST_VER}" ]; then
-    XRAY_LATEST_VER="v26.3.27"
+  XRAY_LATEST_VER=$(curl -fsSL --connect-timeout 10 --max-time 30 https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name // empty')
+  if [[ ! "$XRAY_LATEST_VER" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Could not resolve official Xray release" >&2; exit 1
   fi
-  XRAY_ZIP="/tmp/xray.zip"
-  curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/${XRAY_LATEST_VER}/Xray-linux-${XRAY_ARCH}.zip" -o ${XRAY_ZIP} || true
-  if [ -f "${XRAY_ZIP}" ]; then
-    unzip -qo ${XRAY_ZIP} xray -d /usr/local/bin/
-    chmod +x /usr/local/bin/xray
-    rm -f ${XRAY_ZIP}
-  fi
+  XRAY_TEMP=$(mktemp -d /usr/local/bin/.nodemaster-install.XXXXXX)
+  trap 'rm -rf "$XRAY_TEMP"' EXIT
+  XRAY_ZIP="$XRAY_TEMP/xray.zip"
+  XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_LATEST_VER}/Xray-linux-${XRAY_ARCH}.zip"
+  curl -fsSL --connect-timeout 10 --max-time 120 "$XRAY_URL" -o "$XRAY_ZIP"
+  curl -fsSL --connect-timeout 10 --max-time 30 "$XRAY_URL.dgst" -o "$XRAY_TEMP/xray.dgst"
+  EXPECTED_SHA256=$(awk '$1 == "SHA2-256=" {print $2}' "$XRAY_TEMP/xray.dgst")
+  [[ "$EXPECTED_SHA256" =~ ^[a-fA-F0-9]{64}$ ]] || { echo "Invalid official checksum" >&2; exit 1; }
+  printf '%s  %s\n' "$EXPECTED_SHA256" "$XRAY_ZIP" | sha256sum -c -
+  unzip -qo "$XRAY_ZIP" xray geoip.dat geosite.dat -d "$XRAY_TEMP"
+  chmod 755 "$XRAY_TEMP/xray"
+  ACTUAL=$("$XRAY_TEMP/xray" version | awk 'NR == 1 {print $2}')
+  [ "v${ACTUAL#v}" = "$XRAY_LATEST_VER" ] || { echo "Downloaded version mismatch" >&2; exit 1; }
 
   if [ -n "${NODE_ID}" ]; then
-    curl -fsSL "${PANEL_URL}/api/nodes/${NODE_ID}/xray-config" | jq '.data' > /etc/nodemaster/config.json 2>/dev/null || true
+    curl -fsSL --connect-timeout 10 --max-time 30 "${PANEL_URL}/api/nodes/by-token/${TOKEN}/xray-config" -o /etc/nodemaster/config.response.json
+    jq -e 'select(.success == true) | .data | select(type == "object")' /etc/nodemaster/config.response.json > /etc/nodemaster/config.pending.json
+    XRAY_LOCATION_ASSET="$XRAY_TEMP" "$XRAY_TEMP/xray" run -test -c /etc/nodemaster/config.pending.json
+    mv "$XRAY_TEMP/xray" /usr/local/bin/xray
+    mv "$XRAY_TEMP/geoip.dat" "$XRAY_TEMP/geosite.dat" /usr/local/bin/
+    mv /etc/nodemaster/config.pending.json /etc/nodemaster/config.json
+    rm /etc/nodemaster/config.response.json
     INIT_CONFIG_VER=$(echo "${NODE_INFO}" | jq -r '.data.configVersion // empty')
     [ -n "$INIT_CONFIG_VER" ] && echo "$INIT_CONFIG_VER" > /etc/nodemaster/config_version || true
   fi
@@ -111,6 +131,7 @@ if [ "$MODE" != "probe_only" ]; then
   cat <<EOF > /etc/systemd/system/nodemaster-proxy.service
 [Unit]
 Description=NodeMaster Proxy Core Service
+ConditionPathExists=!/etc/nodemaster/circuit-broken
 After=network.target
 
 [Service]
@@ -265,183 +286,9 @@ fi
 
 # --- Part C: 部署系统探针客户端 (NodeMaster Probe Agent) ---
 echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 部署 NodeMaster 探针守护进程 (实时采集系统指标)..."
-cat <<'PROBE_EOF' > /usr/local/bin/nodemaster-probe
-#!/usr/bin/env bash
-PANEL_URL="{{DEFAULT_PANEL_URL}}"
-TOKEN=""
-
-[ -f /etc/nodemaster/agent.env ] && . /etc/nodemaster/agent.env
-
-PREV_TOTAL=0
-PREV_IDLE=0
-PREV_RX=0
-PREV_TX=0
-PREV_TIME=$(date +%s)
-
-# Local Config Version Tracker
-APPLIED_VER=0
-if [ -f /etc/nodemaster/config_version ]; then
-  APPLIED_VER=$(cat /etc/nodemaster/config_version 2>/dev/null || echo 0)
-fi
-LAST_SYNC_STATUS=""
-LAST_SYNC_ERR=""
-
-# OS Info Detection
-OS_NAME="Linux"
-if [ -f /etc/os-release ]; then
-  . /etc/os-release
-  OS_NAME="${PRETTY_NAME:-$NAME}"
-fi
-ARCH_NAME=$(uname -m)
-
-while true; do
-  NOW=$(date +%s)
-  INTERVAL=$((NOW - PREV_TIME))
-  [ "$INTERVAL" -le 0 ] && INTERVAL=1
-
-  # 1. CPU Usage
-  CPU_LINE=$(grep '^cpu ' /proc/stat)
-  IDLE=$(echo "$CPU_LINE" | awk '{print $5}')
-  TOTAL=0
-  for val in $(echo "$CPU_LINE" | cut -d' ' -f2-); do
-    TOTAL=$((TOTAL + val))
-  done
-  DIFF_IDLE=$((IDLE - PREV_IDLE))
-  DIFF_TOTAL=$((TOTAL - PREV_TOTAL))
-  CPU_USAGE=0
-  if [ "$DIFF_TOTAL" -gt 0 ]; then
-    CPU_USAGE=$(( (1000 * (DIFF_TOTAL - DIFF_IDLE) / DIFF_TOTAL + 5) / 10 ))
-  fi
-  PREV_TOTAL=$TOTAL
-  PREV_IDLE=$IDLE
-
-  # 2. RAM
-  MEM_TOTAL_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-  MEM_AVAIL_KB=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
-  [ -z "$MEM_AVAIL_KB" ] && MEM_AVAIL_KB=$(grep MemFree /proc/meminfo | awk '{print $2}')
-  MEM_USED_KB=$((MEM_TOTAL_KB - MEM_AVAIL_KB))
-  MEM_TOTAL_BYTES=$((MEM_TOTAL_KB * 1024))
-  MEM_USED_BYTES=$((MEM_USED_KB * 1024))
-  MEM_USAGE=0
-  [ "$MEM_TOTAL_KB" -gt 0 ] && MEM_USAGE=$(( (1000 * MEM_USED_KB / MEM_TOTAL_KB + 5) / 10 ))
-
-  # 3. Disk
-  DISK_INFO=$(df -B1 / | tail -n 1)
-  DISK_TOTAL_BYTES=$(echo "$DISK_INFO" | awk '{print $2}')
-  DISK_USED_BYTES=$(echo "$DISK_INFO" | awk '{print $3}')
-  DISK_USAGE=0
-  [ "$DISK_TOTAL_BYTES" -gt 0 ] && DISK_USAGE=$(( (1000 * DISK_USED_BYTES / DISK_TOTAL_BYTES + 5) / 10 ))
-
-  # 4. Network Speeds
-  NET_RX=0
-  NET_TX=0
-  while read -r iface rx _ _ _ _ _ _ _ tx _; do
-    if [[ "$iface" != "lo:" && "$iface" =~ ^[a-zA-Z0-9_-]+: ]]; then
-      NET_RX=$((NET_RX + rx))
-      NET_TX=$((NET_TX + tx))
-    fi
-  done < <(tail -n +3 /proc/net/dev)
-
-  RX_SPEED=0
-  TX_SPEED=0
-  if [ "$PREV_RX" -gt 0 ] && [ "$NET_RX" -ge "$PREV_RX" ]; then
-    RX_SPEED=$(( (NET_RX - PREV_RX) / INTERVAL ))
-    TX_SPEED=$(( (NET_TX - PREV_TX) / INTERVAL ))
-  fi
-  PREV_RX=$NET_RX
-  PREV_TX=$NET_TX
-  PREV_TIME=$NOW
-
-  # 5. Load & Uptime
-  LOAD_1=$(awk '{print $1}' /proc/loadavg)
-  LOAD_5=$(awk '{print $2}' /proc/loadavg)
-  LOAD_15=$(awk '{print $3}' /proc/loadavg)
-  UPTIME_SECS=$(cut -d. -f1 /proc/uptime)
-  UPTIME_DAYS=$((UPTIME_SECS / 86400))
-  UPTIME_HOURS=$(( (UPTIME_SECS % 86400) / 3600 ))
-  UPTIME_STR="${UPTIME_DAYS}天 ${UPTIME_HOURS}小时"
-
-  # 6. TCP / UDP Counts & Congestion Algorithm
-  TCP_CNT=$(ss -ant 2>/dev/null | grep -v 'State' | wc -l || echo 0)
-  UDP_CNT=$(ss -anu 2>/dev/null | grep -v 'State' | wc -l || echo 0)
-  TCP_CC=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "")
-
-  # 7. Xray Version
-  XRAY_VER=""
-  if [ -x /usr/local/bin/xray ]; then
-    XRAY_RAW=$(/usr/local/bin/xray version 2>/dev/null | head -n 1 | awk '{print $2}')
-    [ -n "$XRAY_RAW" ] && XRAY_VER="v${XRAY_RAW#v}"
-  fi
-
-  # 8. Report to Panel with Applied Config Version
-  PAYLOAD_SYNC=""
-  if [ -n "$LAST_SYNC_STATUS" ]; then
-    PAYLOAD_SYNC=",\"syncReport\":{\"status\":\"${LAST_SYNC_STATUS}\",\"version\":${APPLIED_VER:-0},\"error\":\"${LAST_SYNC_ERR}\"}"
-    LAST_SYNC_STATUS=""
-    LAST_SYNC_ERR=""
-  fi
-
-  PAYLOAD=$(cat <<JSON_PAYLOAD
-{
-  "token": "${TOKEN}",
-  "appliedConfigVersion": ${APPLIED_VER:-0}${PAYLOAD_SYNC},
-  "cpuUsage": ${CPU_USAGE},
-  "memUsage": ${MEM_USAGE},
-  "memTotalBytes": ${MEM_TOTAL_BYTES},
-  "memUsedBytes": ${MEM_USED_BYTES},
-  "diskUsage": ${DISK_USAGE},
-  "diskTotalBytes": ${DISK_TOTAL_BYTES},
-  "diskUsedBytes": ${DISK_USED_BYTES},
-  "uplinkSpeedBytes": ${TX_SPEED},
-  "downlinkSpeedBytes": ${RX_SPEED},
-  "loadAvg": [${LOAD_1}, ${LOAD_5}, ${LOAD_15}],
-  "uptime": "${UPTIME_STR}",
-  "os": "${OS_NAME}",
-  "arch": "${ARCH_NAME}",
-  "tcpCount": ${TCP_CNT},
-  "udpCount": ${UDP_CNT},
-  "tcpCongestion": "${TCP_CC}",
-  "xrayVersion": "${XRAY_VER}"
-}
-JSON_PAYLOAD
-)
-
-  RESP=$(curl -s -X POST "${PANEL_URL}/api/nodes/telemetry" \
-    -H "Content-Type: application/json" \
-    -d "$PAYLOAD" 2>/dev/null || echo "")
-
-  # 9. Hot Sync Engine: Check if panel requests config reload
-  if [ -n "$RESP" ]; then
-    SYNC_ACTION=$(echo "$RESP" | jq -r '.sync.action // empty' 2>/dev/null || true)
-    TARGET_VER=$(echo "$RESP" | jq -r '.sync.targetVersion // empty' 2>/dev/null || true)
-
-    if [ "$SYNC_ACTION" = "RELOAD_CONFIG" ] && [ -n "$TARGET_VER" ] && [ "$TARGET_VER" != "$APPLIED_VER" ]; then
-      CONF_URL=$(echo "$RESP" | jq -r '.sync.configUrl // empty' 2>/dev/null || true)
-      [ -z "$CONF_URL" ] && CONF_URL="/api/nodes/by-token/${TOKEN}/xray-config"
-
-      NEW_CONF=$(curl -fsSL "${PANEL_URL}${CONF_URL}" 2>/dev/null || true)
-      if [ -n "$NEW_CONF" ]; then
-        echo "$NEW_CONF" | jq '.data' > /tmp/nodemaster-new-config.json 2>/dev/null || true
-        # Validate Xray syntax before applying to prevent service crash
-        if [ -s /tmp/nodemaster-new-config.json ] && /usr/local/bin/xray -test -c /tmp/nodemaster-new-config.json >/dev/null 2>&1; then
-          mv /tmp/nodemaster-new-config.json /etc/nodemaster/config.json
-          systemctl restart nodemaster-proxy 2>/dev/null || true
-          APPLIED_VER="$TARGET_VER"
-          echo "$APPLIED_VER" > /etc/nodemaster/config_version
-          LAST_SYNC_STATUS="success"
-          LAST_SYNC_ERR=""
-        else
-          LAST_SYNC_STATUS="error"
-          LAST_SYNC_ERR="Xray config validation test failed"
-          rm -f /tmp/nodemaster-new-config.json
-        fi
-      fi
-    fi
-  fi
-
-  sleep 3
-done
-PROBE_EOF
+curl -fsSL --connect-timeout 10 --max-time 30 "${PANEL_URL}/api/probe.py" -o /usr/local/bin/nodemaster-probe.new
+python3 -c 'import ast; ast.parse(open("/usr/local/bin/nodemaster-probe.new").read())'
+mv /usr/local/bin/nodemaster-probe.new /usr/local/bin/nodemaster-probe
 
 chmod +x /usr/local/bin/nodemaster-probe
 
@@ -469,10 +316,19 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-if [ "$MODE" != "probe_only" ]; then
-  systemctl enable --now nodemaster-proxy >/dev/null 2>&1 || true
+if [ -f /etc/systemd/system/nodemaster-proxy.service ]; then
+  mkdir -p /etc/systemd/system/nodemaster-proxy.service.d
+  printf '[Unit]\nConditionPathExists=!/etc/nodemaster/circuit-broken\n' > /etc/systemd/system/nodemaster-proxy.service.d/circuit-breaker.conf
+  systemctl daemon-reload
 fi
-systemctl enable --now nodemaster-probe >/dev/null 2>&1 || true
+if [ "$MODE" != "probe_only" ]; then
+  systemctl enable nodemaster-proxy
+  systemctl restart nodemaster-proxy
+  systemctl is-active --quiet nodemaster-proxy
+fi
+systemctl enable nodemaster-probe
+systemctl restart nodemaster-probe
+systemctl is-active --quiet nodemaster-probe
 
 echo "========================================================="
 if [ "$MODE" != "probe_only" ]; then

@@ -1,4 +1,5 @@
 import https from "https";
+import fs from "node:fs";
 import { db } from "../db/index.js";
 import { wsHub } from "./wsHub.js";
 import { XrayVersionInfo, XrayVersionNodeStatus } from "../types/index.js";
@@ -40,7 +41,7 @@ export function compareSemver(v1: string, v2: string): number {
   return 0;
 }
 
-// Fetch latest release from GitHub API with fallback and caching
+// Cache successful checks briefly; never present an expired check as current.
 export async function getLatestXrayRelease(forceRefresh = false): Promise<GitHubReleaseCache> {
   const now = Date.now();
   if (!forceRefresh && releaseCache && now - releaseCache.cachedAt < CACHE_TTL_MS) {
@@ -61,6 +62,8 @@ export async function getLatestXrayRelease(forceRefresh = false): Promise<GitHub
 
       const req = https.get(options, (res) => {
         let body = "";
+        res.on("error", reject);
+        res.on("aborted", () => reject(new Error("GitHub API response aborted")));
         res.on("data", (chunk) => (body += chunk));
         res.on("end", () => {
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
@@ -82,7 +85,8 @@ export async function getLatestXrayRelease(forceRefresh = false): Promise<GitHub
       });
     });
 
-    const version = normalizeVersion(data.tag_name || "v26.3.27");
+    const version = normalizeVersion(data.tag_name);
+    if (!/^v\d+\.\d+\.\d+$/.test(version) || data.draft || data.prerelease) throw new Error("Release response has no valid stable version");
     releaseCache = {
       version,
       releaseUrl: data.html_url || `https://github.com/XTLS/Xray-core/releases/tag/${version}`,
@@ -93,17 +97,7 @@ export async function getLatestXrayRelease(forceRefresh = false): Promise<GitHub
     return releaseCache;
   } catch (err: any) {
     console.warn("[XrayVersionService] Failed to query GitHub releases:", err.message);
-    if (releaseCache) return releaseCache;
-
-    // Default safe fallback if network is offline
-    releaseCache = {
-      version: "v26.3.27",
-      releaseUrl: "https://github.com/XTLS/Xray-core/releases/tag/v26.3.27",
-      publishedAt: new Date().toISOString(),
-      releaseNotes: "XTLS/Xray-core release",
-      cachedAt: now,
-    };
-    return releaseCache;
+    throw new Error("无法获取官方版本信息，请重试或指定明确的版本号");
   }
 }
 
@@ -113,7 +107,7 @@ export async function getXrayVersionMatrix(forceRefresh = false): Promise<XrayVe
   const nodes = db.getNodes();
 
   const nodeStatuses: XrayVersionNodeStatus[] = nodes.map((n) => {
-    const cur = normalizeVersion(n.xrayVersion || "v26.3.27");
+    const cur = normalizeVersion(n.xrayVersion);
     let status: XrayVersionNodeStatus["status"] = "unknown";
     if (cur) {
       status = compareSemver(cur, latest.version) < 0 ? "outdated" : "up_to_date";
@@ -123,6 +117,9 @@ export async function getXrayVersionMatrix(forceRefresh = false): Promise<XrayVe
       nodeId: n.id,
       nodeName: n.name,
       currentVersion: cur,
+      desiredVersion: n.desiredXrayVersion,
+      upgradeStatus: n.upgradeStatus,
+      upgradeError: n.upgradeError,
       status,
       arch: n.arch || "x86_64",
       os: n.os,
@@ -133,7 +130,7 @@ export async function getXrayVersionMatrix(forceRefresh = false): Promise<XrayVe
     latestVersion: latest.version,
     releaseUrl: latest.releaseUrl,
     publishedAt: latest.publishedAt,
-    checkedAt: Date.now(),
+    checkedAt: latest.cachedAt,
     nodes: nodeStatuses,
   };
 }
@@ -150,23 +147,23 @@ export async function upgradeNodeXray(nodeId: string, customVersion?: string): P
     throw new Error(`未找到节点 [${nodeId}]`);
   }
 
-  const latest = await getLatestXrayRelease();
-  const targetVersion = normalizeVersion(customVersion || latest.version);
+  const targetVersion = normalizeVersion(customVersion || (await getLatestXrayRelease()).version);
+  if (!/^v\d+\.\d+\.\d+$/.test(targetVersion)) throw new Error("Invalid release version");
 
-  // 1. Notify online agent if connected via WebSocket
-  const wsPushed = wsHub.pushUpgradeToAgent(node.id, targetVersion);
-
-  // 2. Update node xrayVersion in database
+  // Persist the desired state before dispatch; installed version comes only from telemetry.
   db.updateNode(node.id, {
-    xrayVersion: targetVersion,
+    desiredXrayVersion: targetVersion,
+    upgradeStatus: "pending",
+    upgradeError: undefined,
   });
+  const wsPushed = wsHub.pushUpgradeToAgent(node.id, targetVersion);
   wsHub.broadcastNodeUpdate(node.id);
 
   return {
     success: true,
     message: wsPushed
-      ? `已成功下发升级指令至节点在线探针，内核版本更新为 ${targetVersion}`
-      : `节点内核版本记录已成功更新为 ${targetVersion}（离线节点将在探针重连或手动执行升级命令后生效）`,
+      ? `升级任务已下发，等待探针确认 ${targetVersion}`
+      : `升级任务已排队，探针下一次上报时执行 ${targetVersion}`,
     nodeId: node.id,
     newVersion: targetVersion,
   };
@@ -178,13 +175,15 @@ export async function batchUpgradeXray(customVersion?: string): Promise<{
   totalUpdated: number;
   newVersion: string;
 }> {
-  const matrix = await getXrayVersionMatrix();
-  const targetVersion = normalizeVersion(customVersion || matrix.latestVersion);
+  const targetVersion = normalizeVersion(customVersion || (await getLatestXrayRelease()).version);
+  if (!/^v\d+\.\d+\.\d+$/.test(targetVersion)) throw new Error("Invalid release version");
   let count = 0;
 
-  for (const item of matrix.nodes) {
-    if (item.status === "outdated" || item.currentVersion !== targetVersion) {
-      await upgradeNodeXray(item.nodeId, targetVersion);
+  for (const node of db.getNodes()) {
+    const current = normalizeVersion(node.xrayVersion);
+    // Unknown versions may be probe-only hosts; do not enqueue installs or downgrades.
+    if (/^v\d+\.\d+\.\d+$/.test(current) && compareSemver(current, targetVersion) < 0) {
+      await upgradeNodeXray(node.id, targetVersion);
       count++;
     }
   }
@@ -198,60 +197,7 @@ export async function batchUpgradeXray(customVersion?: string): Promise<{
 
 // Generate standalone Linux one-click upgrade script
 export function generateUpgradeScript(panelUrl: string, targetVersion: string): string {
-  return `#!/usr/bin/env bash
-# ==============================================================================
-# NodeMaster Xray-core Automated Kernel Updater
-# ==============================================================================
-set -e
-
-TARGET_VER="${targetVersion}"
-ARCH=$(uname -m)
-
-case $ARCH in
-  x86_64) XRAY_ARCH="64" ;;
-  aarch64|arm64) XRAY_ARCH="arm64-v8a" ;;
-  *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
-esac
-
-echo "========================================================="
-echo "   NodeMaster Xray-core 独立内核一键升级脚本"
-echo "========================================================="
-echo "目标版本 : \${TARGET_VER}"
-echo "硬件架构 : \${ARCH} (\${XRAY_ARCH})"
-echo "控制中心 : ${panelUrl}"
-echo "---------------------------------------------------------"
-
-if command -v curl >/dev/null 2>&1; then
-  FETCH="curl -fsSL"
-elif command -v wget >/dev/null 2>&1; then
-  FETCH="wget -qO-"
-else
-  echo "Error: curl or wget is required."
-  exit 1
-fi
-
-TMP_DIR="/tmp/xray-upgrade"
-mkdir -p "\${TMP_DIR}"
-ZIP_PATH="\${TMP_DIR}/xray.zip"
-
-echo "[1/3] 下载官方 Xray-core \${TARGET_VER} 二进制发布包..."
-curl -fsSL "https://github.com/XTLS/Xray-core/releases/download/\${TARGET_VER}/Xray-linux-\${XRAY_ARCH}.zip" -o "\${ZIP_PATH}"
-
-echo "[2/3] 解压并安全替换 /usr/local/bin/xray..."
-unzip -qo "\${ZIP_PATH}" xray -d /usr/local/bin/
-chmod +x /usr/local/bin/xray
-rm -rf "\${TMP_DIR}"
-
-echo "[3/3] 重启代理守护进程 (nodemaster-proxy)..."
-if systemctl is-active --quiet nodemaster-proxy; then
-  systemctl restart nodemaster-proxy
-  echo "✓ nodemaster-proxy 服务已完成热重启"
-fi
-
-NEW_VER=$(/usr/local/bin/xray version 2>/dev/null | head -n 1 || echo "Unknown")
-echo "========================================================="
-echo "✓ Xray-core 内核升级成功！当前运行版本："
-echo ">> \${NEW_VER}"
-echo "========================================================="
-`;
+  const version = normalizeVersion(targetVersion);
+  if (!/^v[0-9]+[.][0-9]+[.][0-9]+$/.test(version)) throw new Error("Invalid version");
+  return fs.readFileSync(new URL("../../data/xray-upgrade.sh", import.meta.url), "utf8").replaceAll("{{VERSION}}", version);
 }

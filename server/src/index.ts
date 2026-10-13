@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import http from "http";
 import cors from "cors";
@@ -13,10 +14,14 @@ const server = http.createServer(app);
 
 // Middlewares
 app.use(cors({ origin: "*" }));
-app.use(express.json());
+app.use(express.json({ limit: "128kb" }));
 
 // Routes
 app.use("/api", apiRouter);
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Request failed", error.message);
+  res.status(error.status || 500).json({ success: false, message: error.status === 400 ? "请求数据格式不正确" : "服务暂时不可用，请稍后重试" });
+});
 
 // Health check
 app.get("/health", (req, res) => {
@@ -59,4 +64,10 @@ server.listen(PORT, HOST, () => {
   console.log(`   API Base   : http://localhost:${PORT}/api`);
   console.log(`   Install Sh : http://localhost:${PORT}/api/install.sh`);
   console.log(`=======================================================`);
+});
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => {
+  wsHub.close();
+  server.close(() => { db.flush(); process.exit(0); });
+  setTimeout(() => { db.flush(); process.exit(0); }, 5000).unref();
 });

@@ -49,8 +49,8 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       setErrorMsg("请输入新密码");
       return;
     }
-    if (newPassword.length < 6) {
-      setErrorMsg("新密码长度不能少于 6 位");
+    if (newPassword.length < 12) {
+      setErrorMsg("新密码长度不能少于 12 位");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -119,7 +119,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         {/* New password */}
         <div>
           <label className="block text-xs font-medium text-ink-secondary mb-1">
-            新密码 (至少 6 位)
+            新密码 (至少 12 位)
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-muted">

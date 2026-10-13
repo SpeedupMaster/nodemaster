@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { NodeItem, RelayLink, SubscriptionToken, LatencyTask, RoutingRule } from "../types";
-import { getStoredToken } from "../services/api";
+import { getStoredToken, setStoredToken } from "../services/api";
 
-export function useData(enabled: boolean = true) {
+export function useData(enabled: boolean = true, sessionToken?: string | null) {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [relays, setRelays] = useState<RelayLink[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionToken[]>([]);
@@ -39,7 +39,7 @@ export function useData(enabled: boolean = true) {
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, sessionToken]);
 
   useEffect(() => {
     if (enabled) {
@@ -86,9 +86,7 @@ export function useData(enabled: boolean = true) {
           } else if (msg.type === "TELEMETRY_BATCH") {
             if (msg.nodes) setNodes(msg.nodes);
           } else if (msg.type === "NODE_UPDATE" && msg.node) {
-            setNodes((prev) =>
-              prev.map((n) => (n.id === msg.node.id ? msg.node : n))
-            );
+            setNodes((prev) => prev.some(n => n.id === msg.node.id) ? prev.map(n => n.id === msg.node.id ? msg.node : n) : [...prev, msg.node]);
           } else if (msg.type === "NODE_DELETED" && msg.id) {
             setNodes((prev) => prev.filter((n) => n.id !== msg.id));
           } else if (msg.type === "RELAYS_UPDATE" && msg.relays) {
@@ -104,6 +102,7 @@ export function useData(enabled: boolean = true) {
       ws.onclose = (event) => {
         setWsConnected(false);
         if (event.code === 4001) {
+          setStoredToken(null);
           window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
           return;
         }
@@ -124,7 +123,7 @@ export function useData(enabled: boolean = true) {
         ws.close();
       }
     };
-  }, [enabled]);
+  }, [enabled, sessionToken]);
 
   // CRUD API helpers
   const addNode = async (nodeData: Partial<NodeItem>) => {
@@ -133,6 +132,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nodeData),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && res.data) {
       setNodes((prev) => (prev.some((n) => n.id === res.data.id) ? prev : [...prev, res.data]));
     }
@@ -145,6 +145,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setNodes((prev) => prev.map((n) => (n.id === id ? res.data : n)));
     }
@@ -155,6 +156,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch(`/api/nodes/${id}`, {
       method: "DELETE",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setNodes((prev) => prev.filter((n) => n.id !== id));
       setRelays((prev) => prev.filter((r) => r.transitNodeId !== id && r.exitNodeId !== id));
@@ -166,6 +168,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch(`/api/nodes/${id}/reset-traffic`, {
       method: "POST",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setNodes((prev) => prev.map((n) => (n.id === id ? res.data : n)));
     }
@@ -178,6 +181,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(relayData),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && res.data) {
       setRelays((prev) => (prev.some((r) => r.id === res.data.id) ? prev : [...prev, res.data]));
     }
@@ -190,6 +194,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && res.data) {
       setRelays((prev) => prev.map((r) => (r.id === id ? res.data : r)));
     }
@@ -200,6 +205,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch(`/api/relays/${id}`, {
       method: "DELETE",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRelays((prev) => prev.filter((r) => r.id !== id));
     }
@@ -213,6 +219,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskData),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && res.data) {
       setLatencyTasks((prev) => (prev.some((t) => t.id === res.data.id) ? prev : [...prev, res.data]));
     }
@@ -225,6 +232,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setLatencyTasks((prev) => prev.map((t) => (t.id === id ? res.data : t)));
     }
@@ -235,6 +243,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch(`/api/ping/tasks/${id}`, {
       method: "DELETE",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setLatencyTasks((prev) => prev.filter((t) => t.id !== id));
     }
@@ -245,6 +254,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch("/api/ping/tasks/presets", {
       method: "POST",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setLatencyTasks(res.data);
     }
@@ -274,6 +284,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: orderedIds }),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && Array.isArray(res.data)) {
       setLatencyTasks(res.data);
     }
@@ -287,6 +298,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ruleData),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRoutingRules((prev) => [...prev, res.data].sort((a, b) => a.priority - b.priority));
     }
@@ -299,6 +311,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRoutingRules((prev) =>
         prev.map((r) => (r.id === id ? res.data : r)).sort((a, b) => a.priority - b.priority)
@@ -311,6 +324,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch(`/api/routing/rules/${id}`, {
       method: "DELETE",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRoutingRules((prev) => prev.filter((r) => r.id !== id));
     }
@@ -323,6 +337,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: orderedIds }),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRoutingRules(res.data);
     }
@@ -333,6 +348,7 @@ export function useData(enabled: boolean = true) {
     const res = await fetch("/api/routing/rules/presets", {
       method: "POST",
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success) {
       setRoutingRules(res.data);
     }
@@ -346,6 +362,7 @@ export function useData(enabled: boolean = true) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     }).then((r) => r.json());
+    if (!res.success) throw new Error(res.message || "请求失败");
     if (res.success && res.data) {
       setSubscriptions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
     }

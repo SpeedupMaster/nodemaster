@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"./web\" --filter \"./server\" dev",
     "build": "pnpm --filter \"./server\" build && pnpm --filter \"./web\" build",
-    "start": "pnpm --filter \"./server\" start"
+    "start": "pnpm --filter \"./server\" start",
+    "test": "pnpm --filter \"./server\" test"
   },
   "keywords": ["vps", "xray", "proxy", "clash", "mihomo", "singbox", "hallmark", "gsap"],
   "author": "Antigravity",

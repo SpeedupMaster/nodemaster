@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { newRealityKeyPair } from "./security.js";
 import { NodeItem, XrayRealityConfig, ShadowsocksConfig, RoutingRule, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
 
@@ -264,11 +265,7 @@ export const UNLOCK_SERVICES: ServiceDefinition[] = [
 // Helper to generate reality credentials
 export function generateRealityCredentials(serverName = "www.microsoft.com"): XrayRealityConfig {
   const uuid = crypto.randomUUID();
-  // Generate random 32-byte curve25519-like base64url keys
-  const privBytes = crypto.randomBytes(32);
-  const pubBytes = crypto.randomBytes(32);
-  const privateKey = privBytes.toString("base64url");
-  const publicKey = pubBytes.toString("base64url");
+  const { privateKey, publicKey } = newRealityKeyPair();
   const shortId = crypto.randomBytes(8).toString("hex");
 
   return {
@@ -288,10 +285,14 @@ export function generateShadowsocksCredentials(
   method = "2022-blake3-aes-128-gcm",
   password?: string
 ): ShadowsocksConfig {
+  const methods = ["2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305", "aes-128-gcm", "aes-256-gcm", "chacha20-ietf-poly1305"];
+  if (!methods.includes(method)) throw new Error("Unsupported Shadowsocks cipher");
+  const length = method === "2022-blake3-aes-128-gcm" ? 16 : 32;
+  if (password && method.startsWith("2022-") && Buffer.from(password, "base64").length !== length) throw new Error(`Shadowsocks password must encode ${length} bytes`);
   return {
     method,
     // 16-byte base64 password is valid for 2022-blake3-aes-128-gcm and standard AEAD
-    password: password || crypto.randomBytes(16).toString("base64"),
+    password: password || crypto.randomBytes(length).toString("base64"),
   };
 }
 
@@ -592,7 +593,7 @@ export function generateXrayServerConfig(
     dns: {
       servers: ["1.1.1.1", "8.8.8.8"],
     },
-    inbounds,
+    inbounds: node.status === "circuit_broken" ? [] : inbounds,
     outbounds,
     routing: {
       domainStrategy: "AsIs",

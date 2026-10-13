@@ -47,9 +47,11 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
       if (json.success) {
         setVersionInfo(json.data);
       } else {
+        setVersionInfo(null);
         setFeedbackMsg({ type: "error", text: json.message || "获取 Xray 版本信息失败" });
       }
     } catch (err: any) {
+      setVersionInfo(null);
       setFeedbackMsg({ type: "error", text: err.message || "网络请求异常，无法连接版本服务" });
     } finally {
       setLoading(false);
@@ -74,8 +76,8 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
       });
       const json = await res.json();
       if (json.success) {
-        setFeedbackMsg({ type: "success", text: json.data?.message || "节点内核升级成功" });
         await fetchVersions(false);
+        setFeedbackMsg({ type: "success", text: json.data?.message || "升级任务已排队，等待探针确认" });
         onRefreshData?.();
       } else {
         setFeedbackMsg({ type: "error", text: json.message || "升级失败" });
@@ -99,11 +101,11 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
       });
       const json = await res.json();
       if (json.success) {
+        await fetchVersions(false);
         setFeedbackMsg({
           type: "success",
-          text: `批量升级完成，共更新 ${json.data?.totalUpdated ?? 0} 个节点至 ${versionInfo.latestVersion}`,
+          text: `已为 ${json.data?.totalUpdated ?? 0} 个节点排队升级至 ${versionInfo.latestVersion}，等待探针确认`,
         });
-        await fetchVersions(false);
         onRefreshData?.();
       } else {
         setFeedbackMsg({ type: "error", text: json.message || "批量升级失败" });
@@ -292,8 +294,8 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
             ) : (
               nodes.map((node) => {
                 const nodeStatus = versionInfo?.nodes.find((n) => n.nodeId === node.id);
-                const currentVer = node.xrayVersion || nodeStatus?.currentVersion || "v1.8.24";
-                const isLatest = versionInfo && currentVer === versionInfo.latestVersion;
+                const currentVer = nodeStatus?.currentVersion || node.xrayVersion || "尚未上报";
+                const isLatest = nodeStatus?.status === "up_to_date";
                 const isUpgrading = upgradingNodeId === node.id || batchUpgrading;
 
                 return (
@@ -316,6 +318,8 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
                       </div>
 
                       {/* 节点运行环境 */}
+                      {node.upgradeStatus === "pending" && <p className="text-xs text-amber-400 mt-1">等待探针执行并确认 {node.desiredXrayVersion}</p>}
+                      {node.upgradeStatus === "failed" && <p role="alert" className="text-xs text-red-400 mt-1">升级失败：{node.upgradeError || "请重试"}</p>}
                       <div className="text-xs text-ink-muted mt-1.5 flex items-center gap-2 font-mono flex-wrap">
                         <span>系统: {node.os || "Linux"}</span>
                         <span>•</span>
@@ -355,7 +359,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
                             variant="primary"
                             size="sm"
                             onClick={() => handleUpgradeSingle(node.id)}
-                            disabled={isUpgrading || loading}
+                            disabled={isUpgrading || loading || !versionInfo}
                             icon={
                               <ArrowsClockwise
                                 className={`w-3.5 h-3.5 ${
@@ -421,9 +425,9 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-emerald-400">✓ 架构自适应 (x86_64 / arm64)</span>
               <span>•</span>
-              <span className="text-emerald-400">✓ 零停机平滑更新</span>
+              <span className="text-emerald-400">✓ 配置预检与失败回滚</span>
               <span>•</span>
-              <span>自动热重启 nodemaster-proxy 守护进程</span>
+              <span>重启 nodemaster-proxy，连接会短暂中断</span>
             </div>
           </div>
         </div>

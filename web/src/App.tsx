@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { lazy, Suspense, useState, useRef, useEffect, useCallback } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useData } from "./hooks/useData";
@@ -6,17 +6,17 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
 import { OverviewCards } from "./components/dashboard/OverviewCards";
-import { NodeList } from "./components/nodes/NodeList";
-import { ProbeDashboard } from "./components/probe/ProbeDashboard";
-import { TopologyCanvas } from "./components/topology/TopologyCanvas";
-import { SubscriptionView } from "./components/subscription/SubscriptionView";
-import { ScriptView } from "./components/dashboard/ScriptView";
-import { TelegramNotificationView } from "./components/notifications/TelegramNotificationView";
+const NodeList = lazy(() => import("./components/nodes/NodeList").then(m => ({ default: m.NodeList })));
+const ProbeDashboard = lazy(() => import("./components/probe/ProbeDashboard").then(m => ({ default: m.ProbeDashboard })));
+const TopologyCanvas = lazy(() => import("./components/topology/TopologyCanvas").then(m => ({ default: m.TopologyCanvas })));
+const SubscriptionView = lazy(() => import("./components/subscription/SubscriptionView").then(m => ({ default: m.SubscriptionView })));
+const ScriptView = lazy(() => import("./components/dashboard/ScriptView").then(m => ({ default: m.ScriptView })));
+const TelegramNotificationView = lazy(() => import("./components/notifications/TelegramNotificationView").then(m => ({ default: m.TelegramNotificationView })));
 import { AddNodeModal } from "./components/nodes/AddNodeModal";
-import { LatencyMonitorView } from "./components/ping/LatencyMonitorView";
-import { NodeDetailModal } from "./components/probe/NodeDetailModal";
+const LatencyMonitorView = lazy(() => import("./components/ping/LatencyMonitorView").then(m => ({ default: m.LatencyMonitorView })));
+const NodeDetailModal = lazy(() => import("./components/probe/NodeDetailModal").then(m => ({ default: m.NodeDetailModal })));
 import { GlobalTooltip } from "./components/common/Tooltip";
-import { TrafficAnalyticsView } from "./components/traffic/TrafficAnalyticsView";
+const TrafficAnalyticsView = lazy(() => import("./components/traffic/TrafficAnalyticsView").then(m => ({ default: m.TrafficAnalyticsView })));
 import { Broadcast, ArrowUpRight, ArrowDownRight, ShareNetwork } from "@phosphor-icons/react";
 import { NodeItem } from "./types";
 import { useAuth } from "./context/AuthContext";
@@ -63,7 +63,7 @@ const getTabFromUrl = (): string => {
 };
 
 export function App() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, token } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
   const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
@@ -123,7 +123,7 @@ export function App() {
     totalTrafficUsed,
     totalTrafficLimit,
     onlineNodesCount,
-  } = useData(isAuthenticated);
+  } = useData(isAuthenticated, token);
 
   // Tab switch GSAP transition
   useGSAP(() => {
@@ -162,6 +162,7 @@ export function App() {
   }
 
   return (
+    <Suspense fallback={<div role="status" className="p-6 text-ink-muted">正在加载页面…</div>}>
     <div className="flex min-h-screen bg-paper text-ink">
       {/* N3 Side-rail Navigation & Mobile Drawer */}
       <Sidebar
@@ -293,15 +294,16 @@ export function App() {
       />
 
       {/* Global Node Detail & Latency Time Series Modal */}
-      <NodeDetailModal
+      {selectedNodeDetail && <NodeDetailModal
         node={selectedNodeDetail}
         isOpen={!!selectedNodeDetail}
         onClose={() => setSelectedNodeDetail(null)}
-      />
+      />}
 
       {/* Global Unified Tooltip Portal & Native Title Interceptor */}
       <GlobalTooltip />
     </div>
+    </Suspense>
   );
 }
 

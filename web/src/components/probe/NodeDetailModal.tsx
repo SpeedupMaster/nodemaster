@@ -154,28 +154,32 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   useEffect(() => {
     if (!node || !isOpen) return;
     setLoading(true);
+    setLatencyData([]);
+    setLoadData(null);
+    const controller = new AbortController();
 
     if (activeTab === "latency") {
-      fetch(`/api/ping/node-history/${node.id}?range=${timeRange}`)
+      fetch(`/api/ping/node-history/${node.id}?range=${timeRange}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((res) => {
-          if (res.success) {
+          if (res.success && !controller.signal.aborted) {
             setLatencyData(res.data);
           }
         })
         .catch((err) => console.error("Fetch latency history failed:", err))
-        .finally(() => setLoading(false));
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     } else {
-      fetch(`/api/nodes/${node.id}/history?range=${timeRange}`)
+      fetch(`/api/nodes/${node.id}/history?range=${timeRange}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((res) => {
-          if (res.success) {
-            setLoadData(res.data);
+          if (res.success && !controller.signal.aborted) {
+            setLoadData(res.data?.timestamps?.length ? res.data : null);
           }
         })
         .catch((err) => console.error("Fetch load history failed:", err))
-        .finally(() => setLoading(false));
+        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     }
+    return () => controller.abort();
   }, [node?.id, isOpen, activeTab, timeRange]);
 
   if (!isOpen || !node) return null;
@@ -626,7 +630,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 <span>架构: {node.arch || "x86_64"}</span>
                 <span>•</span>
                 <span>峰值带宽: {node.bandwidthMbps ? `${node.bandwidthMbps} Mbps` : "1 Gbps"}</span>
-                {node.costAmount !== undefined && node.costAmount > 0 && (
+                {node.costAmount != null && node.costAmount > 0 && (
                   <>
                     <span>•</span>
                     <span className="text-amber-400 font-medium">

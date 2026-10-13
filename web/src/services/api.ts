@@ -50,7 +50,9 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
   const token = getStoredToken();
   const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
 
-  if (token && !headers.has("Authorization")) {
+  const targetUrl = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+  const sameApi = targetUrl.origin === window.location.origin && targetUrl.pathname.startsWith("/api/");
+  if (sameApi && token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
@@ -59,9 +61,8 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
     headers,
   });
 
-  if (response.status === 401) {
-    const urlStr = typeof input === "string" ? input : input instanceof Request ? input.url : "";
-    if (!urlStr.includes("/api/auth/login")) {
+  if (sameApi && response.status === 401 && getStoredToken() === token) {
+    if (targetUrl.pathname !== "/api/auth/login") {
       setStoredToken(null);
       setStoredUser(null);
       window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
@@ -74,13 +75,16 @@ export async function authFetch(input: RequestInfo | URL, init?: RequestInit): P
 // Initialize global interceptor so existing fetch() calls throughout the app attach the auth header seamlessly
 export function initAuthInterceptor() {
   if (typeof window === "undefined") return;
+  if ((window.fetch as any).__nodemasterAuth) return;
   const originalFetch = window.fetch;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const token = getStoredToken();
     const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
 
-    if (token && !headers.has("Authorization")) {
+    const targetUrl = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+    const sameApi = targetUrl.origin === window.location.origin && targetUrl.pathname.startsWith("/api/");
+    if (sameApi && token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
@@ -89,9 +93,8 @@ export function initAuthInterceptor() {
       headers,
     });
 
-    if (response.status === 401) {
-      const urlStr = typeof input === "string" ? input : input instanceof Request ? input.url : "";
-      if (!urlStr.includes("/api/auth/login")) {
+    if (sameApi && response.status === 401 && getStoredToken() === token) {
+      if (targetUrl.pathname !== "/api/auth/login") {
         setStoredToken(null);
         setStoredUser(null);
         window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
@@ -100,4 +103,5 @@ export function initAuthInterceptor() {
 
     return response;
   };
+  (window.fetch as any).__nodemasterAuth = true;
 }

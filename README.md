@@ -37,7 +37,7 @@
 - **动效引擎**：GSAP 3 + `@gsap/react` (`useGSAP` hook)
 - **图标系统**：`@phosphor-icons/react`
 - **设计规范**：Hallmark 1.1.0 (`modern-minimal`, `tokens.css`, 8-state components)
-- **后端服务**：Node.js 24 + TypeScript + Express + WebSocket (`ws`) + SQLite/JSON 嵌入式持久化
+- **后端服务**：Node.js 24 + TypeScript + Express + WebSocket (`ws`) + 原子 JSON 持久化
 - **工程结构**：pnpm Workspace Monorepo
 
 ---
@@ -50,6 +50,8 @@
 
 ```bash
 cd "F:\代码\nodemaster"
+pnpm install
+pnpm build
 pnpm start
 ```
 
@@ -87,7 +89,7 @@ F:\代码\nodemaster/
 │   │   │   └── common/       # 8-state 按钮、徽章、数字翻牌
 │   │   ├── hooks/useData.ts  # WebSocket 双向遥测与 REST API
 │   │   └── App.tsx
-└── server/                   # 后端核心服务 (Express + WS + SQLite)
+└── server/                   # 后端核心服务 (Express + WS + JSON)
     └── src/
         ├── db/               # 数据存储层与初始节点
         ├── services/
@@ -97,3 +99,27 @@ F:\代码\nodemaster/
         ├── routes/api.ts     # REST API 与 install.sh 脚本下发
         └── index.ts          # 入口服务 (3880端口)
 ```
+
+
+## 安全迁移与真实遥测（2026-10-13）
+
+- 安装依赖、执行 `pnpm test` 和 `pnpm build`，再启动服务。Node.js 24；VPS 探针需要 Linux、systemd、Python 3。
+- 新部署不再插入示例节点、固定订阅或默认密码。可通过服务端环境变量 `NODEMASTER_ADMIN_PASSWORD` 设置至少 12 位的首次密码；否则生成随机密码写入数据目录的 `bootstrap-admin.txt`（登录后修改并删除该文件）。
+- 旧数据库启动时保留节点、链路和订阅；迁移固定 JWT 密钥及旧默认密码，旧会话全部失效。迁移会从已有 Reality 私钥重新派生正确公钥，需要客户端重新获取订阅。
+- 数据目录默认 `server/data`，可通过 `NODEMASTER_DATA_DIR` 覆盖。写入使用同目录临时文件和原子替换，并保存 `.bak`。数据库损坏时停止启动，保留原文件；由管理员核实备份后恢复。不要将真实数据库、备份或凭证文件提交到 Git；已经被 Git 跟踪的数据库需在保留本地文件的前提下移出版本管理，并处理历史中的旧凭证。
+- **已有 VPS 必须更新探针**：执行面板的探针升级命令，或在 VPS 上运行 `curl -fsSL "$PANEL_URL/api/update-probe.sh" | bash`，其中 `PANEL_URL` 为可访问的面板地址。旧 Bash 探针不支持新计数、停止指令与升级确认。
+- 新探针使用累计网卡计数与启动标识去重；首次接入或重启的首个样本建立基线，不补造缺失流量。断网期间的累计差值在恢复上报时计入恢复时段。旧模拟累计量会保留，核实后可在面板手动重置。
+- 心跳超过 30 秒标记离线。达到额度阈值后下发停止代理指令并移除入站；探针确认配置版本后才显示同步成功。月度重置按服务端本地时区，31 日在短月取当月最后一天；重置后下发恢复配置。
+- 历史数据来自真实采样，保留最近 35 天。网卡计数包含主机网络流量，不等同于 Xray 按用户计费；业务分类、请求数和活跃流没有采集时显示未采集，不再生成模拟曲线。延迟任务由 VPS 探针实际执行 TCP/ICMP 测量。
+- 订阅 `expireAt` 使用 Unix 秒，过期或已记录用量达到额度后拒绝下载。订阅访问限制不是独立用户计费，也不会撤销已经导出的共享节点凭证；该项目不提供按订阅用户的流量归属。
+- Xray 升级接口只排队，HTTP/WS 探针取得任务并确认真实版本后才完成；失败保留错误，管理员可重试。升级过程校验二进制版本和现有配置，启动失败回滚原二进制。配置重载失败同样恢复上一份配置。
+- 登出撤销当前管理员的全部会话，改密亦撤销旧会话。反向代理部署时应正确转发 HTTPS，并为面板和 VPS 通信提供 HTTPS。
+
+验证命令：`pnpm test`、`pnpm build`、`python -m unittest discover -s server/test -p '*_test.py'`；安装脚本可用 `bash -n server/data/install.sh` 与 `bash -n server/data/xray-upgrade.sh` 检查。
+
+## Reality / Xray 版本核对（2026-10-13）
+
+- Reality 由 Xray-core 提供；本项目的 `server/data/install.sh` 是自有部署脚本。官方 GitHub `XTLS/Xray-core/releases/latest` 本次返回正式版 `v26.3.27`（UTC 发布时间：2026-03-27 17:51:11），安装时动态查询，不固定该版本。
+- 安装及升级均校验官方 `.dgst` 文件中的 SHA-256、二进制实际版本；安装使用独立临时目录，在替换二进制前验证配置。升级通过服务重启生效，会短暂中断连接。
+- 版本查询缓存 15 分钟；查询失败不再冒充实时成功，`checkedAt` 表示成功查询时间。批量升级只处理已上报且低于目标版本的节点，跳过未知版本并避免降级。
+- 本地数据库的版本记录不等于 VPS 当前实况；请以探针的新上报或 VPS 执行 `/usr/local/bin/xray version` 的结果为准。

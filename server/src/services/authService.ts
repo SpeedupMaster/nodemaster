@@ -29,10 +29,11 @@ export function verifyPassword(password: string, storedHash: string, salt: strin
 }
 
 export function signToken(payload: Record<string, any>, expiresInSec: number = 7 * 86400): string {
-  const secret = db.getConfig().jwtSecret || "nm_secret_key_8848_secure";
+  const secret = db.getConfig().jwtSecret;
+  if (!secret) throw new Error("Signing key is not initialized");
   const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
-  const fullPayload = { ...payload, iat: now, exp: now + expiresInSec };
+  const fullPayload = { ...payload, sessionVersion: db.getAdmin().sessionVersion, iat: now, exp: now + expiresInSec };
 
   const encHeader = base64url(JSON.stringify(header));
   const encPayload = base64url(JSON.stringify(fullPayload));
@@ -54,7 +55,8 @@ export function verifyToken(token: string): { valid: boolean; payload?: any; err
   }
 
   const [encHeader, encPayload, signature] = parts;
-  const secret = db.getConfig().jwtSecret || "nm_secret_key_8848_secure";
+  const secret = db.getConfig().jwtSecret;
+  if (!secret) return { valid: false, error: "Signing key unavailable" };
   const expectedSig = crypto
     .createHmac("sha256", secret)
     .update(`${encHeader}.${encPayload}`)
@@ -69,9 +71,15 @@ export function verifyToken(token: string): { valid: boolean; payload?: any; err
   try {
     const payloadJson = Buffer.from(encPayload, "base64url").toString("utf-8");
     const payload = JSON.parse(payloadJson);
+    const header = JSON.parse(Buffer.from(encHeader, "base64url").toString("utf-8"));
+    const admin = db.getAdmin();
     const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
-      return { valid: false, error: "Token expired" };
+    if (header.alg !== "HS256" || header.typ !== "JWT" ||
+        !Number.isFinite(payload.exp) || payload.exp <= now ||
+        !Number.isFinite(payload.iat) || payload.iat > now + 30 ||
+        payload.sub !== admin.username || payload.role !== "admin" ||
+        payload.sessionVersion !== admin.sessionVersion) {
+      return { valid: false, error: "Session expired or revoked" };
     }
     return { valid: true, payload };
   } catch (err) {
