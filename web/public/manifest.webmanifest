@@ -1,0 +1,69 @@
+{
+  "name": "NodeMaster 节点控制台",
+  "short_name": "NodeMaster",
+  "description": "多 VPS 节点全生命周期管理与自适应分流控制系统",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#08090E",
+  "theme_color": "#08090E",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "节点管理",
+      "short_name": "节点",
+      "description": "查看并管理分布式 VPS 节点",
+      "url": "/?tab=nodes",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "硬件工况",
+      "short_name": "探针",
+      "description": "实时硬件探针指标与系统负载",
+      "url": "/?tab=probe",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "流量大屏",
+      "short_name": "流量",
+      "description": "全球业务流量统计与节点带宽分析",
+      "url": "/?tab=traffic",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

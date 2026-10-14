@@ -21,6 +21,7 @@ import { Broadcast, ArrowUpRight, ArrowDownRight, ShareNetwork } from "@phosphor
 import { NodeItem } from "./types";
 import { useAuth } from "./context/AuthContext";
 import { LoginPage } from "./components/auth/LoginPage";
+import { PWAStatusBanner } from "./components/common/PWAStatusBanner";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
@@ -158,7 +159,12 @@ export function App() {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        <LoginPage />
+        <PWAStatusBanner />
+      </>
+    );
   }
 
   return (
@@ -302,6 +308,9 @@ export function App() {
 
       {/* Global Unified Tooltip Portal & Native Title Interceptor */}
       <GlobalTooltip />
+
+      {/* PWA Status and Install Banner */}
+      <PWAStatusBanner />
     </div>
     </Suspense>
   );

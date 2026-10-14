@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
 import { useAuth } from "../../context/AuthContext";
+import { PWAInstallButton } from "../common/PWAStatusBanner";
 
 interface SidebarProps {
   currentTab: string;
@@ -234,6 +235,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {totalCount > 0 ? Math.round((onlineCount / totalCount) * 100) : 0}%
           </span>
         </div>
+
+        {/* PWA Install Entry (Desktop & Mobile Drawer) */}
+        <PWAInstallButton className="w-full justify-center py-2" />
 
         {/* Admin Account Status */}
         <div className="text-[11px] font-mono text-ink-muted flex items-center justify-between pt-1 border-t border-rule-subtle">

@@ -13,6 +13,7 @@ import {
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
+import { PWAInstallButton } from "../common/PWAStatusBanner";
 
 interface HeaderProps {
   currentTab: string;
@@ -131,6 +132,8 @@ export const Header: React.FC<HeaderProps> = ({
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>熔断防护已激活</span>
           </div>
+
+          <PWAInstallButton className="hidden sm:flex" />
 
           <Button
             variant="secondary"

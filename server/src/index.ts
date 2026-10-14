@@ -43,7 +43,19 @@ const __dirname = path.dirname(__filename);
 const WEB_DIST = path.resolve(__dirname, "../../web/dist");
 
 if (fs.existsSync(WEB_DIST)) {
-  app.use(express.static(WEB_DIST));
+  app.use(
+    express.static(WEB_DIST, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith("sw.js")) {
+          // Never cache Service Worker file; allow full root scope
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Service-Worker-Allowed", "/");
+        } else if (filePath.endsWith(".webmanifest")) {
+          res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+        }
+      },
+    })
+  );
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/ws")) return next();
     res.sendFile(path.join(WEB_DIST, "index.html"));
