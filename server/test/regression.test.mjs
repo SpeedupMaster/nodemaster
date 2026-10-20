@@ -20,9 +20,11 @@ const { WsHub } = await import('../dist/services/wsHub.js');
 const { ingestTelemetry, maintainNodes, agentDirectives } = await import('../dist/services/telemetryService.js');
 const { apiRouter, getNodeXrayConfig } = await import('../dist/routes/api.js');
 const { trafficService } = await import('../dist/services/trafficService.js');
-const { historyStore } = await import('../dist/services/historyStore.js');
+const historyModule = await import('../dist/services/historyStore.js');
+const { historyStore } = historyModule;
 const { upgradeNodeXray, generateUpgradeScript } = await import('../dist/services/xrayVersionService.js');
-const { assembleProxies } = await import('../dist/services/subscription.js');
+const { assembleProxies, renderClashYaml, renderSingboxJson } = await import('../dist/services/subscription.js');
+const YAML = (await import('yaml')).default;
 const app = express(); app.use(express.json()); app.use('/api', apiRouter);
 const server = app.listen(0, '127.0.0.1'); await new Promise(r => server.once('listening', r));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -189,6 +191,128 @@ test('websocket replacement preserves live agent and revoked admin is disconnect
   const secondClosed = once(second, 'close'); second.close(); await secondClosed;
   hub.close(); await new Promise(r => host.close(r));
   token = signToken({ sub: 'admin', role: 'admin' });
+});
+test('history downsamples old data, keeps traffic totals and survives reload', () => {
+  const { HistoryStore } = historyModule;
+  const file = path.join(directory, 'history-compact.json');
+  const store = new HistoryStore(file); const node = { id: 'h', cpuUsage: 10, memUsage: 20, diskUsage: 30, uplinkSpeedBytes: 1, downlinkSpeedBytes: 2 };
+  const old = Math.floor((Date.now() - 10 * 86400000) / 3600000) * 3600000;
+  for (let i = 0; i < 120; i++) { store.record(node, 5, 7, old + i * 60000); store.recordLatency('h', [{ taskId: 't', latencyMs: i % 2 ? 10 : 20, lossRate: 0, jitter: 1 }], old + i * 60000); }
+  store.record(node, 1, 1);
+  store.flush();
+  const rows = store.samples('all', 'h');
+  assert.equal(rows.length, 3);
+  assert.equal(rows.reduce((s, p) => s + p.tx + p.rx, 0), 120 * 12 + 2);
+  const reloaded = new HistoryStore(file);
+  assert.deepEqual(reloaded.samples('all', 'h'), rows);
+  const latency = reloaded.latencyHistory('h', 'all', [{ id: 't', name: 't', enabled: true, nodeIds: [] }]);
+  assert.equal(latency[0].history.length, 2); assert.equal(latency[0].history[0].latencyMs, 15);
+});
+test('resetting latency presets restores original order after reorder', () => {
+  db.resetLatencyTasks();
+  const ids = db.getLatencyTasks().map(t => t.id);
+  db.reorderLatencyTasks([...ids].reverse());
+  assert.deepEqual(db.resetLatencyTasks().map(t => t.id), ids);
+});
+test('telegram alerts skip restart baseline and escape HTML', async () => {
+  const { telegramService } = await import('../dist/services/telegramService.js');
+  const sent = []; const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { sent.push(JSON.parse(init.body).text); return new Response('{"ok":true}'); };
+  try {
+    db.updateTelegramConfig({ enabled: true, botToken: 'x', chatId: '1', trafficAlert: false, renewalAlert: false, cpuAlert: false, memAlert: false });
+    const node = { id: 'tg', name: 'A<B>&C', ip: '1.1.1.1', port: 1, country: 'US', status: 'offline' };
+    await telegramService.checkNodeAlerts([node]);
+    assert.equal(sent.length, 0);
+    await telegramService.checkNodeAlerts([{ ...node, status: 'online' }]);
+    assert.equal(sent.length, 1); assert.ok(sent[0].includes('A&lt;B&gt;&amp;C'));
+  } finally { globalThis.fetch = realFetch; db.updateTelegramConfig({ enabled: false }); }
+});
+test('browsers receive only nodes that changed since the last push', async () => {
+  const hub = new WsHub(); const host = http.createServer(); hub.init(host);
+  host.listen(0, '127.0.0.1'); await once(host, 'listening');
+  const browser = new WebSocket(`ws://127.0.0.1:${host.address().port}/ws?type=web&token=${encodeURIComponent(token)}`);
+  const messages = []; browser.on('message', raw => messages.push(JSON.parse(raw.toString())));
+  await once(browser, 'open'); await new Promise(r => setTimeout(r, 50));
+  hub.broadcastChangedNodes(); await new Promise(r => setTimeout(r, 50));
+  const first = messages.filter(m => m.type === 'NODES_PATCH');
+  assert.equal(first.length, 1); assert.equal(first[0].nodes.length, db.getNodes().length);
+  hub.broadcastChangedNodes();
+  db.updateNode('main', { cpuUsage: 42 }, true); hub.broadcastChangedNodes(); await new Promise(r => setTimeout(r, 50));
+  const patches = messages.filter(m => m.type === 'NODES_PATCH');
+  assert.equal(patches.length, 2); assert.deepEqual(patches[1].nodes.map(n => n.id), ['main']);
+  browser.close(); hub.close(); await new Promise(r => host.close(r));
+});
+test('custom subscription tokens must be long enough to be unguessable', async () => {
+  db.addSubscription({ id: 'custom', name: 'Custom', token: 'sub_custom_token_0001', nodeIds: [], trafficLimitBytes: 0, trafficUsedBytes: 0, expireAt: 0, createdAt: 1 });
+  assert.equal((await request('/api/subscriptions/custom', 'PUT', { token: 'abc' })).status, 400);
+  assert.equal((await request('/api/subscriptions/custom', 'PUT', { token: 'my_long_custom_token_42' })).status, 200);
+});
+test('explicit reset variable recovers the admin password once and revokes sessions', async () => {
+  const { verifyPassword } = await import('../dist/services/authService.js');
+  db.flush();
+  process.env.NODEMASTER_RESET_ADMIN_PASSWORD = 'recovered-password-789';
+  try {
+    const first = new Database(); const admin = first.getAdmin();
+    assert.ok(verifyPassword('recovered-password-789', admin.passwordHash, admin.salt));
+    assert.notEqual(admin.sessionVersion, db.getAdmin().sessionVersion);
+    assert.equal(new Database().getAdmin().sessionVersion, admin.sessionVersion);
+  } finally { delete process.env.NODEMASTER_RESET_ADMIN_PASSWORD; }
+});
+test('chained entry uses its own client and only that client is routed to the unlock node', async () => {
+  db.resetRoutingRules();
+  makeNode('c-main', { name: 'Edge One' });
+  makeNode('c-twin', { name: 'Edge One' });
+  makeNode('c-unlock', { type: 'unlock', protocol: 'shadowsocks', reality: undefined, shadowsocks: { method: 'aes-256-gcm', password: 'legacy-password' } });
+  const created = await request('/api/relays', 'POST', { mainNodeId: 'c-main', unlockNodeId: 'c-unlock', mode: 'ai_media' });
+  assert.equal(created.status, 200);
+  const relay = created.data.data;
+  assert.match(relay.chainUuid, /^[0-9a-f-]{36}$/);
+
+  const config = getNodeXrayConfig(db.getNodeById('c-main'));
+  const clients = config.inbounds[0].settings.clients;
+  assert.deepEqual(clients.map(c => c.id), [db.getNodeById('c-main').reality.uuid, relay.chainUuid]);
+  assert.equal(config.inbounds[0].settings.flow, undefined);
+  assert.equal(config.routing.domainStrategy, 'IPIfNonMatch');
+  // Server-side private ranges are always blocked first, regardless of the "LAN direct" preset
+  assert.deepEqual(config.routing.rules.slice(0, 2).map(r => r.outboundTag), ['BLOCK', 'BLOCK']);
+  const unlockRules = config.routing.rules.filter(r => r.outboundTag === 'UNLOCK_OUT');
+  assert.ok(unlockRules.length > 0);
+  for (const r of unlockRules) {
+    assert.deepEqual(r.user, ['nodemaster_chain@local']);
+    assert.ok(r.domain || r.ip || r.protocol || r.port, 'the fallback preset must not become a catch-all to the unlock node');
+  }
+  // Non-2022 ciphers get no UDP-over-TCP
+  assert.equal(config.outbounds.find(o => o.tag === 'UNLOCK_OUT').settings.servers[0].uot, undefined);
+
+  const proxies = assembleProxies(db.getNodes().filter(n => n.id.startsWith('c-')), db.getRelays());
+  const chain = proxies.find(p => p.chain);
+  assert.equal(chain.node.reality.uuid, relay.chainUuid);
+  assert.equal(db.getNodeById('c-main').reality.uuid !== relay.chainUuid, true);
+  assert.equal(new Set(proxies.map(p => p.name)).size, proxies.length);
+});
+test('clash region groups match by country and never fall back to DIRECT', () => {
+  const proxies = assembleProxies(db.getNodes().filter(n => n.id.startsWith('c-')), db.getRelays());
+  const doc = YAML.parse(renderClashYaml(proxies));
+  const groups = Object.fromEntries(doc['proxy-groups'].map(g => [g.name, g]));
+  // "Edge One" has no region tag in its name, but its country is US
+  assert.ok(groups['美国节点'].proxies.includes('Edge One'));
+  assert.equal(groups['美国节点'].filter, undefined);
+  for (const name of ['美国节点', '亚太节点', '欧洲节点']) assert.notDeepEqual(groups[name].proxies, ['DIRECT']);
+  assert.ok(groups['解锁链路'].proxies.includes(proxies.find(p => p.chain).name));
+  assert.equal(groups['GPT'].proxies[0], '解锁链路');
+  assert.ok(doc.dns['respect-rules']);
+});
+test('sing-box output uses the 1.12 schema with DNS hijacking and no legacy geo fields', () => {
+  const proxies = assembleProxies(db.getNodes().filter(n => n.id.startsWith('c-')), db.getRelays());
+  const config = JSON.parse(renderSingboxJson(proxies));
+  assert.ok(config.inbounds.some(i => i.type === 'tun' && i.auto_route));
+  assert.ok(config.route.rules.some(r => r.protocol === 'dns' && r.action === 'hijack-dns'));
+  assert.ok(!config.outbounds.some(o => o.type === 'block'));
+  assert.ok(config.dns.servers.every(s => s.type && !s.address));
+  for (const r of config.route.rules) { assert.equal(r.geosite, undefined); assert.equal(r.geoip, undefined); assert.notEqual(typeof r.port, 'string'); }
+  const sets = new Set(config.route.rule_set.map(s => s.tag));
+  for (const r of [...config.route.rules, ...config.dns.rules]) for (const tag of r.rule_set || []) assert.ok(sets.has(tag), tag);
+  assert.ok(config.outbounds.find(o => o.tag === 'unlock').outbounds.includes(proxies.find(p => p.chain).name));
 });
 after(async () => {
   db.flush(); server.closeAllConnections(); await new Promise(r => server.close(r)); fs.rmSync(directory, { recursive: true, force: true });
