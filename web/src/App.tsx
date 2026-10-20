@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useRef, useEffect, useCallback } from "react";
+import { lazy, Suspense, useState, useRef, useEffect, useCallback } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useData } from "./hooks/useData";
@@ -12,17 +12,17 @@ const TopologyCanvas = lazy(() => import("./components/topology/TopologyCanvas")
 const SubscriptionView = lazy(() => import("./components/subscription/SubscriptionView").then(m => ({ default: m.SubscriptionView })));
 const ScriptView = lazy(() => import("./components/dashboard/ScriptView").then(m => ({ default: m.ScriptView })));
 const TelegramNotificationView = lazy(() => import("./components/notifications/TelegramNotificationView").then(m => ({ default: m.TelegramNotificationView })));
-import { AddNodeModal } from "./components/nodes/AddNodeModal";
+import { NodeForm } from "./components/nodes/NodeForm";
 const LatencyMonitorView = lazy(() => import("./components/ping/LatencyMonitorView").then(m => ({ default: m.LatencyMonitorView })));
 const NodeDetailModal = lazy(() => import("./components/probe/NodeDetailModal").then(m => ({ default: m.NodeDetailModal })));
 import { GlobalTooltip } from "./components/common/Tooltip";
 const TrafficAnalyticsView = lazy(() => import("./components/traffic/TrafficAnalyticsView").then(m => ({ default: m.TrafficAnalyticsView })));
 import { Broadcast, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
 import { Logo } from "./components/common/Logo";
-import { NodeItem } from "./types";
 import { useAuth } from "./context/AuthContext";
 import { LoginPage } from "./components/auth/LoginPage";
 import { PWAStatusBanner } from "./components/common/PWAStatusBanner";
+import { formatSpeed } from "./utils/format";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
@@ -83,7 +83,8 @@ export function App() {
   const { isAuthenticated, loading: authLoading, token } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
-  const [selectedNodeDetail, setSelectedNodeDetail] = useState<NodeItem | null>(null);
+  // Keep the id only: the node itself is read from live data so the modal tracks updates
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
@@ -134,13 +135,16 @@ export function App() {
     deleteLatencyTask,
     resetLatencyTasks,
     reorderLatencyTasks,
+    addSubscription,
     updateSubscription,
+    deleteSubscription,
     totalUplinkSpeed: totalUpSpeed,
     totalDownlinkSpeed: totalDownSpeed,
     totalTrafficUsed,
     totalTrafficLimit,
     onlineNodesCount,
   } = useData(isAuthenticated, token);
+  const selectedNodeDetail = nodes.find((n) => n.id === selectedNodeId) ?? null;
 
   // Tab switch GSAP transition
   useGSAP(() => {
@@ -151,13 +155,6 @@ export function App() {
       { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", clearProps: "transform,translate,scale,opacity" }
     );
   }, { dependencies: [currentTab] });
-
-  const formatSpeed = (bytesPerSec: number) => {
-    if (bytesPerSec > 1024 * 1024) {
-      return { val: bytesPerSec / (1024 * 1024), unit: "MB/s" };
-    }
-    return { val: bytesPerSec / 1024, unit: "KB/s" };
-  };
 
   const mobileUp = formatSpeed(totalUpSpeed);
   const mobileDown = formatSpeed(totalDownSpeed);
@@ -247,7 +244,7 @@ export function App() {
                 />
                 <ProbeDashboard
                   nodes={nodes}
-                  onSelectNode={(node) => setSelectedNodeDetail(node)}
+                  onSelectNode={(node) => setSelectedNodeId(node.id)}
                 />
               </div>
             )}
@@ -275,7 +272,7 @@ export function App() {
                 onDeleteTask={deleteLatencyTask}
                 onResetTasks={resetLatencyTasks}
                 onReorderTasks={reorderLatencyTasks}
-                onOpenNodeDetail={(node) => setSelectedNodeDetail(node)}
+                onOpenNodeDetail={(node) => setSelectedNodeId(node.id)}
               />
             )}
 
@@ -294,7 +291,9 @@ export function App() {
                 subscriptions={subscriptions}
                 nodes={nodes}
                 relays={relays}
+                onAddSubscription={addSubscription}
                 onUpdateSubscription={updateSubscription}
+                onDeleteSubscription={deleteSubscription}
               />
             )}
 
@@ -311,7 +310,7 @@ export function App() {
       </div>
 
       {/* Global Add Node Modal */}
-      <AddNodeModal
+      <NodeForm
         isOpen={isAddNodeOpen}
         onClose={() => setIsAddNodeOpen(false)}
         onSubmit={addNode}
@@ -320,8 +319,8 @@ export function App() {
       {/* Global Node Detail & Latency Time Series Modal */}
       {selectedNodeDetail && <Suspense fallback={null}><NodeDetailModal
         node={selectedNodeDetail}
-        isOpen={!!selectedNodeDetail}
-        onClose={() => setSelectedNodeDetail(null)}
+        isOpen
+        onClose={() => setSelectedNodeId(null)}
       /></Suspense>}
 
       {/* Global Unified Tooltip Portal & Native Title Interceptor */}

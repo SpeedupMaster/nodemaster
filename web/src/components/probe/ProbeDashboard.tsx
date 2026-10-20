@@ -9,19 +9,17 @@ import { Tooltip } from "../common/Tooltip";
 import {
   Cpu,
   HardDrive,
-  Globe,
   ArrowUp,
   ArrowDown,
   Clock,
-  ArrowsClockwise,
   ListBullets,
   SquaresFour,
   MagnifyingGlass,
-  Sparkle,
   Database,
   Lightning,
   ShieldCheck,
 } from "@phosphor-icons/react";
+import { formatSpeed, formatBytes, toGB } from "../../utils/format";
 
 gsap.registerPlugin(useGSAP);
 
@@ -36,20 +34,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const formatSpeed = (bytes: number) => {
-    if (bytes > 1024 * 1024) return { val: bytes / (1024 * 1024), unit: "MB/s" };
-    return { val: bytes / 1024, unit: "KB/s" };
-  };
-
-  const formatBytes = (bytes?: number) => {
-    if (!bytes) return "0 B";
-    if (bytes >= 1024 * 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
-    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
-  };
-
   const cleanOsName = (os?: string) => {
-    if (!os) return "Debian 12";
+    if (!os) return "未知系统";
     return os
       .replace(/\s*\([^)]*\)/g, "")
       .replace(/(\d+\.\d+)\.\d+/g, "$1")
@@ -245,8 +231,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           const down = formatSpeed(node.downlinkSpeedBytes);
           const memTotal = node.memTotalBytes || 2147483648;
           const memUsed = node.memUsedBytes || Math.floor(memTotal * (node.memUsage / 100));
-          const trafficUsedGB = (node.trafficUsedBytes / (1024 * 1024 * 1024)).toFixed(1);
-          const trafficLimitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
+          const trafficUsedGB = toGB(node.trafficUsedBytes);
+          const trafficLimitGB = toGB(node.trafficLimitBytes, 0);
           const trafficPct = Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100);
 
           return (
@@ -420,8 +406,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   const memUsed = node.memUsedBytes || Math.floor(memTotal * (node.memUsage / 100));
                   const diskTotal = node.diskTotalBytes || 42949672960;
                   const diskUsed = node.diskUsedBytes || Math.floor(diskTotal * (node.diskUsage / 100));
-                  const trafficUsedGB = (node.trafficUsedBytes / (1024 * 1024 * 1024)).toFixed(1);
-                  const trafficLimitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
+                  const trafficUsedGB = toGB(node.trafficUsedBytes);
+                  const trafficLimitGB = toGB(node.trafficLimitBytes, 0);
                   const trafficPct = Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100);
 
                   return (
@@ -620,9 +606,6 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
             const memUsed = node.memUsedBytes || Math.floor(memTotal * (node.memUsage / 100));
             const diskTotal = node.diskTotalBytes || 42949672960;
             const diskUsed = node.diskUsedBytes || Math.floor(diskTotal * (node.diskUsage / 100));
-            const trafficUsedGB = (node.trafficUsedBytes / (1024 * 1024 * 1024)).toFixed(1);
-            const trafficLimitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
-            const trafficPct = Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100);
 
             return (
               <div

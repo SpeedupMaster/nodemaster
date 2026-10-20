@@ -6,13 +6,8 @@ import {
   ArrowsClockwise,
   DotsSixVertical,
   HardDrives,
-  ListBullets,
-  SquaresFour,
   Info,
-  Check,
-  X,
   Target,
-  Globe,
   ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { LatencyTask, NodeItem } from "../../types";

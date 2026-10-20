@@ -1,76 +1,34 @@
 import crypto from "crypto";
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { db } from "../db/index.js";
 
-function base64url(input: string | Buffer): string {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
+const SESSION_TTL_SEC = 7 * 86400;
+const HEADER = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
 
-export function hashPassword(password: string, customSalt?: string): { hash: string; salt: string } {
-  const salt = customSalt || crypto.randomBytes(16).toString("hex");
-  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
-  return { hash, salt };
-}
+const sign = (data: string, secret: string) => crypto.createHmac("sha256", secret).update(data).digest("base64url");
 
-export function verifyPassword(password: string, storedHash: string, salt: string): boolean {
-  try {
-    const computed = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
-    const a = Buffer.from(computed, "hex");
-    const b = Buffer.from(storedHash, "hex");
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
-}
-
-export function signToken(payload: Record<string, any>, expiresInSec: number = 7 * 86400): string {
+export function signToken(payload: Record<string, unknown>, expiresInSec = SESSION_TTL_SEC): string {
   const secret = db.getConfig().jwtSecret;
   if (!secret) throw new Error("Signing key is not initialized");
-  const header = { alg: "HS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
-  const fullPayload = { ...payload, sessionVersion: db.getAdmin().sessionVersion, iat: now, exp: now + expiresInSec };
-
-  const encHeader = base64url(JSON.stringify(header));
-  const encPayload = base64url(JSON.stringify(fullPayload));
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(`${encHeader}.${encPayload}`)
-    .digest("base64url");
-
-  return `${encHeader}.${encPayload}.${signature}`;
+  const body = Buffer.from(JSON.stringify({ ...payload, sessionVersion: db.getAdmin().sessionVersion, iat: now, exp: now + expiresInSec })).toString("base64url");
+  return `${HEADER}.${body}.${sign(`${HEADER}.${body}`, secret)}`;
 }
 
 export function verifyToken(token: string): { valid: boolean; payload?: any; error?: string } {
-  if (!token || typeof token !== "string") {
-    return { valid: false, error: "Missing token" };
-  }
+  if (!token || typeof token !== "string") return { valid: false, error: "Missing token" };
   const parts = token.split(".");
-  if (parts.length !== 3) {
-    return { valid: false, error: "Invalid token format" };
-  }
+  if (parts.length !== 3) return { valid: false, error: "Invalid token format" };
 
   const [encHeader, encPayload, signature] = parts;
   const secret = db.getConfig().jwtSecret;
   if (!secret) return { valid: false, error: "Signing key unavailable" };
-  const expectedSig = crypto
-    .createHmac("sha256", secret)
-    .update(`${encHeader}.${encPayload}`)
-    .digest("base64url");
-
   const a = Buffer.from(signature);
-  const b = Buffer.from(expectedSig);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return { valid: false, error: "Invalid signature" };
-  }
+  const b = Buffer.from(sign(`${encHeader}.${encPayload}`, secret));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return { valid: false, error: "Invalid signature" };
 
   try {
-    const payloadJson = Buffer.from(encPayload, "base64url").toString("utf-8");
-    const payload = JSON.parse(payloadJson);
+    const payload = JSON.parse(Buffer.from(encPayload, "base64url").toString("utf-8"));
     const header = JSON.parse(Buffer.from(encHeader, "base64url").toString("utf-8"));
     const admin = db.getAdmin();
     const now = Math.floor(Date.now() / 1000);
@@ -82,43 +40,27 @@ export function verifyToken(token: string): { valid: boolean; payload?: any; err
       return { valid: false, error: "Session expired or revoked" };
     }
     return { valid: true, payload };
-  } catch (err) {
+  } catch {
     return { valid: false, error: "Malformed payload" };
   }
 }
 
-export function extractToken(req: Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.substring(7).trim();
-  }
-  if (typeof req.query.token === "string" && req.query.token.length > 0) {
-    return req.query.token;
-  }
-  return null;
-}
+export const signAdminToken = () => signToken({ sub: db.getAdmin().username, role: "admin" });
 
+/**
+ * REST calls authenticate with the Authorization header only, so session tokens never end up in
+ * URLs and access logs. (The WebSocket upgrade, which cannot set headers, reads it from its query.)
+ */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
-  const token = extractToken(req);
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7).trim() : "";
   if (!token) {
-    res.status(401).json({
-      success: false,
-      code: "UNAUTHORIZED",
-      message: "未登录或缺少凭证，请登录管理员账号",
-    });
+    res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "未登录或缺少凭证，请登录管理员账号" });
     return;
   }
-
-  const verification = verifyToken(token);
-  if (!verification.valid) {
-    res.status(401).json({
-      success: false,
-      code: "UNAUTHORIZED",
-      message: "登录凭证已过期或无效，请重新登录",
-    });
+  if (!verifyToken(token).valid) {
+    res.status(401).json({ success: false, code: "UNAUTHORIZED", message: "登录凭证已过期或无效，请重新登录" });
     return;
   }
-
-  (req as any).user = verification.payload;
   next();
 }

@@ -45,39 +45,48 @@ export function setStoredUser(user: AdminUser | null) {
   }
 }
 
-// Wraps a fetch implementation so same-origin /api/ calls carry the session token and a real 401 logs out
-function withAuth(fetchImpl: typeof window.fetch): typeof window.fetch {
-  return async (input: RequestInfo | URL, init?: RequestInit) => {
-    const token = getStoredToken();
-    const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
-
-    const targetUrl = new URL(input instanceof Request ? input.url : String(input), window.location.href);
-    const sameApi = targetUrl.origin === window.location.origin && targetUrl.pathname.startsWith("/api/");
-    if (sameApi && token && !headers.has("Authorization")) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-
-    const response = await fetchImpl(input, {
-      ...init,
-      headers,
-    });
-
-    if (sameApi && response.status === 401 && getStoredToken() === token) {
-      if (targetUrl.pathname !== "/api/auth/login") {
-        setStoredToken(null);
-        setStoredUser(null);
-        window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
-      }
-    }
-
-    return response;
-  };
+/** Ends the local session; AuthContext listens for the event and returns to the login page. */
+export function signalUnauthorized() {
+  setStoredToken(null);
+  window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
 }
 
-// Initialize global interceptor so existing fetch() calls throughout the app attach the auth header seamlessly
-export function initAuthInterceptor() {
-  if (typeof window === "undefined") return;
-  if ((window.fetch as any).__nodemasterAuth) return;
-  window.fetch = withAuth(window.fetch.bind(window));
-  (window.fetch as any).__nodemasterAuth = true;
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
+/**
+ * fetch() for the panel's own API: adds the session token and treats a 401 on an authenticated call
+ * as the end of the session. Only relative /api/ paths are accepted, so the token never leaves the origin.
+ */
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  if (!path.startsWith("/api/")) throw new Error(`apiFetch only accepts /api/ paths, got ${path}`);
+  const token = getStoredToken();
+  const headers = new Headers(init.headers);
+  if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+  const response = await fetch(path, { ...init, headers });
+  // A failed login is a 401 too, but there is no session to end; a token swapped meanwhile is newer
+  if (response.status === 401 && token && getStoredToken() === token) signalUnauthorized();
+  return response;
+}
+
+/** JSON API call: resolves with `data` of a `{ success: true }` response, otherwise throws ApiError. */
+export async function api<T = unknown>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  const response = await apiFetch(path, {
+    method,
+    signal,
+    ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  });
+  let payload: { success?: boolean; data?: T; message?: string } | null = null;
+  try {
+    payload = await response.json();
+  } catch {
+    // Non-JSON (proxy error page, empty body) is reported below with the HTTP status
+  }
+  if (!response.ok || !payload?.success) {
+    throw new ApiError(payload?.message || `请求失败 (HTTP ${response.status})`, response.status);
+  }
+  return payload.data as T;
 }

@@ -1,11 +1,11 @@
-import { db } from "../db/index.js";
+import { db, bumpConfigVersion } from "../db/index.js";
 import { billingPeriod } from "./security.js";
 import { historyStore } from "./historyStore.js";
+import { OFFLINE_AFTER_MS, isXrayVersion } from "../constants.js";
 import type { NodeItem } from "../types/index.js";
 
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
 const integer = (v: unknown): v is number => finite(v) && Number.isSafeInteger(v);
-const OFFLINE_MS = 30000;
 
 export function maintainNodes(now = Date.now()) {
   for (const node of db.getNodes()) maintainNode(node, now);
@@ -19,12 +19,11 @@ function maintainNode(node: NodeItem, now: number) {
     updates.trafficPeriodStart = period;
     updates.trafficUsedBytes = 0;
     if (node.status === "circuit_broken") {
-      updates.status = now - node.lastSeen > OFFLINE_MS ? "offline" : "online";
-      updates.configVersion = Math.max(now, (node.configVersion || 0) + 1);
-      updates.configSyncStatus = "pending";
+      updates.status = now - node.lastSeen > OFFLINE_AFTER_MS ? "offline" : "online";
+      Object.assign(updates, bumpConfigVersion(node, now));
     }
   }
-  if (now - node.lastSeen > OFFLINE_MS) {
+  if (now - node.lastSeen > OFFLINE_AFTER_MS) {
     if ((updates.status || node.status) !== "circuit_broken") updates.status = "offline";
     updates.uplinkSpeedBytes = 0;
     updates.downlinkSpeedBytes = 0;
@@ -65,23 +64,20 @@ export function ingestTelemetry(nodeId: string, data: Record<string, any>, now =
   const config = db.getConfig();
   if (config.autoCircuitBreaker && node.trafficLimitBytes > 0 && (updates.trafficUsedBytes ?? node.trafficUsedBytes) >= node.trafficLimitBytes * config.circuitBreakerThresholdPct / 100) {
     updates.status = "circuit_broken";
-    if (node.status !== "circuit_broken") {
-      updates.configVersion = Math.max(now, (node.configVersion || 0) + 1);
-      updates.configSyncStatus = "pending";
-    }
+    if (node.status !== "circuit_broken") Object.assign(updates, bumpConfigVersion(node, now));
   }
   const reported = integer(data.appliedConfigVersion) ? data.appliedConfigVersion : 0;
   const target = updates.configVersion || node.configVersion || 0;
   if (reported === target && target > 0) Object.assign(updates, { appliedConfigVersion: reported, configSyncStatus: "synced", configSyncedAt: now, configSyncError: undefined });
   if (data.syncReport?.status === "error") Object.assign(updates, { configSyncStatus: "failed", configSyncError: String(data.syncReport.error || "Reload failed").slice(0, 500) });
-  if (typeof data.xrayVersion === "string" && /^v?\d+\.\d+\.\d+$/.test(data.xrayVersion)) {
+  if (isXrayVersion(data.xrayVersion)) {
     updates.xrayVersion = data.xrayVersion.startsWith("v") ? data.xrayVersion : `v${data.xrayVersion}`;
     if (node.desiredXrayVersion === updates.xrayVersion) Object.assign(updates, { upgradeStatus: "succeeded", upgradeError: undefined });
   }
   if (data.upgradeReport?.status === "error" && data.upgradeReport.version === node.desiredXrayVersion) Object.assign(updates, { upgradeStatus: "failed", upgradeError: String(data.upgradeReport.error || "Upgrade failed").slice(0, 500) });
   const updated = db.updateNode(node.id, updates, true)!;
   historyStore.record(updated, tx, rx, now);
-  const tasks = db.getLatencyTasks().filter(t => t.enabled && (!t.nodeIds.length || t.nodeIds.includes(node.id)));
+  const tasks = db.getLatencyTasksFor(node.id);
   if (Array.isArray(data.latencyResults)) {
     const valid = data.latencyResults.slice(0, 100).filter((r: any) => r && tasks.some(t => t.id === r.taskId) && finite(r.latencyMs) && finite(r.lossRate) && r.lossRate <= 100 && finite(r.jitter));
     historyStore.recordLatency(node.id, valid, now);
@@ -96,6 +92,6 @@ export function agentDirectives(node: NodeItem) {
     proxyAction: node.status === "circuit_broken" ? "STOP" : "RUN",
     sync: (node.configVersion || 0) > (node.appliedConfigVersion || 0) ? { action: "RELOAD_CONFIG", targetVersion: node.configVersion, configUrl: `/api/nodes/by-token/${node.token}/xray-config` } : null,
     upgrade: node.desiredXrayVersion && node.desiredXrayVersion !== node.xrayVersion && node.upgradeStatus === "pending" ? { action: "XRAY_UPGRADE", version: node.desiredXrayVersion, scriptUrl: `/api/xray/upgrade.sh?version=${encodeURIComponent(node.desiredXrayVersion)}` } : null,
-    latencyTasks: db.getLatencyTasks().filter(t => t.enabled && (!t.nodeIds.length || t.nodeIds.includes(node.id))),
+    latencyTasks: db.getLatencyTasksFor(node.id),
   };
 }

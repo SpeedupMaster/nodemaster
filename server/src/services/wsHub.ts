@@ -1,15 +1,19 @@
 import { WebSocket, WebSocketServer } from "ws";
-import { Server } from "http";
+import type { Server } from "http";
 import { db } from "../db/index.js";
-import { NodeItem } from "../types/index.js";
+import type { NodeItem } from "../types/index.js";
+import { HEARTBEAT_MS } from "../constants.js";
 import { telegramService } from "./telegramService.js";
-import { ingestTelemetry, maintainNodes, agentDirectives } from "./telemetryService.js";
+import { maintainNodes } from "./telemetryService.js";
 import { verifyToken } from "./authService.js";
 
+/**
+ * Pushes live state to dashboard browsers. Probes never connect here: they report over HTTP
+ * (/api/nodes/telemetry) and receive their directives in the response.
+ */
 export class WsHub {
   private wss: WebSocketServer | null = null;
-  private agentClients = new Map<string, WebSocket>(); // nodeId -> WebSocket
-  private webClients = new Map<WebSocket, string>();
+  private webClients = new Map<WebSocket, string>(); // socket -> session token
   private heartbeatTimer: NodeJS.Timeout | null = null;
   private lastSent = new Map<string, string>(); // nodeId -> last JSON pushed to browsers
 
@@ -18,72 +22,25 @@ export class WsHub {
 
     this.wss.on("connection", (ws, req) => {
       ws.on("error", (error) => console.error("WebSocket error", error.message));
-      const url = new URL(req.url || "/ws", "http://localhost");
-      const clientType = url.searchParams.get("type"); // "web" | "agent"
-      const token = url.searchParams.get("token");
-
-      if (clientType === "agent" && token) {
-        // Agent connection
-        const node = db.getNodeByToken(token);
-        if (!node) {
-          ws.close(4001, "Invalid Agent Token");
-          return;
-        }
-
-        const previous = this.agentClients.get(node.id);
-        this.agentClients.set(node.id, ws);
-        previous?.close(4000, "Replaced connection");
-        db.updateNode(node.id, { status: node.status === "circuit_broken" ? node.status : "online", lastSeen: Date.now() }, true);
-        this.broadcastNodeUpdate(node.id);
-
-        ws.on("message", (raw) => {
-          try {
-            const data = JSON.parse(raw.toString());
-            this.handleAgentReport(node.id, data);
-          } catch (err) {
-            console.error("[WsHub] Parse agent report error:", err);
-          }
-        });
-
-        ws.on("close", () => {
-          if (this.agentClients.get(node.id) !== ws) return;
-          this.agentClients.delete(node.id);
-          db.updateNode(node.id, { status: db.getNodeById(node.id)?.status === "circuit_broken" ? "circuit_broken" : "offline" }, true);
-          this.broadcastNodeUpdate(node.id);
-          telegramService.checkNodeAlerts(db.getNodes()).catch(() => {});
-        });
-      } else {
-        // Web Dashboard Client - Require valid Admin JWT Token
-        const authResult = verifyToken(token || "");
-        if (!authResult.valid) {
-          ws.close(4001, "Unauthorized Web Client");
-          return;
-        }
-
-        this.webClients.set(ws, token!);
-        // Send initial full state
-        ws.send(JSON.stringify({
-          type: "INIT_STATE",
-          nodes: db.getNodes(),
-          relays: db.getRelays(),
-          subscriptions: db.getSubscriptions(),
-          routingRules: db.getRoutingRules(),
-        }));
-
-        ws.on("close", () => {
-          this.webClients.delete(ws);
-        });
+      // Browsers cannot set headers on a WebSocket upgrade, so the session token travels in the query
+      const token = new URL(req.url || "/ws", "http://localhost").searchParams.get("token") || "";
+      if (!verifyToken(token).valid) {
+        ws.close(4001, "Unauthorized Web Client");
+        return;
       }
+
+      this.webClients.set(ws, token);
+      ws.send(JSON.stringify({ type: "INIT_STATE", nodes: db.getNodes(), relays: db.getRelays(), subscriptions: db.getSubscriptions() }));
+      ws.on("close", () => this.webClients.delete(ws));
     });
 
-    // Only age real telemetry; never invent measurements or refresh agent heartbeats.
-    this.startBackgroundTelemetry();
-  }
-
-  private handleAgentReport(nodeId: string, data: Partial<NodeItem>) {
-    const node = ingestTelemetry(nodeId, data);
-    this.agentClients.get(nodeId)?.send(JSON.stringify({ type: "DIRECTIVES", ...agentDirectives(node) }));
-    // Telemetry is pushed to browsers by the heartbeat as a coalesced NODES_PATCH.
+    this.heartbeatTimer = setInterval(() => {
+      maintainNodes();
+      this.closeRevokedClients();
+      this.broadcastChangedNodes();
+      telegramService.checkNodeAlerts(db.getNodes()).catch(console.error);
+    }, HEARTBEAT_MS);
+    this.heartbeatTimer.unref();
   }
 
   public closeRevokedClients() {
@@ -92,20 +49,9 @@ export class WsHub {
     }
   }
 
-  private startBackgroundTelemetry() {
-    this.heartbeatTimer = setInterval(() => {
-      maintainNodes();
-      this.closeRevokedClients();
-      this.broadcastChangedNodes();
-      telegramService.checkNodeAlerts(db.getNodes()).catch(console.error);
-    }, 3000);
-    this.heartbeatTimer.unref();
-  }
-
   public close() {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     for (const client of this.webClients.keys()) client.terminate();
-    for (const client of this.agentClients.values()) client.terminate();
     this.wss?.close();
   }
 
@@ -127,44 +73,18 @@ export class WsHub {
     const node = db.getNodeById(nodeId);
     if (!node) return;
     this.lastSent.set(node.id, JSON.stringify(node));
-    this.broadcastToWeb({
-      type: "NODE_UPDATE",
-      node,
-    });
+    this.broadcastToWeb({ type: "NODE_UPDATE", node });
   }
 
-  public broadcastToWeb(payload: any) {
-    // Revoked sessions are closed by the 3s heartbeat and immediately on logout/password change.
+  public broadcastRelays() {
+    this.broadcastToWeb({ type: "RELAYS_UPDATE", relays: db.getRelays() });
+  }
+
+  public broadcastToWeb(payload: object) {
     const str = JSON.stringify(payload);
     for (const client of this.webClients.keys()) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(str);
-      }
+      if (client.readyState === WebSocket.OPEN) client.send(str);
     }
-  }
-
-  public pushConfigToAgent(nodeId: string, xrayConfig: any): boolean {
-    const ws = this.agentClients.get(nodeId);
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "CONFIG_RELOAD",
-        config: xrayConfig,
-      }));
-      return true;
-    }
-    return false;
-  }
-
-  public pushUpgradeToAgent(nodeId: string, targetVersion: string): boolean {
-    const ws = this.agentClients.get(nodeId);
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({
-        type: "XRAY_UPGRADE",
-        version: targetVersion,
-      }));
-      return true;
-    }
-    return false;
   }
 }
 

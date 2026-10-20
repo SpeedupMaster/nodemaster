@@ -1,19 +1,41 @@
-import { useState, useEffect, useCallback } from "react";
-import { NodeItem, RelayLink, SubscriptionToken, LatencyTask, RoutingRule } from "../types";
-import { getStoredToken, setStoredToken } from "../services/api";
+import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from "react";
+import { NodeItem, NodeInput, RelayLink, SubscriptionToken, LatencyTask } from "../types";
+import { api, getStoredToken, signalUnauthorized } from "../services/api";
 
-// Replaces changed nodes in place and appends new ones; untouched nodes keep their object identity
+const WS_RECONNECT_MS = 3000;
+
+// Replaces changed items in place and appends new ones; untouched items keep their object identity
 // so memoized children can skip re-rendering.
-function mergeNodes(prev: NodeItem[], changed: NodeItem[]): NodeItem[] {
+function mergeById<T extends { id: string }>(prev: T[], changed: T[]): T[] {
   if (!changed.length) return prev;
-  const updates = new Map(changed.map((n) => [n.id, n]));
-  const next = prev.map((n) => {
-    const updated = updates.get(n.id);
-    if (!updated) return n;
-    updates.delete(n.id);
+  const updates = new Map(changed.map((item) => [item.id, item]));
+  const next = prev.map((item) => {
+    const updated = updates.get(item.id);
+    if (!updated) return item;
+    updates.delete(item.id);
     return updated;
   });
   return updates.size ? [...next, ...updates.values()] : next;
+}
+
+/** Create / update / delete for one REST collection, keeping local state in step with the server. */
+function crud<T extends { id: string }, Input = Partial<T>>(path: string, setItems: Dispatch<SetStateAction<T[]>>) {
+  return {
+    add: async (input: Input) => {
+      const item = await api<T>("POST", path, input);
+      setItems((prev) => mergeById(prev, [item]));
+      return item;
+    },
+    update: async (id: string, input: Input) => {
+      const item = await api<T>("PUT", `${path}/${id}`, input);
+      setItems((prev) => mergeById(prev, [item]));
+      return item;
+    },
+    remove: async (id: string) => {
+      await api("DELETE", `${path}/${id}`);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    },
+  };
 }
 
 export function useData(enabled: boolean = true, sessionToken?: string | null) {
@@ -21,33 +43,25 @@ export function useData(enabled: boolean = true, sessionToken?: string | null) {
   const [relays, setRelays] = useState<RelayLink[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionToken[]>([]);
   const [latencyTasks, setLatencyTasks] = useState<LatencyTask[]>([]);
-  const [routingRules, setRoutingRules] = useState<RoutingRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [wsConnected, setWsConnected] = useState(false);
 
-  // Initial Fetch
   const fetchData = useCallback(async () => {
-    if (!enabled) return;
-    const token = getStoredToken();
-    if (!token) {
+    if (!enabled || !getStoredToken()) {
       setLoading(false);
       return;
     }
-
     try {
-      const [resNodes, resRelays, resSubs, resTasks, resRules] = await Promise.all([
-        fetch("/api/nodes").then((r) => r.json()),
-        fetch("/api/relays").then((r) => r.json()),
-        fetch("/api/subscriptions").then((r) => r.json()),
-        fetch("/api/ping/tasks").then((r) => r.json()),
-        fetch("/api/routing/rules").then((r) => r.json()),
+      const [nodeList, relayList, subList, taskList] = await Promise.all([
+        api<NodeItem[]>("GET", "/api/nodes"),
+        api<RelayLink[]>("GET", "/api/relays"),
+        api<SubscriptionToken[]>("GET", "/api/subscriptions"),
+        api<LatencyTask[]>("GET", "/api/ping/tasks"),
       ]);
-
-      if (resNodes?.success) setNodes(resNodes.data);
-      if (resRelays?.success) setRelays(resRelays.data);
-      if (resSubs?.success) setSubscriptions(resSubs.data);
-      if (resTasks?.success) setLatencyTasks(resTasks.data);
-      if (resRules?.success) setRoutingRules(resRules.data);
+      setNodes(nodeList);
+      setRelays(relayList);
+      setSubscriptions(subList);
+      setLatencyTasks(taskList);
     } catch (err) {
       console.error("[useData] fetch error:", err);
     } finally {
@@ -56,82 +70,57 @@ export function useData(enabled: boolean = true, sessionToken?: string | null) {
   }, [enabled, sessionToken]);
 
   useEffect(() => {
-    if (enabled) {
-      fetchData();
-    }
-  }, [fetchData, enabled]);
+    fetchData();
+  }, [fetchData]);
 
-  // WebSocket Live Connection
+  // Live updates pushed by the server
   useEffect(() => {
-    if (!enabled) {
-      setWsConnected(false);
-      return;
-    }
-
-    const token = getStoredToken();
-    if (!token) {
+    if (!enabled || !getStoredToken()) {
       setWsConnected(false);
       return;
     }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     let ws: WebSocket | null = null;
-    let reconnectTimer: any = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
     const connect = () => {
-      const currentToken = getStoredToken();
-      if (!currentToken) return;
-
-      const wsUrl = `${protocol}//${window.location.host}/ws?type=web&token=${encodeURIComponent(currentToken)}`;
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        setWsConnected(true);
-      };
-
+      const token = getStoredToken();
+      if (!token) return;
+      ws = new WebSocket(`${protocol}//${window.location.host}/ws?token=${encodeURIComponent(token)}`);
+      ws.onopen = () => setWsConnected(true);
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === "INIT_STATE") {
-            if (msg.nodes) setNodes(msg.nodes);
-            if (msg.relays) setRelays(msg.relays);
-            if (msg.subscriptions) setSubscriptions(msg.subscriptions);
-            if (msg.routingRules) setRoutingRules(msg.routingRules);
-          } else if (msg.type === "NODES_PATCH" && Array.isArray(msg.nodes)) {
-            setNodes((prev) => mergeNodes(prev, msg.nodes));
-          } else if (msg.type === "TELEMETRY_BATCH") {
-            if (msg.nodes) setNodes(msg.nodes);
-          } else if (msg.type === "NODE_UPDATE" && msg.node) {
-            setNodes((prev) => mergeNodes(prev, [msg.node]));
-          } else if (msg.type === "NODE_DELETED" && msg.id) {
-            setNodes((prev) => prev.filter((n) => n.id !== msg.id));
-          } else if (msg.type === "RELAYS_UPDATE" && msg.relays) {
+            setNodes(msg.nodes);
             setRelays(msg.relays);
-          } else if (msg.type === "ROUTING_RULES_UPDATE" && msg.rules) {
-            setRoutingRules(msg.rules);
+            setSubscriptions(msg.subscriptions);
+          } else if (msg.type === "NODES_PATCH") {
+            setNodes((prev) => mergeById(prev, msg.nodes));
+          } else if (msg.type === "NODE_UPDATE") {
+            setNodes((prev) => mergeById(prev, [msg.node]));
+          } else if (msg.type === "NODE_DELETED") {
+            setNodes((prev) => prev.filter((n) => n.id !== msg.id));
+          } else if (msg.type === "RELAYS_UPDATE") {
+            setRelays(msg.relays);
           }
         } catch (e) {
           console.error("[useData] WS message parse error:", e);
         }
       };
-
       ws.onclose = (event) => {
         setWsConnected(false);
         if (event.code === 4001) {
-          setStoredToken(null);
-          window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
+          signalUnauthorized();
           return;
         }
-        reconnectTimer = setTimeout(connect, 3000);
+        reconnectTimer = setTimeout(connect, WS_RECONNECT_MS);
       };
-
-      ws.onerror = () => {
-        ws?.close();
-      };
+      ws.onerror = () => ws?.close();
     };
 
     connect();
-
     return () => {
       clearTimeout(reconnectTimer);
       if (ws) {
@@ -141,289 +130,62 @@ export function useData(enabled: boolean = true, sessionToken?: string | null) {
     };
   }, [enabled, sessionToken]);
 
-  // CRUD API helpers
-  const addNode = async (nodeData: Partial<NodeItem>) => {
-    const res = await fetch("/api/nodes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(nodeData),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && res.data) {
-      setNodes((prev) => (prev.some((n) => n.id === res.data.id) ? prev : [...prev, res.data]));
-    }
-    return res;
-  };
-
-  const updateNode = async (id: string, updates: Partial<NodeItem>) => {
-    const res = await fetch(`/api/nodes/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setNodes((prev) => prev.map((n) => (n.id === id ? res.data : n)));
-    }
-    return res;
-  };
+  const nodeApi = crud<NodeItem, NodeInput>("/api/nodes", setNodes);
+  const relayApi = crud<RelayLink>("/api/relays", setRelays);
+  const subscriptionApi = crud<SubscriptionToken>("/api/subscriptions", setSubscriptions);
+  const taskApi = crud<LatencyTask>("/api/ping/tasks", setLatencyTasks);
 
   const deleteNode = async (id: string) => {
-    const res = await fetch(`/api/nodes/${id}`, {
-      method: "DELETE",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setNodes((prev) => prev.filter((n) => n.id !== id));
-      setRelays((prev) => prev.filter((r) => r.transitNodeId !== id && r.exitNodeId !== id));
-    }
-    return res;
+    await nodeApi.remove(id);
+    // The server drops the node's relays and its subscription references as well
+    setRelays((prev) => prev.filter((r) => r.mainNodeId !== id && r.unlockNodeId !== id));
+    setSubscriptions((prev) => prev.map((s) => ({ ...s, nodeIds: s.nodeIds.filter((nodeId) => nodeId !== id) })));
   };
 
   const resetTraffic = async (id: string) => {
-    const res = await fetch(`/api/nodes/${id}/reset-traffic`, {
-      method: "POST",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setNodes((prev) => prev.map((n) => (n.id === id ? res.data : n)));
-    }
-    return res;
+    const node = await api<NodeItem>("POST", `/api/nodes/${id}/reset-traffic`);
+    setNodes((prev) => mergeById(prev, [node]));
+    return node;
   };
 
-  const addRelay = async (relayData: Partial<RelayLink>) => {
-    const res = await fetch("/api/relays", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(relayData),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && res.data) {
-      setRelays((prev) => (prev.some((r) => r.id === res.data.id) ? prev : [...prev, res.data]));
-    }
-    return res;
-  };
-
-  const updateRelay = async (id: string, updates: Partial<RelayLink>) => {
-    const res = await fetch(`/api/relays/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && res.data) {
-      setRelays((prev) => prev.map((r) => (r.id === id ? res.data : r)));
-    }
-    return res;
-  };
-
-  const deleteRelay = async (id: string) => {
-    const res = await fetch(`/api/relays/${id}`, {
-      method: "DELETE",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRelays((prev) => prev.filter((r) => r.id !== id));
-    }
-    return res;
-  };
-
-  // Latency Tasks API helpers
-  const addLatencyTask = async (taskData: Partial<LatencyTask>) => {
-    const res = await fetch("/api/ping/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskData),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && res.data) {
-      setLatencyTasks((prev) => (prev.some((t) => t.id === res.data.id) ? prev : [...prev, res.data]));
-    }
-    return res;
-  };
-
-  const updateLatencyTask = async (id: string, updates: Partial<LatencyTask>) => {
-    const res = await fetch(`/api/ping/tasks/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setLatencyTasks((prev) => prev.map((t) => (t.id === id ? res.data : t)));
-    }
-    return res;
-  };
-
-  const deleteLatencyTask = async (id: string) => {
-    const res = await fetch(`/api/ping/tasks/${id}`, {
-      method: "DELETE",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setLatencyTasks((prev) => prev.filter((t) => t.id !== id));
-    }
-    return res;
-  };
-
-  const resetLatencyTasks = async () => {
-    const res = await fetch("/api/ping/tasks/presets", {
-      method: "POST",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setLatencyTasks(res.data);
-    }
-    return res;
-  };
+  const resetLatencyTasks = async () => setLatencyTasks(await api<LatencyTask[]>("POST", "/api/ping/tasks/presets"));
 
   const reorderLatencyTasks = async (orderedIds: string[]) => {
-    // Optimistic update
+    // Optimistic: listed ids first in the given order, the rest after them
     setLatencyTasks((prev) => {
-      const map = new Map(prev.map((t) => [t.id, t]));
-      const next: LatencyTask[] = [];
-      orderedIds.forEach((id, idx) => {
-        const item = map.get(id);
-        if (item) {
-          next.push({ ...item, order: idx + 1 });
-          map.delete(id);
-        }
-      });
-      for (const remaining of map.values()) {
-        next.push({ ...remaining, order: next.length + 1 });
-      }
-      return next;
+      const rank = (id: string) => (orderedIds.includes(id) ? orderedIds.indexOf(id) : Infinity);
+      return [...prev].sort((a, b) => rank(a.id) - rank(b.id)).map((t, i) => ({ ...t, order: i + 1 }));
     });
-
-    const res = await fetch("/api/ping/tasks/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: orderedIds }),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && Array.isArray(res.data)) {
-      setLatencyTasks(res.data);
-    }
-    return res;
+    setLatencyTasks(await api<LatencyTask[]>("POST", "/api/ping/tasks/reorder", { ids: orderedIds }));
   };
-
-  // Routing Rules actions
-  const addRoutingRule = async (ruleData: Partial<RoutingRule>) => {
-    const res = await fetch("/api/routing/rules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(ruleData),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRoutingRules((prev) => [...prev, res.data].sort((a, b) => a.priority - b.priority));
-    }
-    return res;
-  };
-
-  const updateRoutingRule = async (id: string, updates: Partial<RoutingRule>) => {
-    const res = await fetch(`/api/routing/rules/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRoutingRules((prev) =>
-        prev.map((r) => (r.id === id ? res.data : r)).sort((a, b) => a.priority - b.priority)
-      );
-    }
-    return res;
-  };
-
-  const deleteRoutingRule = async (id: string) => {
-    const res = await fetch(`/api/routing/rules/${id}`, {
-      method: "DELETE",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRoutingRules((prev) => prev.filter((r) => r.id !== id));
-    }
-    return res;
-  };
-
-  const reorderRoutingRules = async (orderedIds: string[]) => {
-    const res = await fetch("/api/routing/rules/reorder", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: orderedIds }),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRoutingRules(res.data);
-    }
-    return res;
-  };
-
-  const resetRoutingRules = async () => {
-    const res = await fetch("/api/routing/rules/presets", {
-      method: "POST",
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success) {
-      setRoutingRules(res.data);
-    }
-    return res;
-  };
-
-  // Subscription Actions
-  const updateSubscription = async (id: string, updates: Partial<SubscriptionToken>) => {
-    const res = await fetch(`/api/subscriptions/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    }).then((r) => r.json());
-    if (!res.success) throw new Error(res.message || "请求失败");
-    if (res.success && res.data) {
-      setSubscriptions((prev) => prev.map((s) => (s.id === id ? res.data : s)));
-    }
-    return res;
-  };
-
-  // Aggregated Telemetry
-  const totalUplinkSpeed = nodes.reduce((acc, n) => acc + (n.uplinkSpeedBytes || 0), 0);
-  const totalDownlinkSpeed = nodes.reduce((acc, n) => acc + (n.downlinkSpeedBytes || 0), 0);
-  const totalTrafficUsed = nodes.reduce((acc, n) => acc + (n.trafficUsedBytes || 0), 0);
-  const totalTrafficLimit = nodes.reduce((acc, n) => acc + (n.trafficLimitBytes || 0), 0);
-  const onlineNodesCount = nodes.filter((n) => n.status === "online").length;
 
   return {
     nodes,
     relays,
     subscriptions,
     latencyTasks,
-    routingRules,
     loading,
     wsConnected,
     fetchData,
-    addNode,
-    updateNode,
+    addNode: nodeApi.add,
+    updateNode: nodeApi.update,
     deleteNode,
     resetTraffic,
-    addRelay,
-    updateRelay,
-    deleteRelay,
-    addLatencyTask,
-    updateLatencyTask,
-    deleteLatencyTask,
+    addRelay: relayApi.add,
+    updateRelay: relayApi.update,
+    deleteRelay: relayApi.remove,
+    addSubscription: subscriptionApi.add,
+    updateSubscription: subscriptionApi.update,
+    deleteSubscription: subscriptionApi.remove,
+    addLatencyTask: taskApi.add,
+    updateLatencyTask: taskApi.update,
+    deleteLatencyTask: taskApi.remove,
     resetLatencyTasks,
     reorderLatencyTasks,
-    addRoutingRule,
-    updateRoutingRule,
-    deleteRoutingRule,
-    reorderRoutingRules,
-    resetRoutingRules,
-    updateSubscription,
-    totalUplinkSpeed,
-    totalDownlinkSpeed,
-    totalTrafficUsed,
-    totalTrafficLimit,
-    onlineNodesCount,
+    totalUplinkSpeed: nodes.reduce((acc, n) => acc + (n.uplinkSpeedBytes || 0), 0),
+    totalDownlinkSpeed: nodes.reduce((acc, n) => acc + (n.downlinkSpeedBytes || 0), 0),
+    totalTrafficUsed: nodes.reduce((acc, n) => acc + (n.trafficUsedBytes || 0), 0),
+    totalTrafficLimit: nodes.reduce((acc, n) => acc + (n.trafficLimitBytes || 0), 0),
+    onlineNodesCount: nodes.filter((n) => n.status === "online").length,
   };
 }
-

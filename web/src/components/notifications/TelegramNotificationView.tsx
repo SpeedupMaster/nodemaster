@@ -20,8 +20,8 @@ import {
 } from "@phosphor-icons/react";
 import { TelegramConfig, TelegramAlertLog, NodeItem } from "../../types";
 import { Button } from "../common/Button";
+import { api } from "../../services/api";
 import { Input } from "../common/Input";
-import { Badge } from "../common/Badge";
 
 interface TelegramNotificationViewProps {
   nodes?: NodeItem[];
@@ -47,7 +47,6 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
   });
 
   const [logs, setLogs] = useState<TelegramAlertLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [simulatingType, setSimulatingType] = useState<string | null>(null);
@@ -60,22 +59,14 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
   // Fetch config and logs
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const [resConfig, resLogs] = await Promise.all([
-        fetch("/api/telegram/config").then((r) => r.json()),
-        fetch("/api/telegram/logs").then((r) => r.json()),
+      const [savedConfig, savedLogs] = await Promise.all([
+        api<TelegramConfig>("GET", "/api/telegram/config"),
+        api<TelegramAlertLog[]>("GET", "/api/telegram/logs"),
       ]);
-
-      if (resConfig.success && resConfig.data) {
-        setConfig(resConfig.data);
-      }
-      if (resLogs.success && resLogs.data) {
-        setLogs(resLogs.data);
-      }
+      setConfig(savedConfig);
+      setLogs(savedLogs);
     } catch (err) {
       console.error("[TelegramNotificationView] Load error:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -83,23 +74,18 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
     fetchData();
   }, []);
 
+  const refreshLogs = () =>
+    api<TelegramAlertLog[]>("GET", "/api/telegram/logs")
+      .then(setLogs)
+      .catch((err) => console.error("[TelegramNotificationView] Logs refresh failed:", err));
+
   const handleSaveConfig = async (override?: Partial<TelegramConfig>) => {
     setSaving(true);
     const toSave = override ? { ...config, ...override } : config;
     try {
-      const res = await fetch("/api/telegram/config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toSave),
-      }).then((r) => r.json());
-
-      if (res.success) {
-        setConfig(res.data);
-        setBanner({ type: "success", message: "Telegram 告警配置保存成功！" });
-        setTimeout(() => setBanner(null), 4000);
-      } else {
-        setBanner({ type: "error", message: res.message || "保存配置失败" });
-      }
+      setConfig(await api<TelegramConfig>("PUT", "/api/telegram/config", toSave));
+      setBanner({ type: "success", message: "Telegram 告警配置保存成功！" });
+      setTimeout(() => setBanner(null), 4000);
     } catch (err: any) {
       setBanner({ type: "error", message: `保存失败: ${err.message}` });
     } finally {
@@ -119,32 +105,16 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
     setTesting(true);
     setBanner(null);
     try {
-      const res = await fetch("/api/telegram/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      }).then((r) => r.json());
-
-      if (res.success) {
-        setBanner({
-          type: "success",
-          message: "测试消息已成功发送至 Telegram，请打开手机或客户端查看！",
-        });
-        // Refresh logs to show this test entry
-        const resLogs = await fetch("/api/telegram/logs").then((r) => r.json());
-        if (resLogs.success) setLogs(resLogs.data);
-      } else {
-        setBanner({
-          type: "error",
-          message: `测试发送失败: ${res.error || "未知网络错误"}`,
-        });
-      }
-    } catch (err: any) {
+      await api("POST", "/api/telegram/test", config);
       setBanner({
-        type: "error",
-        message: `请求异常: ${err.message}`,
+        type: "success",
+        message: "测试消息已成功发送至 Telegram，请打开手机或客户端查看！",
       });
+    } catch (err: any) {
+      setBanner({ type: "error", message: `测试发送失败: ${err.message}` });
     } finally {
+      // The attempt is logged either way
+      refreshLogs();
       setTesting(false);
     }
   };
@@ -160,40 +130,20 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
 
     setSimulatingType(type);
     try {
-      const res = await fetch("/api/telegram/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      }).then((r) => r.json());
-
-      if (res.success) {
-        setBanner({
-          type: "success",
-          message: `模拟告警已成功推送到 Telegram！`,
-        });
-        // Refresh logs
-        const resLogs = await fetch("/api/telegram/logs").then((r) => r.json());
-        if (resLogs.success) setLogs(resLogs.data);
-        setTimeout(() => setBanner(null), 3000);
-      } else {
-        setBanner({
-          type: "error",
-          message: `模拟推送失败: ${res.error}`,
-        });
-      }
+      await api("POST", "/api/telegram/simulate", { type });
+      setBanner({ type: "success", message: "模拟告警已成功推送到 Telegram！" });
+      setTimeout(() => setBanner(null), 3000);
     } catch (err: any) {
-      setBanner({
-        type: "error",
-        message: `模拟请求异常: ${err.message}`,
-      });
+      setBanner({ type: "error", message: `模拟推送失败: ${err.message}` });
     } finally {
+      refreshLogs();
       setSimulatingType(null);
     }
   };
 
   const handleClearLogs = async () => {
     try {
-      await fetch("/api/telegram/logs", { method: "DELETE" });
+      await api("DELETE", "/api/telegram/logs");
       setLogs([]);
     } catch (err) {
       console.error(err);

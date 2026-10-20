@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../common/Button";
+import { apiFetch } from "../../services/api";
 import {
   Terminal,
   Copy,
   Check,
-  ShieldCheck,
   Cpu,
   Pulse,
   Lightning,
   Sliders,
   Globe,
   ArrowSquareOut,
-  Sparkle,
   CheckCircle,
 } from "@phosphor-icons/react";
 
@@ -50,15 +49,13 @@ export const ScriptView: React.FC = () => {
   const tunePanelCmd = `curl -fsSL ${panelHost}/api/tcp-tune.sh | bash`;
 
   useEffect(() => {
-    fetch("/api/install.sh")
-      .then((r) => r.text())
-      .then((txt) => setScriptContent(txt))
-      .catch((e) => console.error(e));
-
-    fetch("/api/tcp-tune.sh")
-      .then((r) => r.text())
-      .then((txt) => setTcpTuneContent(txt))
-      .catch((e) => console.error(e));
+    const load = (path: string, set: (text: string) => void) =>
+      apiFetch(path)
+        .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then(set)
+        .catch((e) => console.error(`[ScriptView] ${path}:`, e));
+    load("/api/install.sh", setScriptContent);
+    load("/api/tcp-tune.sh", setTcpTuneContent);
   }, []);
 
   const handleCopyCmd = () => {

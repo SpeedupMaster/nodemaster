@@ -14,13 +14,16 @@ export interface ShadowsocksConfig {
   password: string;
 }
 
+export type NodeProtocol = "vless-reality" | "shadowsocks";
+
 export interface NodeItem {
   id: string;
   name: string;
   ip: string;
   port: number;
-  type: "direct" | "unlock" | "transit" | "exit";
-  protocol: "vless-reality" | "shadowsocks" | "trojan" | "dokodemo" | "socks5";
+  // Role in the topology; always "unlock" for shadowsocks and "direct" for vless-reality nodes
+  type: "direct" | "unlock";
+  protocol: NodeProtocol;
   status: "online" | "offline" | "circuit_broken";
   country: string;
   countryName: string;
@@ -38,7 +41,6 @@ export interface NodeItem {
   lastSeen: number;
   createdAt: number;
   tags: string[];
-  sni?: string;
   bandwidthMbps?: number;
   trafficResetDay?: number;
   costAmount?: number;
@@ -76,6 +78,27 @@ export interface NodeItem {
   configSyncedAt?: number;
 }
 
+/** Editable node fields accepted by POST /api/nodes and PUT /api/nodes/:id. */
+export interface NodeInput {
+  name?: string;
+  ip?: string;
+  port?: number;
+  protocol?: NodeProtocol;
+  country?: string;
+  countryName?: string;
+  trafficLimitBytes?: number;
+  bandwidthMbps?: number;
+  trafficResetDay?: number;
+  costAmount?: number | null;
+  costCurrency?: NodeItem["costCurrency"];
+  costPeriod?: NodeItem["costPeriod"];
+  expiresAt?: string | null;
+  autoRenew?: boolean;
+  tags?: string[];
+  sni?: string;
+  shadowsocks?: Partial<ShadowsocksConfig>;
+}
+
 export interface XrayVersionNodeStatus {
   desiredVersion?: string;
   upgradeStatus?: "pending" | "failed" | "succeeded";
@@ -106,13 +129,8 @@ export interface RelayLink {
   customDomains?: string[];
   // Dedicated VLESS client on the main node: the 🔗 subscription entry authenticates with it,
   // letting the server tell chained traffic apart from the plain direct entry
-  chainUuid?: string;
-  transitNodeId?: string;
-  exitNodeId?: string;
-  transitPort?: number;
+  chainUuid: string;
   status: "active" | "inactive";
-  trafficBytes: number;
-  latencyMs: number;
   createdAt: number;
 }
 
@@ -121,18 +139,14 @@ export interface SubscriptionToken {
   name: string;
   token: string;
   nodeIds: string[];
-  trafficLimitBytes: number;
-  trafficUsedBytes: number;
+  /** Unix seconds; 0 = never expires */
   expireAt: number;
   createdAt: number;
   customHost?: string;
 }
 
 export interface SystemConfig {
-  port: number;
-  host: string;
   jwtSecret: string;
-  panelUrl: string;
   autoCircuitBreaker: boolean;
   circuitBreakerThresholdPct: number;
   trafficResetDay: number;
@@ -160,7 +174,6 @@ export interface NodeLatencyHistory {
   nodeId: string;
   taskId: string;
   taskName: string;
-  color: string;
   currentLatency: number;
   lossRate: number;
   jitter: number;
@@ -170,21 +183,12 @@ export interface NodeLatencyHistory {
 export interface RoutingRule {
   id: string;
   name: string;
-  description?: string;
-  enabled: boolean;
-  priority: number;
   targetOutbound: "DIRECT" | "BLOCK" | "UNLOCK_OUT" | "PROXY";
-  targetNodeId?: string;
   domains?: string[];
   geosite?: string[];
   ips?: string[];
   geoip?: string[];
   protocol?: string[];
-  port?: string;
-  inboundNodeIds?: string[]; // empty array means all nodes
-  builtInPresetId?: string;
-  createdAt: number;
-  updatedAt: number;
 }
 
 export interface TelegramConfig {
@@ -192,25 +196,22 @@ export interface TelegramConfig {
   botToken: string;
   chatId: string;
   apiEndpoint?: string;
-  // 离线通知
   offlineAlert: boolean;
-  // 流量预警
   trafficAlert: boolean;
-  trafficThresholdPercent: number; // e.g. 80
-  // 续费通知
+  trafficThresholdPercent: number;
   renewalAlert: boolean;
-  renewalDaysAhead: number; // e.g. 7
-  // CPU 占用预警
+  renewalDaysAhead: number;
   cpuAlert: boolean;
-  cpuThresholdPercent: number; // e.g. 85
-  // 内存占用预警
+  cpuThresholdPercent: number;
   memAlert: boolean;
-  memThresholdPercent: number; // e.g. 85
+  memThresholdPercent: number;
 }
+
+export type TelegramAlertType = "offline" | "recovery" | "traffic" | "renewal" | "cpu" | "mem" | "test";
 
 export interface TelegramAlertLog {
   id: string;
-  type: "offline" | "recovery" | "traffic" | "renewal" | "cpu" | "mem" | "test";
+  type: TelegramAlertType;
   nodeId?: string;
   nodeName?: string;
   title: string;
@@ -221,47 +222,9 @@ export interface TelegramAlertLog {
 }
 
 // -------------------------------------------------------------
-// 8. Service Traffic Analytics Types
+// Traffic analytics (measured NIC counters only; no per-service breakdown is collected)
 // -------------------------------------------------------------
-export type TrafficCategory =
-  | "streaming"
-  | "ai"
-  | "social"
-  | "developer"
-  | "system"
-  | "direct"
-  | "other";
-
-export interface ServiceTrafficItem {
-  id: string;
-  name: string;
-  category: TrafficCategory;
-  categoryName: string;
-  color: string;
-  icon: string;
-  domains: string[];
-  downlinkBytes: number;
-  uplinkBytes: number;
-  totalBytes: number;
-  percentage: number;
-  activeConnections: number;
-  requestsCount: number;
-  nodeDistribution: {
-    nodeId: string;
-    nodeName: string;
-    bytes: number;
-    percentage: number;
-  }[];
-}
-
-export interface CategoryTrafficSummary {
-  category: TrafficCategory;
-  categoryName: string;
-  color: string;
-  totalBytes: number;
-  percentage: number;
-  servicesCount: number;
-}
+export type TrafficRange = "today" | "7d" | "30d" | "month" | "all";
 
 export interface NodeTrafficDistribution {
   nodeId: string;
@@ -270,34 +233,19 @@ export interface NodeTrafficDistribution {
   countryName: string;
   totalBytes: number;
   percentage: number;
-  topServices: {
-    serviceId: string;
-    serviceName: string;
-    bytes: number;
-    color: string;
-  }[];
 }
 
 export interface TrafficTimeSeriesPoint {
-  time: string;
+  /** Bucket start (hourly for "today", daily otherwise); format on the client in its own timezone */
   timestamp: number;
   totalBytes: number;
-  streamingBytes: number;
-  aiBytes: number;
-  socialBytes: number;
-  devBytes: number;
-  otherBytes: number;
 }
 
 export interface TrafficAnalyticsSummary {
-  timeRange: "today" | "7d" | "30d" | "month" | "all";
+  timeRange: TrafficRange;
   totalRecordedBytes: number;
   totalUplinkBytes: number;
   totalDownlinkBytes: number;
-  totalRequests: number;
-  activeStreams: number;
-  services: ServiceTrafficItem[];
-  categories: CategoryTrafficSummary[];
   nodeDistributions: NodeTrafficDistribution[];
   timeSeries: TrafficTimeSeriesPoint[];
   updatedAt: number;

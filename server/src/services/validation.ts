@@ -1,44 +1,90 @@
 import type { RequestHandler } from "express";
 
-export const validateRequest: RequestHandler = (req, res, next) => {
-  const fail = (field: string) => res.status(400).json({ success: false, message: `参数无效: ${field}` });
-  for (const [key, value] of Object.entries(req.query)) if (typeof value !== "string") { fail(key); return; }
-  if (!["POST", "PUT", "PATCH"].includes(req.method)) { next(); return; }
-  const body = req.body;
-  if (!body || typeof body !== "object" || Array.isArray(body)) { fail("JSON body"); return; }
-  for (const key of ["username", "password", "oldPassword", "newPassword", "name", "ip", "sni", "serverName", "token", "country", "countryName", "description", "version", "target", "ssMethod", "ssPassword", "mainNodeId", "unlockNodeId", "transitNodeId", "exitNodeId", "customHost", "expiresAt"]) {
-    if (body[key] !== undefined && body[key] !== null && (typeof body[key] !== "string" || body[key].length > 2048)) { fail(key); return; }
+/** An error whose message is safe to show the client; the error handler responds with its status. */
+export class HttpError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
   }
-  for (const key of ["port", "trafficLimitBytes", "trafficLimitGB", "bandwidthMbps", "trafficResetDay", "costAmount", "expireAt", "intervalSec", "priority"]) {
-    if (body[key] === undefined || body[key] === null || body[key] === "") continue;
-    if (key === "port" && req.path.startsWith("/routing/")) continue;
-    const value = Number(body[key]);
-    if (!Number.isFinite(value) || value < 0 || value > Number.MAX_SAFE_INTEGER) { fail(key); return; }
-    if (key === "port" && (!Number.isInteger(value) || value < 1 || value > 65535)) { fail(key); return; }
-    if (key === "trafficResetDay" && (!Number.isInteger(value) || value < 1 || value > 31)) { fail(key); return; }
-    if (key === "intervalSec" && (value < 10 || value > 86400)) { fail(key); return; }
+}
+
+/** Rejected client input (400). */
+export class InputError extends HttpError {
+  constructor(message: string) {
+    super(400, message);
   }
-  for (const key of ["tags", "nodeIds", "ids", "domains", "geosite", "ips", "geoip", "inboundNodeIds", "customServices", "customDomains"]) {
-    if (body[key] !== undefined && (!Array.isArray(body[key]) || body[key].length > 1000 || body[key].some((v: unknown) => typeof v !== "string" || v.length > 2048))) { fail(key); return; }
-  }
-  for (const key of ["enabled", "autoRenew"]) if (body[key] !== undefined && typeof body[key] !== "boolean") { fail(key); return; }
-  if (body.sni !== undefined && (typeof body.sni !== "string" || !/^[a-zA-Z0-9.-]+$/.test(body.sni))) { fail("sni"); return; }
-  if (body.serverName !== undefined && !/^[a-zA-Z0-9.-]+$/.test(body.serverName)) { fail("serverName"); return; }
-  if (body.ip !== undefined && !/^[a-zA-Z0-9.:[\]-]+$/.test(body.ip)) { fail("ip"); return; }
-  if (req.path.startsWith("/nodes") && req.path !== "/nodes/telemetry" && body.protocol !== undefined && !["vless-reality", "shadowsocks"].includes(body.protocol)) { fail("protocol"); return; }
-  if (body.status !== undefined) {
-    const allowed = req.path.startsWith("/relays") ? ["active", "inactive"] : ["online", "offline", "circuit_broken"];
-    if (!allowed.includes(body.status)) { fail("status"); return; }
-  }
-  if (body.mode !== undefined && !["ai_media", "all", "custom"].includes(body.mode)) { fail("mode"); return; }
-  if (body.targetOutbound !== undefined && !["DIRECT", "BLOCK", "UNLOCK_OUT", "PROXY"].includes(body.targetOutbound)) { fail("targetOutbound"); return; }
-  if (req.path.startsWith("/routing/") && body.protocol !== undefined && (!Array.isArray(body.protocol) || body.protocol.some((v: unknown) => typeof v !== "string"))) { fail("protocol"); return; }
-  if (body.shadowsocks !== undefined && (!body.shadowsocks || typeof body.shadowsocks !== "object" || typeof body.shadowsocks.method !== "string" || typeof body.shadowsocks.password !== "string")) { fail("shadowsocks"); return; }
-  const cipher = body.shadowsocks?.method || body.ssMethod;
-  const password = body.shadowsocks?.password || body.ssPassword;
-  if (cipher !== undefined) {
-    if (!["2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305", "aes-128-gcm", "aes-256-gcm", "chacha20-ietf-poly1305"].includes(cipher)) { fail("ssMethod"); return; }
-    if (password && cipher.startsWith("2022-") && Buffer.from(password, "base64").length !== (cipher === "2022-blake3-aes-128-gcm" ? 16 : 32)) { fail("ssPassword"); return; }
+}
+
+export const notFound = (what: string): never => { throw new HttpError(404, `${what}不存在`); };
+
+const invalid = (field: string): never => { throw new InputError(`参数无效: ${field}`); };
+const absent = (v: unknown) => v === undefined;
+/** For nullable fields: null or "" means "clear the value". */
+const cleared = (v: unknown) => v === null || v === "";
+
+const MAX_STRING = 2048;
+const MAX_ITEMS = 1000;
+
+export function optString(body: any, field: string, pattern?: RegExp): string | undefined {
+  const v = body[field];
+  if (absent(v)) return undefined;
+  if (typeof v !== "string" || v.length > MAX_STRING || (pattern && !pattern.test(v))) return invalid(field);
+  return v.trim();
+}
+
+export function optNumber(body: any, field: string, { min = 0, max = Number.MAX_SAFE_INTEGER, integer = false } = {}): number | undefined {
+  const v = body[field];
+  if (absent(v)) return undefined;
+  const n = typeof v === "string" && v.trim() !== "" ? Number(v) : v;
+  if (typeof n !== "number" || !Number.isFinite(n) || n < min || n > max || (integer && !Number.isInteger(n))) return invalid(field);
+  return n;
+}
+
+/** `undefined` = not sent, `null` = clear, otherwise a valid number. */
+export function nullableNumber(body: any, field: string): number | null | undefined {
+  return cleared(body[field]) ? null : optNumber(body, field);
+}
+
+export function nullableString(body: any, field: string, pattern?: RegExp): string | null | undefined {
+  return cleared(body[field]) ? null : optString(body, field, pattern);
+}
+
+export function optBoolean(body: any, field: string): boolean | undefined {
+  const v = body[field];
+  if (absent(v)) return undefined;
+  return typeof v === "boolean" ? v : invalid(field);
+}
+
+export function optStringArray(body: any, field: string): string[] | undefined {
+  const v = body[field];
+  if (absent(v)) return undefined;
+  if (!Array.isArray(v) || v.length > MAX_ITEMS || v.some((s) => typeof s !== "string" || s.length > MAX_STRING)) return invalid(field);
+  return v.map((s: string) => s.trim()).filter(Boolean);
+}
+
+export function optEnum<T extends string>(body: any, field: string, allowed: readonly T[]): T | undefined {
+  const v = body[field];
+  if (absent(v)) return undefined;
+  return allowed.includes(v) ? v : invalid(field);
+}
+
+export function required<T>(value: T | undefined, message: string): T {
+  if (value === undefined || value === "") throw new InputError(message);
+  return value;
+}
+
+export const HOSTNAME = /^[a-zA-Z0-9.-]+$/;
+export const HOST_OR_IP = /^[a-zA-Z0-9.:[\]-]+$/;
+export const PORT = { min: 1, max: 65535, integer: true };
+
+/** Every route expects scalar query values and (for writes) a JSON object body. */
+export const requireJsonShape: RequestHandler = (req, _res, next) => {
+  for (const [key, value] of Object.entries(req.query)) if (typeof value !== "string") invalid(key);
+  if (["POST", "PUT", "PATCH"].includes(req.method)) {
+    if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+      // Bodiless action endpoints (sync, reset, logout …) are sent without a JSON payload
+      if (req.body === undefined || Object.keys(req.body ?? {}).length === 0) req.body = {};
+      else invalid("JSON body");
+    }
   }
   next();
 };

@@ -6,7 +6,6 @@ import {
   Code,
   ArrowClockwise,
   Trash,
-  Globe,
   Terminal,
   ArrowUp,
   ArrowDown,
@@ -22,6 +21,7 @@ import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { RollingCounter } from "../common/RollingCounter";
 import { Tooltip } from "../common/Tooltip";
+import { formatSpeed, toGB } from "../../utils/format";
 
 interface NodeCardProps {
   node: NodeItem;
@@ -68,17 +68,12 @@ export const NodeCard: React.FC<NodeCardProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const usedGB = (node.trafficUsedBytes / (1024 * 1024 * 1024)).toFixed(1);
-  const limitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
+  const usedGB = toGB(node.trafficUsedBytes);
+  const limitGB = toGB(node.trafficLimitBytes, 0);
   const trafficPct =
     node.trafficLimitBytes > 0
       ? Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100)
       : 0;
-
-  const formatSpeed = (bytes: number) => {
-    if (bytes > 1024 * 1024) return { val: bytes / (1024 * 1024), unit: "MB/s" };
-    return { val: bytes / 1024, unit: "KB/s" };
-  };
 
   const up = formatSpeed(node.uplinkSpeedBytes);
   const down = formatSpeed(node.downlinkSpeedBytes);
@@ -252,24 +247,10 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               </Badge>
             )}
             <Badge
-              variant={
-                node.type === "unlock"
-                  ? "exit"
-                  : node.type === "direct"
-                  ? "accent"
-                  : node.type === "transit"
-                  ? "transit"
-                  : "exit"
-              }
+              variant={node.type === "unlock" ? "unlock" : "accent"}
               size="sm"
             >
-              {node.type === "unlock"
-                ? "专属解锁"
-                : node.type === "direct"
-                ? "主力直连"
-                : node.type === "transit"
-                ? "中转入口"
-                : "海外落地"}
+              {node.type === "unlock" ? "专属解锁" : "主力直连"}
             </Badge>
           </div>
         </div>

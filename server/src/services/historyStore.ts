@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { atomicWriteJson } from "./security.js";
 import { DATA_DIR } from "../paths.js";
+import { MINUTE, HOUR, DAY } from "../constants.js";
 import type { LatencyTask, NodeItem, NodeLatencyHistory } from "../types/index.js";
 
 // `n` = number of raw points merged into a downsampled row (absent for raw rows).
@@ -11,9 +12,6 @@ export interface Sample {
 }
 interface LatencySample { nodeId: string; taskId: string; timestamp: number; latencyMs: number; lossRate: number; jitter: number; n?: number }
 interface HistoryData { samples: Sample[]; latency: LatencySample[] }
-const MINUTE = 60000;
-const HOUR = 3600000;
-const DAY = 86400000;
 const RETENTION = 35 * DAY;
 const MAX_POINTS = 300;
 // Older data is kept at coarser resolution so the file stays bounded:
@@ -167,15 +165,16 @@ export class HistoryStore {
     const rows = all.length ? thin(all, all[0].timestamp, Date.now()) : all;
     return { timestamps: rows.map(p => p.timestamp), cpu: rows.map(p => p.cpu), mem: rows.map(p => p.mem), disk: rows.map(p => p.disk), netIn: rows.map(p => p.down), netOut: rows.map(p => p.up) };
   }
+  /** `tasks` must already be filtered to the ones that apply to this node. */
   public latencyHistory(nodeId: string, range: string, tasks: LatencyTask[]): NodeLatencyHistory[] {
     const start = rangeStart(range);
     const rows = this.latencyByNode.get(nodeId) || [];
     const recent = rows.slice(lowerBound(rows, start));
-    return tasks.filter(t => t.enabled && (!t.nodeIds.length || t.nodeIds.includes(nodeId))).flatMap(task => {
+    return tasks.flatMap(task => {
       const points = recent.filter(p => p.taskId === task.id);
       if (!points.length) return [];
       const latest = points[points.length - 1];
-      return [{ nodeId, taskId: task.id, taskName: task.name, color: "#3b82f6", currentLatency: latest.latencyMs, lossRate: latest.lossRate, jitter: latest.jitter, history: thin(points, points[0].timestamp, Date.now()) }];
+      return [{ nodeId, taskId: task.id, taskName: task.name, currentLatency: latest.latencyMs, lossRate: latest.lossRate, jitter: latest.jitter, history: thin(points, points[0].timestamp, Date.now()) }];
     });
   }
 }

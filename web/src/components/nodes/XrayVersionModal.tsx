@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { NodeItem, XrayVersionInfo } from "../../types";
+import { api } from "../../services/api";
 import {
   ArrowClockwise,
   ArrowSquareOut,
@@ -42,14 +43,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
     setLoading(true);
     setFeedbackMsg(null);
     try {
-      const res = await fetch(`/api/xray/version${forceRefresh ? "?refresh=true" : ""}`);
-      const json = await res.json();
-      if (json.success) {
-        setVersionInfo(json.data);
-      } else {
-        setVersionInfo(null);
-        setFeedbackMsg({ type: "error", text: json.message || "获取 Xray 版本信息失败" });
-      }
+      setVersionInfo(await api<XrayVersionInfo>("GET", `/api/xray/version${forceRefresh ? "?refresh=true" : ""}`));
     } catch (err: any) {
       setVersionInfo(null);
       setFeedbackMsg({ type: "error", text: err.message || "网络请求异常，无法连接版本服务" });
@@ -69,19 +63,12 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
     setUpgradingNodeId(nodeId);
     setFeedbackMsg(null);
     try {
-      const res = await fetch(`/api/nodes/${nodeId}/upgrade-xray`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version: versionInfo.latestVersion }),
+      const result = await api<{ message?: string }>("POST", `/api/nodes/${nodeId}/upgrade-xray`, {
+        version: versionInfo.latestVersion,
       });
-      const json = await res.json();
-      if (json.success) {
-        await fetchVersions(false);
-        setFeedbackMsg({ type: "success", text: json.data?.message || "升级任务已排队，等待探针确认" });
-        onRefreshData?.();
-      } else {
-        setFeedbackMsg({ type: "error", text: json.message || "升级失败" });
-      }
+      await fetchVersions(false);
+      setFeedbackMsg({ type: "success", text: result?.message || "升级任务已排队，等待探针确认" });
+      onRefreshData?.();
     } catch (err: any) {
       setFeedbackMsg({ type: "error", text: err.message || "请求异常" });
     } finally {
@@ -94,22 +81,15 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
     setBatchUpgrading(true);
     setFeedbackMsg(null);
     try {
-      const res = await fetch("/api/nodes/batch-upgrade-xray", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version: versionInfo.latestVersion }),
+      const result = await api<{ totalUpdated?: number }>("POST", "/api/nodes/batch-upgrade-xray", {
+        version: versionInfo.latestVersion,
       });
-      const json = await res.json();
-      if (json.success) {
-        await fetchVersions(false);
-        setFeedbackMsg({
-          type: "success",
-          text: `已为 ${json.data?.totalUpdated ?? 0} 个节点排队升级至 ${versionInfo.latestVersion}，等待探针确认`,
-        });
-        onRefreshData?.();
-      } else {
-        setFeedbackMsg({ type: "error", text: json.message || "批量升级失败" });
-      }
+      await fetchVersions(false);
+      setFeedbackMsg({
+        type: "success",
+        text: `已为 ${result?.totalUpdated ?? 0} 个节点排队升级至 ${versionInfo.latestVersion}，等待探针确认`,
+      });
+      onRefreshData?.();
     } catch (err: any) {
       setFeedbackMsg({ type: "error", text: err.message || "批量请求异常" });
     } finally {

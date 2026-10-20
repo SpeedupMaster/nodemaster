@@ -4,7 +4,8 @@ import http from "http";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { apiRouter } from "./routes/api.js";
+import { apiRouter } from "./routes/index.js";
+import { errorHandler } from "./routes/util.js";
 import { wsHub } from "./services/wsHub.js";
 import { db } from "./db/index.js";
 
@@ -16,6 +17,15 @@ const server = http.createServer(app);
 const trustProxy = process.env.TRUST_PROXY?.trim();
 if (trustProxy && trustProxy !== "false") {
   app.set("trust proxy", trustProxy === "true" ? true : /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
+} else {
+  let warned = false;
+  app.use((req, _res, next) => {
+    if (!warned && req.headers["x-forwarded-for"]) {
+      warned = true;
+      console.warn("[Config] Requests arrive through a reverse proxy but TRUST_PROXY is not set; client IPs and https links will be wrong.");
+    }
+    next();
+  });
 }
 app.disable("x-powered-by");
 
@@ -32,10 +42,8 @@ app.use(express.json({ limit: "128kb" }));
 
 // Routes
 app.use("/api", apiRouter);
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error("Request failed", error.message);
-  res.status(error.status || 500).json({ success: false, message: error.status === 400 ? "请求数据格式不正确" : "服务暂时不可用，请稍后重试" });
-});
+// Errors raised before the API router runs (e.g. malformed JSON bodies)
+app.use(errorHandler);
 
 // Health check
 app.get("/health", (req, res) => {
@@ -76,7 +84,7 @@ if (fs.existsSync(WEB_DIST)) {
 // Initialize WebSocket Hub
 wsHub.init(server);
 
-const PORT = Number(process.env.PORT) || db.getConfig().port || 3880;
+const PORT = Number(process.env.PORT) || 3880;
 const HOST = process.env.HOST || "0.0.0.0";
 
 server.listen(PORT, HOST, () => {

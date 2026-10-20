@@ -10,6 +10,7 @@ import {
   ArrowDown,
 } from "@phosphor-icons/react";
 import { RollingCounter } from "../common/RollingCounter";
+import { formatSpeed, toGB } from "../../utils/format";
 
 gsap.registerPlugin(useGSAP);
 
@@ -56,15 +57,9 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
     card.style.setProperty("--my", `${e.clientY - rect.top}px`);
   };
 
-  const formatGB = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(1);
-  const usedGB = Number(formatGB(totalTrafficUsed));
-  const limitGB = Number(formatGB(totalTrafficLimit));
+  const usedGB = Number(toGB(totalTrafficUsed));
+  const limitGB = Number(toGB(totalTrafficLimit));
   const trafficPct = limitGB > 0 ? Math.min(100, (usedGB / limitGB) * 100) : 0;
-
-  const formatSpeed = (bytes: number) => {
-    if (bytes > 1024 * 1024) return { val: bytes / (1024 * 1024), unit: "MB/s" };
-    return { val: bytes / 1024, unit: "KB/s" };
-  };
 
   const up = formatSpeed(totalUpSpeed);
   const down = formatSpeed(totalDownSpeed);

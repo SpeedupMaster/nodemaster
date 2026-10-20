@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { NodeItem, RelayLink } from "../../types";
 import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
@@ -13,11 +13,8 @@ import {
   ShieldCheck,
   Sparkle,
   Globe,
-  ArrowRight,
   Broadcast,
   CheckCircle,
-  Plugs,
-  CaretRight,
   Shuffle,
   Laptop,
   Warning,
@@ -44,9 +41,9 @@ import {
 interface TopologyCanvasProps {
   nodes: NodeItem[];
   relays: RelayLink[];
-  onAddRelay: (relayData: Partial<RelayLink>) => Promise<any>;
-  onUpdateRelay?: (id: string, relayData: Partial<RelayLink>) => Promise<any>;
-  onDeleteRelay: (id: string) => Promise<any>;
+  onAddRelay: (relayData: Partial<RelayLink>) => Promise<unknown>;
+  onUpdateRelay?: (id: string, relayData: Partial<RelayLink>) => Promise<unknown>;
+  onDeleteRelay: (id: string) => Promise<unknown>;
 }
 
 export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
@@ -82,7 +79,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const uniqueRelays = Array.from(new Map(relays.map((r) => [r.id, r])).values());
 
   // Group nodes: Main connection nodes vs Dedicated unlock nodes
-  const mainNodes = nodes.filter((n) => n.type === "direct" || n.type === "exit");
+  const mainNodes = nodes.filter((n) => n.type === "direct");
   const unlockNodes = nodes.filter((n) => n.type === "unlock");
 
   // Regional indicator badge
@@ -176,8 +173,8 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const handleEditRelay = (relay: RelayLink) => {
     setEditingRelay(relay);
     setName(relay.name);
-    setMainId(relay.mainNodeId || relay.transitNodeId || "");
-    setUnlockId(relay.unlockNodeId || relay.exitNodeId || "");
+    setMainId(relay.mainNodeId);
+    setUnlockId(relay.unlockNodeId);
     setMode(relay.mode || (relay.customServices && relay.customServices.length > 0 ? "custom" : "ai_media"));
     setSelectedServices(
       relay.customServices && relay.customServices.length > 0
@@ -265,22 +262,13 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
       mode,
       customServices: mode === "custom" ? selectedServices : mode === "ai_media" ? getDefaultAiMediaServiceIds() : [],
       customDomains: mode === "custom" ? customDomains : [],
-      transitNodeId: mainId,
-      exitNodeId: unlockId,
-      transitPort: 443,
     };
 
     try {
-      let res;
       if (editingRelay && onUpdateRelay) {
-        res = await onUpdateRelay(editingRelay.id, payload);
+        await onUpdateRelay(editingRelay.id, payload);
       } else {
-        res = await onAddRelay(payload);
-      }
-
-      if (res && res.success === false) {
-        setErrorMessage(res.message || "保存失败，请检查是否已存在相同链路");
-        return;
+        await onAddRelay(payload);
       }
       setIsModalOpen(false);
       setEditingRelay(null);
@@ -306,11 +294,11 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
     if (activeUnlockFilter === "all") return true;
 
     const nodeChains = uniqueRelays.filter(
-      (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
+      (r) => r.mainNodeId === mn.id
     );
     if (activeUnlockFilter === "unbound") return nodeChains.length === 0;
     return nodeChains.some(
-      (r) => r.unlockNodeId === activeUnlockFilter || r.exitNodeId === activeUnlockFilter
+      (r) => r.unlockNodeId === activeUnlockFilter
     );
   });
 
@@ -424,7 +412,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {unlockNodes.map((un) => {
             const servingRelays = uniqueRelays.filter(
-              (r) => r.unlockNodeId === un.id || r.exitNodeId === un.id
+              (r) => r.unlockNodeId === un.id
             );
 
             const displayCountryTag = un.countryName?.includes("原生住宅")
@@ -556,7 +544,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   mainNodes.filter(
                     (m) =>
                       !uniqueRelays.some(
-                        (r) => r.mainNodeId === m.id || r.transitNodeId === m.id
+                        (r) => r.mainNodeId === m.id
                       )
                   ).length
                 }
@@ -569,7 +557,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {filteredMainNodes.map((mn) => {
             const chainedRelays = uniqueRelays.filter(
-              (r) => r.mainNodeId === mn.id || r.transitNodeId === mn.id
+              (r) => r.mainNodeId === mn.id
             );
 
             return (
@@ -615,7 +603,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                       <div className="flex items-center gap-1 truncate min-w-0 flex-1">
                         {chainedRelays.map((r) => {
                           const targetUnlock = nodes.find(
-                            (n) => n.id === (r.unlockNodeId || r.exitNodeId)
+                            (n) => n.id === r.unlockNodeId
                           );
                           const modeText =
                             r.mode === "all"
@@ -676,10 +664,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         <div className="space-y-3">
           {uniqueRelays.map((r) => {
             const main = nodes.find(
-              (n) => n.id === (r.mainNodeId || r.transitNodeId)
+              (n) => n.id === r.mainNodeId
             );
             const unlock = nodes.find(
-              (n) => n.id === (r.unlockNodeId || r.exitNodeId)
+              (n) => n.id === r.unlockNodeId
             );
             const isAiMediaMode = r.mode === "ai_media" || (!r.mode && (!r.customServices || r.customServices.length === 0));
             const isCustomMode = r.mode === "custom";
@@ -803,10 +791,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
 
                 <div className="flex items-center gap-4 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-rule/50 w-full sm:w-auto">
                   <div className="text-left sm:text-right">
-                    <span className="text-[11px] text-ink-muted block">综合链路时延</span>
-                    <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {r.latencyMs} ms
+                    <span className="text-[11px] text-ink-muted block">链路状态</span>
+                    <span className={`font-bold text-xs flex items-center gap-1 ${r.status === "active" ? "text-emerald-400" : "text-ink-muted"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${r.status === "active" ? "bg-emerald-400" : "bg-ink-muted"}`} />
+                      {r.status === "active" ? "启用" : "停用"}
                     </span>
                   </div>
 
@@ -1307,13 +1295,13 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
               <div className="flex items-center justify-between text-ink-muted">
                 <span>主力节点:</span>
                 <span className="text-ink font-semibold">
-                  {nodes.find((n) => n.id === deletingRelay.mainNodeId || n.id === deletingRelay.transitNodeId)?.name || deletingRelay.mainNodeId}
+                  {nodes.find((n) => n.id === deletingRelay.mainNodeId)?.name || deletingRelay.mainNodeId}
                 </span>
               </div>
               <div className="flex items-center justify-between text-ink-muted">
                 <span>解锁节点:</span>
                 <span className="text-purple-300 font-semibold">
-                  {nodes.find((n) => n.id === deletingRelay.unlockNodeId || n.id === deletingRelay.exitNodeId)?.name || deletingRelay.unlockNodeId}
+                  {nodes.find((n) => n.id === deletingRelay.unlockNodeId)?.name || deletingRelay.unlockNodeId}
                 </span>
               </div>
               <div className="flex items-center justify-between text-ink-muted">

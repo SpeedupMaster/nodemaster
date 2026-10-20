@@ -6,7 +6,6 @@ import {
   Copy,
   Check,
   Terminal,
-  ShieldCheck,
   Pulse,
   Cpu,
   Lightning,

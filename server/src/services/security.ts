@@ -14,6 +14,22 @@ export function newRealityKeyPair() {
   return { privateKey: privateKey.export({ format: 'jwk' }).d!, publicKey: publicKey.export({ format: 'jwk' }).x! };
 }
 
+const PBKDF2 = { iterations: 100000, keyLength: 64, digest: 'sha512' } as const;
+
+export function hashPassword(password: string, salt = crypto.randomBytes(16).toString('hex')): { hash: string; salt: string } {
+  const hash = crypto.pbkdf2Sync(password, salt, PBKDF2.iterations, PBKDF2.keyLength, PBKDF2.digest).toString('hex');
+  return { hash, salt };
+}
+
+export function verifyPassword(password: string, storedHash: string, salt: string): boolean {
+  const a = Buffer.from(hashPassword(password, salt).hash, 'hex');
+  const b = Buffer.from(storedHash, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/** Collision-free identifier with a readable prefix, e.g. `relay-1b9d6bcd…`. */
+export const newId = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+
 export function atomicWriteJson(file: string, data: unknown, backup = false): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const temporary = `${file}.tmp.${crypto.randomUUID()}`;
@@ -27,6 +43,7 @@ export function atomicWriteJson(file: string, data: unknown, backup = false): vo
   }
 }
 
+/** Start of the billing period containing `now`; a reset day past the month's end falls on its last day. */
 export function billingPeriod(now: number, resetDay: number): number {
   const date = new Date(now);
   const boundary = (year: number, month: number) => {

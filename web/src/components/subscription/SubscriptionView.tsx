@@ -21,14 +21,19 @@ import {
   FloppyDisk,
   X,
   ShieldCheck,
+  Plus,
+  Trash,
 } from "@phosphor-icons/react";
-import { renderOfficialServiceLogo, hasOfficialLogo } from "../traffic/BrandIcons";
+import { apiFetch } from "../../services/api";
+import { renderOfficialServiceLogo, hasOfficialLogo } from "./BrandIcons";
 
 interface SubscriptionViewProps {
   subscriptions: SubscriptionToken[];
   nodes: NodeItem[];
   relays?: RelayLink[];
-  onUpdateSubscription?: (id: string, updates: Partial<SubscriptionToken>) => Promise<any>;
+  onAddSubscription: (input: Partial<SubscriptionToken>) => Promise<SubscriptionToken>;
+  onUpdateSubscription: (id: string, updates: Partial<SubscriptionToken>) => Promise<unknown>;
+  onDeleteSubscription: (id: string) => Promise<unknown>;
 }
 
 interface PolicyGroupCardData {
@@ -291,7 +296,9 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   subscriptions,
   nodes,
   relays = [],
+  onAddSubscription,
   onUpdateSubscription,
+  onDeleteSubscription,
 }) => {
   const [selectedSubToken, setSelectedSubToken] = useState<string>("");
   const [format, setFormat] = useState<"clash" | "singbox" | "egern" | "base64">("clash");
@@ -328,10 +335,32 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     subscriptions[0];
 
   useEffect(() => {
-    if (subscriptions.length > 0 && !selectedSubToken) {
+    if (subscriptions.length > 0 && !subscriptions.some((s) => s.token === selectedSubToken)) {
       setSelectedSubToken(subscriptions[0].token);
     }
   }, [subscriptions, selectedSubToken]);
+
+  const [subActionError, setSubActionError] = useState<string | null>(null);
+
+  const handleAddSubscription = async () => {
+    setSubActionError(null);
+    try {
+      const sub = await onAddSubscription({ name: `订阅 ${subscriptions.length + 1}` });
+      setSelectedSubToken(sub.token);
+    } catch (err: any) {
+      setSubActionError(err.message || "创建订阅失败");
+    }
+  };
+
+  const handleDeleteSubscription = async (sub: SubscriptionToken) => {
+    if (!window.confirm(`删除订阅「${sub.name}」？已导入该链接的客户端将无法再更新。`)) return;
+    setSubActionError(null);
+    try {
+      await onDeleteSubscription(sub.id);
+    } catch (err: any) {
+      setSubActionError(err.message || "删除订阅失败");
+    }
+  };
 
   // Sync inputs when activeSub changes
   useEffect(() => {
@@ -352,10 +381,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   useEffect(() => {
     if (!activeSub?.token) return;
     setLoadingPreview(true);
-    fetch(`/api/sub/${activeSub.token}?format=${format}`)
+    apiFetch(`/api/sub/${activeSub.token}?format=${format}`)
       .then((r) => r.text())
       .then((txt) => setPreviewContent(txt))
-      .catch((e) => console.error(e))
+      .catch((e) => setPreviewContent(`# 预览加载失败: ${e.message}`))
       .finally(() => setLoadingPreview(false));
   }, [activeSub?.token, format]);
 
@@ -403,17 +432,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     setIsSavingUrl(true);
     setUrlError(null);
     try {
-      if (onUpdateSubscription) {
-        const res = await onUpdateSubscription(activeSub.id, {
-          name: customNameInput.trim() || activeSub.name,
-          token: cleanToken,
-          customHost: cleanHost,
-        });
-        if (res && !res.success) {
-          setUrlError(res.message || "保存失败");
-          return;
-        }
-      }
+      await onUpdateSubscription(activeSub.id, {
+        name: customNameInput.trim() || activeSub.name,
+        token: cleanToken,
+        customHost: cleanHost,
+      });
       setSelectedSubToken(cleanToken);
       setIsEditingUrl(false);
     } catch (err: any) {
@@ -475,7 +498,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
     // 1. 直连节点 (排除纯 Shadowsocks / unlock / exit 落地机)
     nodes.forEach((n) => {
-      const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock" || n.type === "exit";
+      const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock";
       if (n.status !== "offline" && !isNakedUnlock && n.reality) {
         list.push({
           name: n.name,
@@ -489,10 +512,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     if (relays && relays.length > 0) {
       relays.forEach((r) => {
         if (r.status !== "active") return;
-        const mainId = r.mainNodeId || r.transitNodeId;
-        const unlockId = r.unlockNodeId || r.exitNodeId;
-        const main = nodes.find((n) => n.id === mainId);
-        const unlock = nodes.find((n) => n.id === unlockId);
+        const main = nodes.find((n) => n.id === r.mainNodeId);
+        const unlock = nodes.find((n) => n.id === r.unlockNodeId);
         if (main && unlock && main.reality) {
           list.push({
             name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
@@ -670,8 +691,50 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </div>
         </div>
 
+        {/* Subscription selector */}
+        <div className="mt-4 flex items-center gap-1.5 flex-wrap">
+          {subscriptions.map((s) => {
+            const active = s.id === activeSub?.id;
+            return (
+              <span
+                key={s.id}
+                className={`inline-flex items-center rounded-md border text-xs transition-colors ${
+                  active ? "bg-accent/15 border-accent/40 text-accent font-semibold" : "bg-paper border-rule text-ink-secondary"
+                }`}
+              >
+                <button type="button" onClick={() => setSelectedSubToken(s.token)} className="px-2.5 py-1 cursor-pointer">
+                  {s.name}
+                </button>
+                {active && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSubscription(s)}
+                    className="pr-2 pl-0.5 py-1 text-ink-muted hover:text-rose-400 cursor-pointer"
+                    title="删除此订阅"
+                  >
+                    <Trash className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </span>
+            );
+          })}
+          <button
+            type="button"
+            onClick={handleAddSubscription}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-dashed border-rule text-xs text-ink-muted hover:text-accent hover:border-accent/40 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            新建订阅
+          </button>
+          {subActionError && <span className="text-xs text-rose-400">{subActionError}</span>}
+        </div>
+
         {/* URL Box & Custom Editor */}
-        {!isEditingUrl ? (
+        {!activeSub ? (
+          <div className="mt-4 p-3 rounded-lg bg-paper border border-rule text-xs text-ink-muted">
+            暂无订阅，点击「新建订阅」生成订阅链接。
+          </div>
+        ) : !isEditingUrl ? (
           <div className="mt-4 p-3 rounded-lg bg-paper border border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <span className="text-xs font-mono text-ink-secondary truncate select-all">

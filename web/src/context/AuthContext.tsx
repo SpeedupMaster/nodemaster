@@ -1,20 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { AdminUser } from "../types";
-import {
-  getStoredToken,
-  setStoredToken,
-  getStoredUser,
-  setStoredUser,
-} from "../services/api";
+import { AdminUser, AuthSession } from "../types";
+import { api, getStoredToken, setStoredToken, getStoredUser, setStoredUser } from "../services/api";
+
+type Result = { success: boolean; message?: string };
 
 interface AuthContextType {
   user: AdminUser | null;
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  login: (username: string, password: string) => Promise<Result>;
   logout: () => Promise<void>;
-  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<Result>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,169 +22,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Validate session on startup
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedToken = getStoredToken();
-      if (!storedToken) {
-        setIsAuthenticated(false);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
-        });
-        const data = await res.json();
-        if (data.success && data.data) {
-          setUser(data.data);
-          setStoredUser(data.data);
-          setIsAuthenticated(true);
-        } else {
-          setStoredToken(null);
-          setStoredUser(null);
-          setToken(null);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error("[Auth] Session validation failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+  const startSession = useCallback((session: AuthSession) => {
+    setStoredToken(session.token);
+    setStoredUser(session.user);
+    setToken(session.token);
+    setUser(session.user);
+    setIsAuthenticated(true);
   }, []);
 
-  // Listen to 401 unauthorized events from any api request
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      setStoredToken(null);
-      setStoredUser(null);
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-    };
-
-    window.addEventListener("nodemaster:unauthorized", handleUnauthorized);
-    return () => {
-      window.removeEventListener("nodemaster:unauthorized", handleUnauthorized);
-    };
+  const endSession = useCallback(() => {
+    setStoredToken(null);
+    setToken(null);
+    setUser(null);
+    setIsAuthenticated(false);
   }, []);
+
+  // Validate the stored session on startup; a 401 ends it through the unauthorized event
+  useEffect(() => {
+    if (!getStoredToken()) {
+      endSession();
+      setLoading(false);
+      return;
+    }
+    api<AdminUser>("GET", "/api/auth/me")
+      .then((profile) => {
+        setUser(profile);
+        setStoredUser(profile);
+        setIsAuthenticated(true);
+      })
+      .catch((err) => console.error("[Auth] Session validation failed:", err))
+      .finally(() => setLoading(false));
+  }, [endSession]);
+
+  useEffect(() => {
+    window.addEventListener("nodemaster:unauthorized", endSession);
+    return () => window.removeEventListener("nodemaster:unauthorized", endSession);
+  }, [endSession]);
 
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        return {
-          success: false,
-          message: data.message || "登录失败，请检查账号密码",
-        };
-      }
-
-      const receivedToken = data.data.token;
-      const receivedUser = data.data.user;
-
-      setStoredToken(receivedToken);
-      setStoredUser(receivedUser);
-      setToken(receivedToken);
-      setUser(receivedUser);
-      setIsAuthenticated(true);
-
+      startSession(await api<AuthSession>("POST", "/api/auth/login", { username, password }));
       return { success: true };
     } catch (err: any) {
-      return {
-        success: false,
-        message: err.message || "网络请求异常，请检查服务器连接",
-      };
+      return { success: false, message: err.message || "登录失败，请检查账号密码" };
     }
-  }, []);
+  }, [startSession]);
 
   const logout = useCallback(async () => {
     try {
-      const currentToken = getStoredToken();
-      if (currentToken) {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${currentToken}`,
-          },
-        }).catch(() => {});
-      }
+      if (getStoredToken()) await api("POST", "/api/auth/logout").catch(() => {});
     } finally {
-      setStoredToken(null);
-      setStoredUser(null);
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
+      endSession();
     }
-  }, []);
+  }, [endSession]);
 
   const changePassword = useCallback(async (oldPassword: string, newPassword: string) => {
     try {
-      const currentToken = getStoredToken();
-      const res = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${currentToken}`,
-        },
-        body: JSON.stringify({ oldPassword, newPassword }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        return {
-          success: false,
-          message: data.message || "密码修改失败",
-        };
-      }
-
-      // If server returned a refreshed token
-      if (data.data?.token) {
-        setStoredToken(data.data.token);
-        setToken(data.data.token);
-      }
-      if (data.data?.user) {
-        setStoredUser(data.data.user);
-        setUser(data.data.user);
-      }
-
-      return {
-        success: true,
-        message: data.message || "密码修改成功",
-      };
+      // The server revokes all sessions and returns a fresh token for this one
+      startSession(await api<AuthSession>("POST", "/api/auth/change-password", { oldPassword, newPassword }));
+      return { success: true, message: "密码修改成功" };
     } catch (err: any) {
-      return {
-        success: false,
-        message: err.message || "网络请求失败，请稍后重试",
-      };
+      return { success: false, message: err.message || "密码修改失败" };
     }
-  }, []);
+  }, [startSession]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated,
-        loading,
-        login,
-        logout,
-        changePassword,
-      }}
-    >
+    <AuthContext.Provider value={{ user, token, isAuthenticated, loading, login, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

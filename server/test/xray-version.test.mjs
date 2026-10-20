@@ -1,7 +1,5 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { EventEmitter } from 'node:events';
-import https from 'node:https';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,20 +9,12 @@ process.env.NODEMASTER_DATA_DIR = directory;
 process.env.NODEMASTER_ADMIN_PASSWORD = 'version-test-password-123';
 const { db } = await import('../dist/db/index.js');
 const { getLatestXrayRelease, getXrayVersionMatrix, batchUpgradeXray } = await import('../dist/services/xrayVersionService.js');
-const originalGet = https.get;
+const originalFetch = globalThis.fetch;
 let fail = false, prerelease = false, requests = 0;
-https.get = (_options, callback) => {
+globalThis.fetch = async () => {
   requests++;
-  const req = new EventEmitter();
-  req.destroy = () => {};
-  queueMicrotask(() => {
-    if (fail) { req.emit('error', new Error('offline')); return; }
-    const res = new EventEmitter(); res.statusCode = 200;
-    callback(res);
-    res.emit('data', JSON.stringify({ tag_name: 'v26.3.27', published_at: '2026-03-27T17:51:11Z', prerelease }));
-    res.emit('end');
-  });
-  return req;
+  if (fail) throw new Error('offline');
+  return new Response(JSON.stringify({ tag_name: 'v26.3.27', published_at: '2026-03-27T17:51:11Z', prerelease }));
 };
 
 test('cached checks retain their timestamp and forced failures reject stale success', async () => {
@@ -58,11 +48,11 @@ test('batch upgrade uses explicit target offline and skips newer, equal and unkn
   assert.equal(requests, count);
   assert.equal(db.getNodeById('old').desiredXrayVersion, 'v26.3.27');
   for (const id of ['same', 'new', 'unknown', 'invalid']) assert.equal(db.getNodeById(id).desiredXrayVersion, undefined);
-  await assert.rejects(batchUpgradeXray('v1;bad'), /Invalid release version/);
+  await assert.rejects(batchUpgradeXray('v1;bad'), /版本号格式无效/);
 });
 
 after(() => {
-  https.get = originalGet;
+  globalThis.fetch = originalFetch;
   db.flush();
   fs.rmSync(directory, { recursive: true, force: true });
 });

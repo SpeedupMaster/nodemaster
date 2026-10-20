@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { NodeItem } from "../../types";
+import { api } from "../../services/api";
 import { Copy, Check } from "@phosphor-icons/react";
 
 interface ConfigModalProps {
@@ -17,14 +18,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ node, onClose }) => {
   useEffect(() => {
     if (!node) return;
     setLoading(true);
-    fetch(`/api/nodes/${node.id}/xray-config`)
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.success) {
-          setConfigJson(JSON.stringify(res.data, null, 2));
-        }
-      })
-      .catch((e) => console.error(e))
+    api("GET", `/api/nodes/${node.id}/xray-config`)
+      .then((config) => setConfigJson(JSON.stringify(config, null, 2)))
+      .catch((e) => setConfigJson(`// 加载失败: ${e.message}`))
       .finally(() => setLoading(false));
   }, [node]);
 

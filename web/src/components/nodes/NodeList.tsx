@@ -1,11 +1,12 @@
 import React, { useState, useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { NodeItem } from "../../types";
+import { NodeItem, NodeInput } from "../../types";
+import { api } from "../../services/api";
 import { NodeCard } from "./NodeCard";
 import { ConfigModal } from "./ConfigModal";
 import { InstallModal } from "./InstallModal";
-import { EditNodeModal } from "./EditNodeModal";
+import { NodeForm } from "./NodeForm";
 import { XrayVersionModal } from "./XrayVersionModal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
@@ -17,7 +18,7 @@ interface NodeListProps {
   nodes: NodeItem[];
   onResetTraffic: (id: string) => void;
   onDelete: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<NodeItem>) => Promise<any> | any;
+  onUpdate: (id: string, input: NodeInput) => Promise<unknown>;
   onRefreshData?: () => void;
 }
 
@@ -45,7 +46,7 @@ export const NodeList: React.FC<NodeListProps> = ({
 
     if (!matchSearch) return false;
     if (typeFilter === "all") return true;
-    if (typeFilter === "direct") return node.type === "direct" || node.type === "exit";
+    if (typeFilter === "direct") return node.type === "direct";
     if (typeFilter === "unlock") return node.type === "unlock";
     if (typeFilter === "circuit_broken") return node.status === "circuit_broken";
     return true;
@@ -79,11 +80,8 @@ export const NodeList: React.FC<NodeListProps> = ({
 
   const handleSyncNode = async (node: NodeItem) => {
     try {
-      const res = await fetch(`/api/nodes/${node.id}/sync`, { method: "POST" });
-      const data = await res.json();
-      if (data.success && onRefreshData) {
-        onRefreshData();
-      }
+      // The server pushes the bumped node over the WebSocket
+      await api("POST", `/api/nodes/${node.id}/sync`);
     } catch (e) {
       console.error("触发节点配置同步失败:", e);
     }
@@ -173,11 +171,11 @@ export const NodeList: React.FC<NodeListProps> = ({
         node={activeInstallNode}
         onClose={() => setActiveInstallNode(null)}
       />
-      <EditNodeModal
+      <NodeForm
         node={activeEditNode}
         isOpen={!!activeEditNode}
         onClose={() => setActiveEditNode(null)}
-        onSubmit={onUpdate}
+        onSubmit={(input) => onUpdate(activeEditNode!.id, input)}
       />
       <XrayVersionModal
         isOpen={isVersionModalOpen}

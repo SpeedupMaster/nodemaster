@@ -18,6 +18,12 @@ import {
 } from "@phosphor-icons/react";
 import { NodeItem, NodeLatencyHistory } from "../../types";
 import { Badge } from "../common/Badge";
+import { api } from "../../services/api";
+
+// Line colours for latency targets, assigned by position
+const SERIES_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"];
+type LatencySeries = NodeLatencyHistory & { color: string };
+type LoadHistory = { timestamps: number[]; cpu: number[]; mem: number[]; disk: number[]; netIn: number[]; netOut: number[] };
 
 gsap.registerPlugin(useGSAP);
 
@@ -65,15 +71,8 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   const isLongPressTriggered = useRef(false);
 
   // Latency & Load Data State
-  const [latencyData, setLatencyData] = useState<NodeLatencyHistory[]>([]);
-  const [loadData, setLoadData] = useState<{
-    timestamps: number[];
-    cpu: number[];
-    mem: number[];
-    disk: number[];
-    netIn: number[];
-    netOut: number[];
-  } | null>(null);
+  const [latencyData, setLatencyData] = useState<LatencySeries[]>([]);
+  const [loadData, setLoadData] = useState<LoadHistory | null>(null);
   const [loading, setLoading] = useState(false);
 
   const latencySvgRef = useRef<SVGSVGElement>(null);
@@ -158,27 +157,21 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
     setLoadData(null);
     const controller = new AbortController();
 
-    if (activeTab === "latency") {
-      fetch(`/api/ping/node-history/${node.id}?range=${timeRange}`, { signal: controller.signal })
-        .then((r) => r.json())
-        .then((res) => {
-          if (res.success && !controller.signal.aborted) {
-            setLatencyData(res.data);
-          }
-        })
-        .catch((err) => console.error("Fetch latency history failed:", err))
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    } else {
-      fetch(`/api/nodes/${node.id}/history?range=${timeRange}`, { signal: controller.signal })
-        .then((r) => r.json())
-        .then((res) => {
-          if (res.success && !controller.signal.aborted) {
-            setLoadData(res.data?.timestamps?.length ? res.data : null);
-          }
-        })
-        .catch((err) => console.error("Fetch load history failed:", err))
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    }
+    const request =
+      activeTab === "latency"
+        ? api<NodeLatencyHistory[]>("GET", `/api/ping/node-history/${node.id}?range=${timeRange}`, undefined, controller.signal).then(
+            (series) => setLatencyData(series.map((s, i) => ({ ...s, color: SERIES_COLORS[i % SERIES_COLORS.length] }))),
+          )
+        : api<LoadHistory>("GET", `/api/nodes/${node.id}/history?range=${timeRange}`, undefined, controller.signal).then((history) =>
+            setLoadData(history?.timestamps?.length ? history : null),
+          );
+    request
+      .catch((err) => {
+        if (!controller.signal.aborted) console.error(`Fetch ${activeTab} history failed:`, err);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
     return () => controller.abort();
   }, [node?.id, isOpen, activeTab, timeRange]);
 

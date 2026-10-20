@@ -8,6 +8,8 @@ services:
     environment:
       - PORT=3880
       - HOST=0.0.0.0
+      # Billing periods, "today" and daily traffic buckets follow this timezone
+      - TZ=Asia/Shanghai
       # - NODEMASTER_ADMIN_PASSWORD=YourStrongPasswordHere
       # Behind nginx/Caddy: trust the proxy so client IP and https are detected correctly
       # - TRUST_PROXY=1

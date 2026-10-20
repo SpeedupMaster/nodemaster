@@ -1,7 +1,7 @@
 import React from "react";
 
 interface BadgeProps {
-  variant?: "online" | "warning" | "danger" | "neutral" | "accent" | "transit" | "exit";
+  variant?: "online" | "warning" | "danger" | "neutral" | "accent" | "unlock";
   children: React.ReactNode;
   pulse?: boolean;
   size?: "sm" | "md";
@@ -23,8 +23,7 @@ export const Badge: React.FC<BadgeProps> = ({
     danger: "bg-rose-500/10 text-rose-400 border-rose-500/30",
     neutral: "bg-paper-3 text-ink-secondary border-rule",
     accent: "bg-accent/10 text-accent border-accent/30",
-    transit: "bg-sky-500/10 text-sky-400 border-sky-500/30",
-    exit: "bg-purple-500/10 text-purple-300 border-purple-500/30",
+    unlock: "bg-purple-500/10 text-purple-300 border-purple-500/30",
   }[variant];
 
   const dotColors = {
@@ -33,8 +32,7 @@ export const Badge: React.FC<BadgeProps> = ({
     danger: "bg-rose-400",
     neutral: "bg-ink-muted",
     accent: "bg-accent",
-    transit: "bg-sky-400",
-    exit: "bg-purple-400",
+    unlock: "bg-purple-400",
   }[variant];
 
   return (

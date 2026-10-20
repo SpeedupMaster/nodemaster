@@ -1,6 +1,9 @@
 import crypto from "crypto";
+import { InputError } from "./validation.js";
 import { newRealityKeyPair } from "./security.js";
-import { NodeItem, XrayRealityConfig, ShadowsocksConfig, RoutingRule, RelayLink } from "../types/index.js";
+import { ROUTING_RULES, xrayConditions } from "./routingRules.js";
+import { DEFAULT_SNI, DEFAULT_SS_CIPHER, REALITY_FINGERPRINT, REALITY_FLOW, SS_CIPHERS, ssKeyLength } from "../constants.js";
+import type { NodeItem, XrayRealityConfig, ShadowsocksConfig, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
 
 // Email tags identify VLESS clients in routing rules ("user" field)
@@ -266,355 +269,197 @@ export const UNLOCK_SERVICES: ServiceDefinition[] = [
   },
 ];
 
-// Helper to generate reality credentials
-export function generateRealityCredentials(serverName = "www.microsoft.com"): XrayRealityConfig {
-  const uuid = crypto.randomUUID();
+export function generateRealityCredentials(serverName = DEFAULT_SNI): XrayRealityConfig {
   const { privateKey, publicKey } = newRealityKeyPair();
-  const shortId = crypto.randomBytes(8).toString("hex");
-
   return {
-    uuid,
-    flow: "xtls-rprx-vision",
+    uuid: crypto.randomUUID(),
+    flow: REALITY_FLOW,
     serverName,
     publicKey,
     privateKey,
-    shortId,
-    fingerprint: "chrome",
+    shortId: crypto.randomBytes(8).toString("hex"),
+    fingerprint: REALITY_FINGERPRINT,
     dest: `${serverName}:443`,
   };
 }
 
-// Helper to generate shadowsocks credentials for unlock nodes
-export function generateShadowsocksCredentials(
-  method = "2022-blake3-aes-128-gcm",
-  password?: string
-): ShadowsocksConfig {
-  const methods = ["2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305", "aes-128-gcm", "aes-256-gcm", "chacha20-ietf-poly1305"];
-  if (!methods.includes(method)) throw new Error("Unsupported Shadowsocks cipher");
-  const length = method === "2022-blake3-aes-128-gcm" ? 16 : 32;
-  if (password && method.startsWith("2022-") && Buffer.from(password, "base64").length !== length) throw new Error(`Shadowsocks password must encode ${length} bytes`);
+export function generateShadowsocksCredentials(method: string = DEFAULT_SS_CIPHER, password?: string): ShadowsocksConfig {
+  if (!(SS_CIPHERS as readonly string[]).includes(method)) throw new InputError("不支持的 Shadowsocks 加密方式");
+  const length = ssKeyLength(method);
+  if (password && method.startsWith("2022-") && Buffer.from(password, "base64").length !== length) {
+    throw new InputError(`Shadowsocks 2022 密码须为 ${length} 字节的 Base64 编码`);
+  }
+  return { method, password: password || crypto.randomBytes(length).toString("base64") };
+}
+
+const SNIFFING = { enabled: true, destOverride: ["http", "tls", "quic"], routeOnly: true };
+
+/**
+ * Generating fresh keys here would hand the node a config that matches neither its previous one nor
+ * the subscriptions, so missing credentials are an error the agent reports back as a failed sync.
+ */
+function requireCredentials<K extends "reality" | "shadowsocks">(node: NodeItem, kind: K): NonNullable<NodeItem[K]> {
+  const value = node[kind];
+  if (!value) throw new Error(`Node ${node.id} has no ${kind} credentials`);
+  return value as NonNullable<NodeItem[K]>;
+}
+
+function unlockOutbound(unlock: NodeItem) {
+  if (unlock.protocol === "shadowsocks") {
+    const ss = requireCredentials(unlock, "shadowsocks");
+    return {
+      tag: "UNLOCK_OUT",
+      protocol: "shadowsocks",
+      settings: {
+        servers: [{
+          address: unlock.ip,
+          port: unlock.port,
+          method: ss.method,
+          password: ss.password,
+          // UDP-over-TCP is only implemented for the 2022 ciphers on the Xray server side
+          ...(ss.method.startsWith("2022-") ? { uot: true } : {}),
+        }],
+      },
+    };
+  }
+  const r = requireCredentials(unlock, "reality");
   return {
-    method,
-    // 16-byte base64 password is valid for 2022-blake3-aes-128-gcm and standard AEAD
-    password: password || crypto.randomBytes(length).toString("base64"),
+    tag: "UNLOCK_OUT",
+    protocol: "vless",
+    settings: { vnext: [{ address: unlock.ip, port: unlock.port, users: [{ id: r.uuid, flow: r.flow, encryption: "none" }] }] },
+    streamSettings: {
+      network: "raw",
+      security: "reality",
+      realitySettings: { show: false, serverName: r.serverName, publicKey: r.publicKey, shortId: r.shortId, fingerprint: r.fingerprint },
+    },
   };
 }
 
-// Generate the Xray server-side config.json for a node (including chained unlock proxy)
-export function generateXrayServerConfig(
-  node: NodeItem,
-  targetUnlockNode?: NodeItem,
-  unlockMode: "ai_media" | "all" | "custom" = "ai_media",
-  relay?: RelayLink
-) {
-  // Outbounds definition
-  const outbounds: any[] = [
-    {
-      tag: "DIRECT",
-      protocol: "freedom",
-    },
-    {
-      tag: "BLOCK",
-      protocol: "blackhole",
-    },
-  ];
-
-  // If paired with an Unlock Node, append UNLOCK_OUT outbound
-  if (targetUnlockNode) {
-    if (targetUnlockNode.protocol === "shadowsocks" || targetUnlockNode.shadowsocks) {
-      // Unlock node uses lightweight Shadowsocks (SS 2022 / AEAD)
-      const ss = targetUnlockNode.shadowsocks || generateShadowsocksCredentials();
-      outbounds.push({
-        tag: "UNLOCK_OUT",
-        protocol: "shadowsocks",
-        settings: {
-          servers: [
-            {
-              address: targetUnlockNode.ip,
-              port: targetUnlockNode.port || 8388,
-              method: ss.method || "2022-blake3-aes-128-gcm",
-              password: ss.password,
-              // UDP-over-TCP is only implemented for the 2022 ciphers on the Xray server side
-              ...(String(ss.method || "2022-blake3-aes-128-gcm").startsWith("2022-") ? { uot: true } : {}),
-            },
-          ],
-        },
-      });
-    } else if (targetUnlockNode.reality) {
-      // Fallback: VLESS-Reality egress chain
-      const ur = targetUnlockNode.reality;
-      outbounds.push({
-        tag: "UNLOCK_OUT",
-        protocol: "vless",
-        settings: {
-          vnext: [
-            {
-              address: targetUnlockNode.ip,
-              port: targetUnlockNode.port || 443,
-              users: [
-                {
-                  id: ur.uuid,
-                  flow: ur.flow || "xtls-rprx-vision",
-                  encryption: "none",
-                },
-              ],
-            },
-          ],
-        },
-        streamSettings: {
-          network: "raw",
-          security: "reality",
-          realitySettings: {
-            show: false,
-            serverName: ur.serverName,
-            publicKey: ur.publicKey,
-            shortId: ur.shortId,
-            fingerprint: ur.fingerprint || "chrome",
-          },
-        },
-      });
-    }
+/** Domain / IP matchers for a relay in "custom" mode (or with explicitly selected services). */
+function customUnlockMatchers(relay: RelayLink) {
+  const domains: string[] = [];
+  const ips: string[] = [];
+  for (const svc of UNLOCK_SERVICES.filter((s) => relay.customServices?.includes(s.id))) {
+    domains.push(...svc.geosite.map((g) => `geosite:${g}`), ...svc.domains.map((d) => `domain:${d}`));
+    ips.push(...(svc.geoip || []).map((g) => `geoip:${g}`), ...(svc.ips || []));
   }
+  for (const entry of relay.customDomains || []) {
+    const value = entry.trim();
+    if (!value) continue;
+    const isIp = value.startsWith("geoip:") || value.includes("/") || /^\d+\.\d+\.\d+\.\d+$/.test(value) || /^[0-9a-f]*:[0-9a-f:]+$/i.test(value);
+    if (isIp) ips.push(value);
+    else domains.push(value.includes(":") ? value : `domain:${value}`);
+  }
+  return { domains: [...new Set(domains)], ips: [...new Set(ips)] };
+}
 
-  // Routing.
+/** Generates the Xray server config.json for a node, including the chained unlock egress if any. */
+export function generateXrayServerConfig(node: NodeItem, unlock?: NodeItem, relay?: RelayLink) {
+  const outbounds: object[] = [{ tag: "DIRECT", protocol: "freedom" }, { tag: "BLOCK", protocol: "blackhole" }];
+  if (unlock) outbounds.push(unlockOutbound(unlock));
+
   // The main node exposes two VLESS clients: the plain direct entry and, when a relay is active, a
   // dedicated chain client used by the 🔗 subscription entry. Only the chain client is ever routed to
   // UNLOCK_OUT, so the two entries behave differently. Shadowsocks inbounds cannot tell users apart,
   // so for them the relay applies to every connection (legacy behaviour).
-  const vlessTag = `VLESS_REALITY_${node.id}`;
-  const ssTag = `SS_${node.id}`;
-  const chainUuid = targetUnlockNode && node.protocol !== "shadowsocks" ? relay?.chainUuid : undefined;
-  const chainScope: Record<string, unknown> = chainUuid ? { user: [CHAIN_CLIENT_EMAIL] } : {};
+  const inboundTag = node.protocol === "shadowsocks" ? `SS_${node.id}` : `VLESS_REALITY_${node.id}`;
+  const chainUuid = unlock && node.protocol !== "shadowsocks" ? relay?.chainUuid : undefined;
+  const chainScope = chainUuid ? { user: [CHAIN_CLIENT_EMAIL] } : {};
 
   // Server side, "private" means the VPS's own loopback/LAN/cloud metadata: never reachable through
-  // the proxy, whatever the panel rules say (a client-side "LAN direct" rule must not become an SSRF).
-  const routingRules: any[] = [
+  // the proxy, whatever the rules say (a client-side "LAN direct" rule must not become an SSRF).
+  const rules: object[] = [
     { type: "field", ip: ["geoip:private"], outboundTag: "BLOCK" },
     { type: "field", domain: ["geosite:private"], outboundTag: "BLOCK" },
     { type: "field", protocol: ["bittorrent"], outboundTag: "BLOCK" },
   ];
 
-  if (targetUnlockNode && unlockMode === "all") {
-    routingRules.push({ type: "field", inboundTag: [vlessTag, ssTag], ...chainScope, outboundTag: "UNLOCK_OUT" });
-  } else if (targetUnlockNode && (unlockMode === "custom" || (relay?.customServices?.length ?? 0) > 0)) {
-    const matchedDomains: string[] = [];
-    const matchedIps: string[] = [];
-
-    for (const sId of relay?.customServices || []) {
-      const svc = UNLOCK_SERVICES.find((s) => s.id === sId);
-      if (svc) {
-        svc.geosite.forEach((g) => matchedDomains.push(g.startsWith("geosite:") ? g : `geosite:${g}`));
-        svc.domains.forEach((d) => matchedDomains.push(d.includes(":") ? d : `domain:${d}`));
-        if (svc.geoip) svc.geoip.forEach((g) => matchedIps.push(g.startsWith("geoip:") ? g : `geoip:${g}`));
-        if (svc.ips) svc.ips.forEach((ip) => matchedIps.push(ip));
-      }
-    }
-
-    for (const d of relay?.customDomains || []) {
-      const trimmed = d.trim();
-      if (!trimmed) continue;
-      if (trimmed.startsWith("geoip:") || /^\d+\.\d+\.\d+\.\d+/.test(trimmed) || trimmed.includes("/")) {
-        matchedIps.push(trimmed);
-      } else {
-        matchedDomains.push(trimmed.includes(":") ? trimmed : `domain:${trimmed}`);
-      }
-    }
-
-    // Xray ORs the conditions inside one rule only across values of the same field, so domains and
-    // IPs need separate rules.
-    if (matchedDomains.length > 0) {
-      routingRules.push({ type: "field", ...chainScope, domain: Array.from(new Set(matchedDomains)), outboundTag: "UNLOCK_OUT" });
-    }
-    if (matchedIps.length > 0) {
-      routingRules.push({ type: "field", ...chainScope, ip: Array.from(new Set(matchedIps)), outboundTag: "UNLOCK_OUT" });
-    }
+  const mode = relay?.mode || "ai_media";
+  if (unlock && mode === "all") {
+    rules.push({ type: "field", inboundTag: [inboundTag], ...chainScope, outboundTag: "UNLOCK_OUT" });
+  } else if (unlock && relay && (mode === "custom" || (relay.customServices?.length ?? 0) > 0)) {
+    // Xray ORs values only within one field, so domains and IPs need separate rules.
+    const { domains, ips } = customUnlockMatchers(relay);
+    if (domains.length) rules.push({ type: "field", ...chainScope, domain: domains, outboundTag: "UNLOCK_OUT" });
+    if (ips.length) rules.push({ type: "field", ...chainScope, ip: ips, outboundTag: "UNLOCK_OUT" });
   } else {
-    // Panel routing rules. On the server only BLOCK and UNLOCK_OUT matter: everything else (DIRECT,
-    // and PROXY, which on a client means "use the proxy" — the server IS the proxy) leaves through the
-    // default DIRECT outbound. Mapping PROXY to UNLOCK_OUT used to send all fallback traffic through
-    // the unlock node.
-    for (const rule of db.getRoutingRules().filter((r) => r.enabled)) {
-      if (rule.inboundNodeIds && rule.inboundNodeIds.length > 0 && !rule.inboundNodeIds.includes(node.id)) continue;
-
-      let outboundTag: string;
-      if (rule.targetOutbound === "BLOCK") outboundTag = "BLOCK";
-      else if (rule.targetOutbound === "UNLOCK_OUT" && targetUnlockNode) outboundTag = "UNLOCK_OUT";
-      else outboundTag = "DIRECT";
-
-      const conditions: Record<string, unknown> = {};
-      const domains = [
-        ...(rule.geosite || []).map((g) => (g.startsWith("geosite:") ? g : `geosite:${g}`)),
-        ...(rule.domains || []).map((d) => (d.includes(":") ? d : `domain:${d}`)),
-      ];
-      const ips = [...(rule.geoip || []).map((g) => (g.startsWith("geoip:") ? g : `geoip:${g}`)), ...(rule.ips || [])];
-      if (rule.protocol && rule.protocol.length > 0) conditions.protocol = rule.protocol;
-      if (rule.port && rule.port.trim()) conditions.port = rule.port.trim();
-      // A rule without any condition is a catch-all (e.g. the fallback preset); on the server that is
-      // simply the default outbound, and emitting it would shadow every rule after it.
-      if (domains.length === 0 && ips.length === 0 && Object.keys(conditions).length === 0) continue;
-
+    // Built-in rules. On the server only BLOCK and UNLOCK_OUT matter: everything else (DIRECT, and
+    // PROXY, which on a client means "use the proxy" — the server IS the proxy) leaves through the
+    // default DIRECT outbound.
+    for (const rule of ROUTING_RULES) {
+      const outboundTag = rule.targetOutbound === "BLOCK" ? "BLOCK" : rule.targetOutbound === "UNLOCK_OUT" && unlock ? "UNLOCK_OUT" : "DIRECT";
+      const { domain, ip } = xrayConditions(rule);
+      const protocol = rule.protocol?.length ? { protocol: rule.protocol } : {};
       const scope = outboundTag === "UNLOCK_OUT" ? chainScope : {};
-      if (domains.length > 0) routingRules.push({ type: "field", ...scope, ...conditions, domain: domains, outboundTag });
-      if (ips.length > 0) routingRules.push({ type: "field", ...scope, ...conditions, ip: ips, outboundTag });
-      if (domains.length === 0 && ips.length === 0) routingRules.push({ type: "field", ...scope, ...conditions, outboundTag });
+      // A rule without any condition is a catch-all (the fallback rule); on the server that is simply
+      // the default outbound, and emitting it would shadow every rule after it.
+      if (domain.length) rules.push({ type: "field", ...scope, ...protocol, domain, outboundTag });
+      if (ip.length) rules.push({ type: "field", ...scope, ...protocol, ip, outboundTag });
+      if (!domain.length && !ip.length && rule.protocol?.length) rules.push({ type: "field", ...scope, ...protocol, outboundTag });
     }
-  }
-
-  // Define inbounds based on node protocol
-  const inbounds: any[] = [];
-
-  if (node.protocol === "shadowsocks") {
-    // Unlock node uses native Shadowsocks inbound
-    const ss = node.shadowsocks || generateShadowsocksCredentials();
-    inbounds.push({
-      tag: `SS_${node.id}`,
-      listen: "0.0.0.0",
-      port: node.port || 8388,
-      protocol: "shadowsocks",
-      settings: {
-        method: ss.method || "2022-blake3-aes-128-gcm",
-        password: ss.password,
-        network: "tcp,udp",
-      },
-      sniffing: {
-        enabled: true,
-        destOverride: ["http", "tls", "quic"],
-        routeOnly: true,
-      },
-    });
-  } else {
-    // Direct node uses VLESS Reality inbound
-    const reality = node.reality || generateRealityCredentials();
-    inbounds.push({
-      tag: `VLESS_REALITY_${node.id}`,
-      listen: "0.0.0.0",
-      port: node.port || 443,
-      protocol: "vless",
-      settings: {
-        clients: [
-          {
-            id: reality.uuid,
-            flow: reality.flow || "xtls-rprx-vision",
-            email: DIRECT_CLIENT_EMAIL,
-          },
-          ...(chainUuid
-            ? [{ id: chainUuid, flow: reality.flow || "xtls-rprx-vision", email: CHAIN_CLIENT_EMAIL }]
-            : []),
-        ],
-        decryption: "none",
-      },
-      sniffing: {
-        enabled: true,
-        destOverride: ["http", "tls", "quic"],
-        routeOnly: true,
-      },
-      streamSettings: {
-        network: "raw",
-        security: "reality",
-        realitySettings: {
-          show: false,
-          target: reality.dest || "www.microsoft.com:443",
-          xver: 0,
-          serverNames: [reality.serverName || "www.microsoft.com"],
-          privateKey: reality.privateKey,
-          shortIds: [reality.shortId],
-          maxTimeDiff: 0,
-        },
-      },
-    });
   }
 
   return {
-    log: {
-      loglevel: "warning",
-    },
-    dns: {
-      servers: ["1.1.1.1", "8.8.8.8"],
-    },
-    inbounds: node.status === "circuit_broken" ? [] : inbounds,
+    log: { loglevel: "warning" },
+    dns: { servers: ["1.1.1.1", "8.8.8.8"] },
+    inbounds: node.status === "circuit_broken" ? [] : [serverInbound(node, inboundTag, chainUuid)],
     outbounds,
     routing: {
       // Resolve a domain only when no domain rule matched, so geoip rules (unlock IP ranges, and the
       // private-range block above, e.g. against DNS-rebinding names pointing at 127.0.0.1) also apply
       // to connections addressed by domain.
       domainStrategy: "IPIfNonMatch",
-      rules: routingRules,
+      rules,
     },
   };
 }
 
-// Helper to compile a single rule into Xray / Clash / Sing-box syntax for frontend live preview
-export function compileRuleForPreview(rule: Partial<RoutingRule>) {
-  const target = rule.targetOutbound || "DIRECT";
-  const domains = [
-    ...(rule.geosite || []).map((g) => (g.startsWith("geosite:") ? g : `geosite:${g}`)),
-    ...(rule.domains || []).map((d) => (d.includes(":") ? d : `domain:${d}`)),
-  ];
-  const ips = [
-    ...(rule.geoip || []).map((g) => (g.startsWith("geoip:") ? g : `geoip:${g}`)),
-    ...(rule.ips || []),
-  ];
-
-  // 1. Xray JSON
-  const xrayRule: any = {
-    type: "field",
-    outboundTag: target,
-  };
-  if (domains.length > 0) xrayRule.domain = domains;
-  if (ips.length > 0) xrayRule.ip = ips;
-  if (rule.protocol && rule.protocol.length > 0) xrayRule.protocol = rule.protocol;
-  if (rule.port && rule.port.trim()) xrayRule.port = rule.port.trim();
-
-  // 2. Clash Rules
-  const clashTarget =
-    target === "DIRECT"
-      ? "DIRECT"
-      : target === "BLOCK"
-      ? "REJECT"
-      : target === "UNLOCK_OUT"
-      ? "🤖 AI & 流媒体解锁"
-      : "🚀 节点选择";
-
-  const clashRules: string[] = [];
-  (rule.domains || []).forEach((d) => {
-    const cleanDomain = d.replace(/^domain:/, "").replace(/^\*\./, "");
-    clashRules.push(`DOMAIN-SUFFIX,${cleanDomain},${clashTarget}`);
-  });
-  (rule.geosite || []).forEach((g) => {
-    const cleanGeo = g.replace(/^geosite:/, "");
-    clashRules.push(`GEOSITE,${cleanGeo},${clashTarget}`);
-  });
-  (rule.geoip || []).forEach((g) => {
-    const cleanGeo = g.replace(/^geoip:/, "").toUpperCase();
-    clashRules.push(`GEOIP,${cleanGeo},${clashTarget}`);
-  });
-  (rule.ips || []).forEach((ip) => {
-    clashRules.push(`IP-CIDR,${ip},${clashTarget},no-resolve`);
-  });
-  (rule.protocol || []).forEach((p) => {
-    if (p === "bittorrent") clashRules.push(`PROCESS-NAME,BitTorrent,${clashTarget}`);
-  });
-  if (clashRules.length === 0) {
-    clashRules.push(`MATCH,${clashTarget}`);
+function serverInbound(node: NodeItem, tag: string, chainUuid?: string) {
+  if (node.protocol === "shadowsocks") {
+    const ss = requireCredentials(node, "shadowsocks");
+    return {
+      tag,
+      listen: "0.0.0.0",
+      port: node.port,
+      protocol: "shadowsocks",
+      settings: { method: ss.method, password: ss.password, network: "tcp,udp" },
+      sniffing: SNIFFING,
+    };
   }
-
-  // 3. Sing-box JSON
-  // sing-box 1.12+: geosite/geoip fields were removed in favour of rule_set; block is a rule action
-  const singboxRule: any =
-    target === "BLOCK" ? { action: "reject" } : { outbound: target === "DIRECT" ? "direct" : target === "UNLOCK_OUT" ? "unlock" : "select" };
-  const ruleSets = [
-    ...(rule.geosite || []).map((g) => `geosite-${g.replace(/^geosite:/, "").toLowerCase()}`),
-    ...(rule.geoip || []).map((g) => `geoip-${g.replace(/^geoip:/, "").toLowerCase()}`),
-  ];
-  if (ruleSets.length > 0) singboxRule.rule_set = ruleSets;
-  if (rule.domains && rule.domains.length > 0) singboxRule.domain_suffix = rule.domains;
-  if (rule.ips && rule.ips.length > 0) singboxRule.ip_cidr = rule.ips;
-  if (rule.port && rule.port.trim()) singboxRule.port = rule.port.trim();
-
+  const reality = requireCredentials(node, "reality");
   return {
-    xray: JSON.stringify(xrayRule, null, 2),
-    clash: clashRules.join("\n"),
-    singbox: JSON.stringify(singboxRule, null, 2),
+    tag,
+    listen: "0.0.0.0",
+    port: node.port,
+    protocol: "vless",
+    settings: {
+      clients: [
+        { id: reality.uuid, flow: reality.flow, email: DIRECT_CLIENT_EMAIL },
+        ...(chainUuid ? [{ id: chainUuid, flow: reality.flow, email: CHAIN_CLIENT_EMAIL }] : []),
+      ],
+      decryption: "none",
+    },
+    sniffing: SNIFFING,
+    streamSettings: {
+      network: "raw",
+      security: "reality",
+      realitySettings: {
+        show: false,
+        target: reality.dest,
+        xver: 0,
+        serverNames: [reality.serverName],
+        privateKey: reality.privateKey,
+        shortIds: [reality.shortId],
+        maxTimeDiff: 0,
+      },
+    },
   };
+}
+
+/** Config for a node as currently stored, resolving its active relay and unlock node. */
+export function getNodeXrayConfig(node: NodeItem) {
+  const relay = db.getActiveRelayFor(node.id);
+  const unlock = relay ? db.getNodeById(relay.unlockNodeId) : undefined;
+  return generateXrayServerConfig(node, unlock, unlock ? relay : undefined);
 }
 

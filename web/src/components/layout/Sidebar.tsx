@@ -19,6 +19,7 @@ import { RollingCounter } from "../common/RollingCounter";
 import { useAuth } from "../../context/AuthContext";
 import { PWAInstallButton } from "../common/PWAStatusBanner";
 import { Logo } from "../common/Logo";
+import { formatSpeed } from "../../utils/format";
 
 type NavItem = { id: string; label: string; icon: React.ElementType };
 
@@ -213,13 +214,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return;
     }
     onCloseMobile?.();
-  };
-
-  const formatSpeed = (bytesPerSec: number) => {
-    if (bytesPerSec > 1024 * 1024) {
-      return { val: bytesPerSec / (1024 * 1024), unit: "MB/s" };
-    }
-    return { val: bytesPerSec / 1024, unit: "KB/s" };
   };
 
   const up = formatSpeed(totalUpSpeed);
