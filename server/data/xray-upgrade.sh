@@ -15,21 +15,29 @@ curl -fsSL --connect-timeout 10 --max-time 30 "https://github.com/XTLS/Xray-core
 EXPECTED_SHA256=$(awk '$1 == "SHA2-256=" {print $2}' "$TEMP/xray.dgst")
 [[ "$EXPECTED_SHA256" =~ ^[a-fA-F0-9]{64}$ ]] || { echo "Invalid official checksum" >&2; exit 1; }
 printf '%s  %s\n' "$EXPECTED_SHA256" "$TEMP/xray.zip" | sha256sum -c -
-unzip -qo "$TEMP/xray.zip" xray -d "$TEMP"
+# 同时更新 geoip/geosite 路由数据，否则 geosite:* 规则会随时间陈旧失效
+unzip -qo "$TEMP/xray.zip" xray geoip.dat geosite.dat -d "$TEMP"
 chmod 755 "$TEMP/xray"
 ACTUAL=$("$TEMP/xray" version | awk 'NR == 1 {print $2}')
 [ "v${ACTUAL#v}" = "$TARGET_VER" ] || { echo "Downloaded version mismatch" >&2; exit 1; }
-XRAY_LOCATION_ASSET=/usr/local/bin "$TEMP/xray" run -test -c /etc/nodemaster/config.json
+XRAY_LOCATION_ASSET="$TEMP" "$TEMP/xray" run -test -c /etc/nodemaster/config.json
 WAS_RUNNING=0
 systemctl is-active --quiet nodemaster-proxy && WAS_RUNNING=1
-[ ! -f /usr/local/bin/xray ] || cp -p /usr/local/bin/xray "$TEMP/xray.backup"
+for f in xray geoip.dat geosite.dat; do
+  [ ! -f "/usr/local/bin/$f" ] || cp -p "/usr/local/bin/$f" "$TEMP/$f.backup"
+done
+restore() {
+  for f in xray geoip.dat geosite.dat; do
+    [ ! -f "$TEMP/$f.backup" ] || mv "$TEMP/$f.backup" "/usr/local/bin/$f"
+  done
+}
+chmod 644 "$TEMP/geoip.dat" "$TEMP/geosite.dat"
+mv "$TEMP/geoip.dat" "$TEMP/geosite.dat" /usr/local/bin/
 mv "$TEMP/xray" /usr/local/bin/xray
 if [ "$WAS_RUNNING" = 1 ] && [ ! -f /etc/nodemaster/circuit-broken ]; then
   if ! systemctl restart nodemaster-proxy || ! sleep 1 || ! systemctl is-active --quiet nodemaster-proxy; then
-    if [ -f "$TEMP/xray.backup" ]; then
-      mv "$TEMP/xray.backup" /usr/local/bin/xray
-      systemctl restart nodemaster-proxy || true
-    fi
+    restore
+    systemctl restart nodemaster-proxy || true
     echo "Service restart failed; previous binary restored" >&2
     exit 1
   fi

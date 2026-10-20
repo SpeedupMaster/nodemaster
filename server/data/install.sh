@@ -11,6 +11,7 @@ TOKEN=""
 MODE="all"
 ENABLE_BBR=0
 ENABLE_IPV4_FIRST=0
+ALLOW_HTTP=0
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -21,6 +22,7 @@ while [[ "$#" -gt 0 ]]; do
     --bbr|--tcp-tune) ENABLE_BBR=1 ;;
     --no-bbr) ENABLE_BBR=0 ;;
     --ipv4-first) ENABLE_IPV4_FIRST=1 ;;
+    --allow-http) ALLOW_HTTP=1 ;;
   esac
   shift
 done
@@ -28,17 +30,24 @@ done
 if [ -z "$PANEL_URL" ]; then
   PANEL_URL="{{DEFAULT_PANEL_URL}}"
 fi
+PANEL_URL="${PANEL_URL%/}"
 
+if [ -z "$TOKEN" ]; then
+  echo "Error: --token is required."
+  echo "Usage: curl -fsSL ${PANEL_URL}/api/install.sh | bash -s -- --panel ${PANEL_URL} --token <YOUR_TOKEN> [--probe-only] [--bbr] [--ipv4-first] [--allow-http]"
+  exit 1
+fi
 if [[ ! "$TOKEN" =~ ^[a-zA-Z0-9_-]+$ ]] || [[ ! "$PANEL_URL" =~ ^https?://[a-zA-Z0-9.:/_-]+$ ]]; then
   echo "Invalid token or panel URL"; exit 1
 fi
+# 探针会从面板拉取代理配置与升级脚本并以 root 执行；明文 HTTP 下可被链路劫持，必须显式放行
+if [[ "$PANEL_URL" == http://* ]] && [ "$ALLOW_HTTP" != "1" ]; then
+  echo "Refusing plaintext panel URL ${PANEL_URL}: token, proxy config and root-executed upgrade scripts would travel unencrypted." >&2
+  echo "Put the panel behind HTTPS, or re-run with --allow-http if the link is trusted (e.g. LAN/WireGuard)." >&2
+  exit 1
+fi
 if ! command -v systemctl >/dev/null 2>&1; then
   echo "This installer requires systemd"; exit 1
-fi
-if [ -z "$TOKEN" ]; then
-  echo "Error: --token is required."
-  echo "Usage: curl -fsSL ${PANEL_URL}/api/install.sh | bash -s -- --panel ${PANEL_URL} --token <YOUR_TOKEN> [--probe-only] [--bbr] [--ipv4-first]"
-  exit 1
 fi
 
 echo "========================================================="
@@ -141,10 +150,29 @@ ExecStart=/usr/local/bin/xray run -c /etc/nodemaster/config.json
 Restart=always
 RestartSec=5
 LimitNOFILE=1048576
+# 仍以 root 读取 0600 的配置，但收紧能力集与文件系统，降低 xray 被利用后的影响面
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
+  # 放行节点端口 (仅在防火墙已启用时操作，不主动开启防火墙)
+  NODE_PORT=$(echo "${NODE_INFO}" | jq -r '.data.port // empty')
+  if [[ "$NODE_PORT" =~ ^[0-9]+$ ]]; then
+    if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+      ufw allow "${NODE_PORT}/tcp" >/dev/null && ufw allow "${NODE_PORT}/udp" >/dev/null && echo "  ✓ ufw 已放行端口 ${NODE_PORT}"
+    elif command -v firewall-cmd >/dev/null 2>&1 && firewall-cmd --state >/dev/null 2>&1; then
+      firewall-cmd --permanent --add-port="${NODE_PORT}/tcp" >/dev/null && firewall-cmd --permanent --add-port="${NODE_PORT}/udp" >/dev/null && firewall-cmd --reload >/dev/null && echo "  ✓ firewalld 已放行端口 ${NODE_PORT}"
+    fi
+  fi
 fi
 
 # --- Part B: TCP / BBR 深度调优与跨境链路补丁 (集成 tcp-dashboard) ---
@@ -192,8 +220,6 @@ net.ipv4.udp_rmem_min = 16384
 net.ipv4.udp_wmem_min = 16384
 # 开启 ECN (显式拥塞通知)，跨境轻微拥塞时打标记不丢包，显著平滑网络抖动
 net.ipv4.tcp_ecn = 1
-# 显式激活高版本内核 BBR3 / BBR 深度调优参数 (老内核安全跳过)
-net.ipv4.tcp_congestion_control_version = 3
 # 限制孤儿连接数，防止翻墙协议在大并发时消耗过多内存
 net.ipv4.tcp_max_orphans = 32768
 
@@ -220,15 +246,41 @@ LIMITS_EOF
   ulimit -n 1048576 2>/dev/null || true
 
   # 4. 智能 MSS 钳制规则 (防止跨境连接超时/MTU黑洞)
+  # 以 oneshot 服务落地，重启后自动重新应用 (iptables 规则本身不持久)
   if command -v iptables &>/dev/null; then
-    iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
-    iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
+    IPT=$(command -v iptables)
+    cat <<MSS_EOF > /etc/systemd/system/nodemaster-mss.service
+[Unit]
+Description=NodeMaster TCP MSS clamping
+After=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=-${IPT} -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+ExecStart=${IPT} -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+ExecStop=-${IPT} -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+[Install]
+WantedBy=multi-user.target
+MSS_EOF
+    systemctl daemon-reload
+    systemctl enable nodemaster-mss >/dev/null 2>&1 || true
+    systemctl restart nodemaster-mss >/dev/null 2>&1 || true
   fi
 
   # 5. 网卡多队列 (RPS/RSS) 多核中断分发优化
   INTERFACES=$(ls /sys/class/net 2>/dev/null | grep -vE 'lo|docker|veth|br-|any|tung3|sit0|tun|wg' || true)
   CPU_COUNT=$(nproc 2>/dev/null || echo 1)
-  RPS_CPUS=$(printf '%x' $(((1 << CPU_COUNT) - 1)))
+  # 位掩码超过 63 位会溢出，按 32 位一组用逗号拼接 (内核 rps_cpus 的标准格式)
+  RPS_CPUS=""
+  REMAINING=$CPU_COUNT
+  while [ "$REMAINING" -gt 0 ]; do
+    CHUNK=$(( REMAINING >= 32 ? 32 : REMAINING ))
+    PART=$(printf '%x' $(( (1 << CHUNK) - 1 )))
+    RPS_CPUS="${PART}${RPS_CPUS:+,}${RPS_CPUS}"
+    REMAINING=$(( REMAINING - CHUNK ))
+  done
   for eth in $INTERFACES; do
     if command -v ethtool &>/dev/null; then
       MAX_RX=$(ethtool -g "$eth" 2>/dev/null | grep -A 5 "Pre-set maximums" | grep "RX:" | awk '{print $2}')
@@ -267,13 +319,14 @@ GAI_EOF
 
   # 8. 部署 tcp-dashboard 本地交互脚本与快捷命令 't'
   mkdir -p /usr/local/bin
-  curl -fsSL --connect-timeout 6 -m 15 "${PANEL_URL}/api/tcp-tune.sh" -o /usr/local/bin/tcp.sh 2>/dev/null || \
-  curl -fsSL --connect-timeout 6 -m 15 "tcp.vpsing.de" -o /usr/local/bin/tcp.sh 2>/dev/null || \
-  curl -fsSL --connect-timeout 6 -m 15 "https://raw.githubusercontent.com/666shen/tcp-dashboard/main/tcp.sh" -o /usr/local/bin/tcp.sh 2>/dev/null || true
-
-  if [ -s /usr/local/bin/tcp.sh ]; then
-    chmod +x /usr/local/bin/tcp.sh
+  # 仅从面板获取 (与本安装脚本同源)，不回退到明文或第三方源：该脚本会以 root 身份长期作为 't' 命令执行
+  if curl -fsSL --connect-timeout 6 -m 15 "${PANEL_URL}/api/tcp-tune.sh" -o /usr/local/bin/tcp.sh.new 2>/dev/null && bash -n /usr/local/bin/tcp.sh.new; then
+    chmod 755 /usr/local/bin/tcp.sh.new
+    mv /usr/local/bin/tcp.sh.new /usr/local/bin/tcp.sh
     ln -sf /usr/local/bin/tcp.sh /usr/local/bin/t 2>/dev/null || true
+  else
+    rm -f /usr/local/bin/tcp.sh.new
+    echo "  ⚠ TCP 调优看板脚本下载失败，已跳过快捷命令 't'"
   fi
 
   echo "  ✓ BBR+FQ 算法已生效 (当前: $(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo 'bbr'))"
@@ -309,11 +362,15 @@ User=root
 ExecStart=/usr/local/bin/nodemaster-probe
 Restart=always
 RestartSec=3
+# 热同步写入的 config.json 含 Reality 私钥与 SS 密码，确保新文件仅 root 可读
+UMask=0077
 LimitNOFILE=1048576
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
+chmod 600 /etc/nodemaster/*.json 2>/dev/null || true
 
 systemctl daemon-reload
 if [ -f /etc/systemd/system/nodemaster-proxy.service ]; then

@@ -39,9 +39,14 @@ export const ScriptView: React.FC = () => {
   if (enableIpv4First) {
     genericArgs.push("--ipv4-first");
   }
+  // 明文 HTTP 面板会以明文下发配置与 root 执行的脚本，安装脚本默认拒绝，需显式放行
+  const insecurePanel = panelHost.startsWith("http://");
+  if (insecurePanel) {
+    genericArgs.push("--allow-http");
+  }
 
   const genericCmd = `curl -fsSL ${panelHost}/api/install.sh | bash -s -- ${genericArgs.join(" ")}`;
-  const tuneOfficialCmd = `bash <(curl -sL tcp.vpsing.de)`;
+  const tuneOfficialCmd = `bash <(curl -fsSL https://tcp.vpsing.de)`;
   const tunePanelCmd = `curl -fsSL ${panelHost}/api/tcp-tune.sh | bash`;
 
   useEffect(() => {
@@ -189,6 +194,11 @@ export const ScriptView: React.FC = () => {
           <div className="p-3.5 rounded-lg bg-paper border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
             {genericCmd}
           </div>
+          {insecurePanel && (
+            <p className="mt-2 text-xs text-amber-400">
+              当前面板通过明文 HTTP 访问：节点 Token、代理配置与升级脚本都会明文传输，可被链路劫持并以 root 执行。建议为面板配置 HTTPS 反向代理。
+            </p>
+          )}
         </div>
       </div>
 

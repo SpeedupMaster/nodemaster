@@ -37,8 +37,11 @@ def request(path, body=None):
 
 
 def atomic_text(path, value):
+    # config.json holds the Reality private key / SS password: never create it world-readable
     temporary = path.with_suffix(path.suffix + '.new')
-    with temporary.open('w') as stream:
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    os.fchmod(fd, 0o600)
+    with os.fdopen(fd, 'w') as stream:
         stream.write(value)
         stream.flush()
         os.fsync(stream.fileno())
@@ -216,4 +219,11 @@ class Probe:
 
 
 if __name__ == '__main__':
+    os.umask(0o077)
+    # Older probes wrote config.json with the default 0644 mode; tighten anything left behind.
+    for leftover in ROOT.glob('*.json'):
+        try:
+            leftover.chmod(0o600)
+        except OSError:
+            pass
     Probe().run()

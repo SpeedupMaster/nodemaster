@@ -742,7 +742,10 @@ if [ -z "\${TOKEN}" ]; then
 fi
 
 echo "[1/2] 升级探针至支持全自动热重载版本..."
-curl -fsSL "\${PANEL_URL}/api/install.sh" | bash -s -- --panel "\${PANEL_URL}" --token "\${TOKEN}" --probe-only
+# 已纳管节点沿用安装时的面板地址；若当时就是明文 HTTP，说明已被显式放行
+ALLOW_HTTP=""
+case "\${PANEL_URL}" in http://*) ALLOW_HTTP="--allow-http" ;; esac
+curl -fsSL "\${PANEL_URL}/api/install.sh" | bash -s -- --panel "\${PANEL_URL}" --token "\${TOKEN}" --probe-only \${ALLOW_HTTP}
 
 echo "[2/2] 校验探针运行状态..."
 if systemctl is-active --quiet nodemaster-probe; then
@@ -768,8 +771,7 @@ apiRouter.get("/tcp-tune.sh", (req, res) => {
     res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
     return res.send(raw.replaceAll("{{DEFAULT_PANEL_URL}}", panelUrl));
   }
-  // Redirect to official upstream
-  return res.redirect("https://raw.githubusercontent.com/666shen/tcp-dashboard/main/tcp.sh");
+  res.status(500).send("# Error: tcp-tune.sh template missing");
 });
 
 // -------------------------------------------------------------

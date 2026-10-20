@@ -47,9 +47,14 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
   if (enableIpv4First) {
     args.push("--ipv4-first");
   }
+  // 明文 HTTP 面板会以明文下发配置与 root 执行的脚本，安装脚本默认拒绝，需显式放行
+  const insecurePanel = panelHost.startsWith("http://");
+  if (insecurePanel) {
+    args.push("--allow-http");
+  }
 
   const installCmd = `curl -fsSL ${panelHost}/api/install.sh | bash -s -- ${args.join(" ")}`;
-  const tuneOfficialCmd = `bash <(curl -sL tcp.vpsing.de)`;
+  const tuneOfficialCmd = `bash <(curl -fsSL https://tcp.vpsing.de)`;
   const tunePanelCmd = `curl -fsSL ${panelHost}/api/tcp-tune.sh | bash`;
   const updateProbeCmd = `curl -fsSL ${panelHost}/api/update-probe.sh | bash`;
 
@@ -250,6 +255,11 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
               <div className="p-3.5 rounded-md bg-paper border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
                 {installCmd}
               </div>
+              {insecurePanel && (
+                <p className="mt-2 text-xs text-amber-400">
+                  当前面板通过明文 HTTP 访问：节点 Token、代理配置与升级脚本都会明文传输，可被链路劫持并以 root 执行。建议为面板配置 HTTPS 反向代理。
+                </p>
+              )}
             </div>
 
             <div className="pt-2 border-t border-rule text-xs text-ink-muted flex items-center justify-between font-mono">
