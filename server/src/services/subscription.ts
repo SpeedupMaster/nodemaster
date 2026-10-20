@@ -102,9 +102,19 @@ export function toSingboxOutbound(node: NodeItem, customHost?: string, customPor
   };
 }
 
+export interface AssembledProxy {
+  node: NodeItem;
+  host: string;
+  port: number;
+  name: string;
+  targetCountry?: string;
+  // Entry authenticates with the relay's chain client, i.e. its traffic is routed via the unlock node
+  chain?: boolean;
+}
+
 // Build Active Proxies List considering Relays and Chained Unlock Nodes
 export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
-  const result: { node: NodeItem; host: string; port: number; name: string; targetCountry?: string }[] = [];
+  const result: AssembledProxy[] = [];
 
   // 1. 仅将安全的主力直连节点 (VLESS-Reality 等免证书抗封锁协议) 作为单节点加入订阅
   // 落地节点是 SS 协议 (Shadowsocks/Unlock)，直连极易被 GFW 主动探测并封锁，因此在直连订阅中隐藏，仅通过链式中转提供
@@ -129,27 +139,55 @@ export function assembleProxies(nodes: NodeItem[], relays: RelayLink[]) {
     const unlockId = r.unlockNodeId || r.exitNodeId;
     const main = nodes.find((n) => n.id === mainId);
     const unlock = nodes.find((n) => n.id === unlockId);
-    if (main && unlock && main.status === "online" && unlock.status === "online" && main.reality) {
+    if (main && unlock && main.status === "online" && unlock.status === "online" && main.reality && r.chainUuid) {
       result.push({
-        node: main,
+        // Same server, different credentials: the main node routes this client through UNLOCK_OUT
+        node: { ...main, reality: { ...main.reality, uuid: r.chainUuid } },
         host: main.ip,
         port: main.port,
         name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
         targetCountry: unlock.country || unlock.countryName,
+        chain: true,
       });
     }
+  }
+
+  // Clash/Mihomo reject duplicate proxy names, and every format uses the name as the selector key
+  const seen = new Set<string>();
+  for (const p of result) {
+    let name = p.name;
+    for (let i = 2; seen.has(name); i++) name = `${p.name} ${i}`;
+    seen.add(name);
+    p.name = name;
   }
 
   return result;
 }
 
+const REGION_MATCHERS: Record<string, (name: string, country?: string) => boolean> = {
+  美国节点: (name, country) => isUSNode(name, country),
+  亚太节点: (name, country) => isAPACNode(name, country),
+  欧洲节点: (name, country) => isEUNode(name, country),
+};
+// Template groups that should prefer the chained (unlock) entries when any exist
+const UNLOCK_PREFERRED_GROUPS = new Set(["GPT", "Gemini", "Claude", "Copilot", "Grok", "Netflix", "Disney+"]);
+const UNLOCK_GROUP = "解锁链路";
+
+function proxyCountry(p: AssembledProxy) {
+  return p.targetCountry || p.node.country;
+}
+
 // Render Clash / Mihomo YAML Configuration (Service-Categorized High-Spec Template)
-export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>): string {
+export function renderClashYaml(proxiesData: AssembledProxy[]): string {
   const proxies = proxiesData
     .map(p => toClashProxy(p.node, p.host, p.port, p.name))
     .filter(Boolean);
 
   const proxyNames = proxies.map((p: any) => p.name);
+  const chainNames = proxiesData.filter((p) => p.chain).map((p) => p.name);
+  // A group that ends up empty must never fall back to DIRECT: the rules route e.g. AI services to
+  // it, and DIRECT would send that traffic from the user's own IP. REJECT only when there is no proxy.
+  const nonEmpty = (names: string[]) => (names.length > 0 ? names : proxyNames.length > 0 ? proxyNames : ["REJECT"]);
 
   // If clash-template.yaml exists, use the full service-single-provider.yaml template
   if (fs.existsSync(CLASH_TEMPLATE_PATH)) {
@@ -179,19 +217,38 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
           if (name === "手动选择" || name === "🌎 Global-Manual") {
             g.set("proxies", doc.createNode([...proxyNames, "DIRECT"]));
           } else if (name === "自动选择") {
-            g.set("proxies", doc.createNode(proxyNames.length > 0 ? proxyNames : ["DIRECT"]));
+            g.set("proxies", doc.createNode(nonEmpty(proxyNames)));
           }
 
           const filter = g.get("filter");
-          if (filter) {
+          const regionMatcher = REGION_MATCHERS[name];
+          if (filter || regionMatcher) {
+            let matched: string[] = [];
             try {
-              const reg = new RegExp(String(filter).replace(/^\(\?i\)/, ""), "i");
-              const matched = proxyNames.filter((pName: string) => reg.test(pName));
-              g.set("proxies", doc.createNode(matched.length > 0 ? matched : ["DIRECT"]));
+              const reg = filter ? new RegExp(String(filter).replace(/^\(\?i\)/, ""), "i") : null;
+              // Match the node's country as well as its name: panel node names often carry no region tag
+              matched = proxiesData
+                .filter((p) => (reg && reg.test(p.name)) || (regionMatcher && regionMatcher(p.name, proxyCountry(p))))
+                .map((p) => p.name);
             } catch (e) {
               // Ignore regex errors
             }
+            // The list is now explicit; leaving include-all/filter would make the client re-filter by name
+            g.delete("include-all");
+            g.delete("filter");
+            g.set("proxies", doc.createNode(nonEmpty(matched)));
           }
+
+          if (chainNames.length > 0 && UNLOCK_PREFERRED_GROUPS.has(name)) {
+            const current = (g.get("proxies")?.toJSON?.() as string[] | undefined) || [];
+            g.set("proxies", doc.createNode([UNLOCK_GROUP, ...current.filter((n) => n !== UNLOCK_GROUP)]));
+          }
+        }
+
+        if (chainNames.length > 0) {
+          groups.items.push(
+            doc.createNode({ name: UNLOCK_GROUP, type: "select", proxies: [...chainNames, "节点选择"] })
+          );
         }
       }
 
@@ -204,11 +261,11 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         let target = "节点选择";
         if (rule.targetOutbound === "DIRECT") target = "DIRECT";
         else if (rule.targetOutbound === "BLOCK") target = "REJECT";
-        else if (rule.targetOutbound === "UNLOCK_OUT") target = "美国节点";
+        else if (rule.targetOutbound === "UNLOCK_OUT") target = chainNames.length > 0 ? UNLOCK_GROUP : "节点选择";
         else if (rule.targetOutbound === "PROXY") {
           if (rule.targetNodeId) {
             const tgtNode = allNodes.find((n) => n.id === rule.targetNodeId);
-            if (tgtNode) target = tgtNode.name;
+            if (tgtNode && proxyNames.includes(tgtNode.name)) target = tgtNode.name;
           }
         }
 
@@ -227,7 +284,8 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         if (rule.geoip) {
           rule.geoip.forEach((g) => {
             const cleanGeo = g.replace(/^geoip:/, "").toUpperCase();
-            customClashRules.push(`GEOIP,${cleanGeo},${target}${cleanGeo === "PRIVATE" ? ",no-resolve" : ""}`);
+            // no-resolve: an IP rule must not trigger a DNS lookup for domain requests
+            customClashRules.push(`GEOIP,${cleanGeo},${target},no-resolve`);
           });
         }
         if (rule.ips) {
@@ -257,13 +315,17 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
   }
 
   // Fallback simplified configuration
-  const hkProxies = proxyNames.filter(n => /HK|香港/i.test(n));
-  const jpProxies = proxyNames.filter(n => /JP|日本/i.test(n));
-  const usProxies = proxyNames.filter(n => /US|美国/i.test(n));
+  const pick = (matcher: (name: string, country?: string) => boolean) =>
+    proxiesData.filter((p) => matcher(p.name, proxyCountry(p))).map((p) => p.name);
+  const hkProxies = pick((n, c) => (c || "").toUpperCase() === "HK" || /HK|香港/i.test(n));
+  const jpProxies = pick((n, c) => (c || "").toUpperCase() === "JP" || /JP|日本/i.test(n));
+  const usProxies = pick(isUSNode);
+  const aiProxies = chainNames.length > 0 ? chainNames : usProxies;
 
   const config = {
     "mixed-port": 7890,
-    "allow-lan": true,
+    // Only this device may use the proxy port; LAN sharing is an explicit user choice
+    "allow-lan": false,
     mode: "rule",
     "log-level": "info",
     ipv6: false,
@@ -274,11 +336,18 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         HTTP: { ports: [80, 8080] },
       },
     },
+    // DNS anti-leak: queries follow the routing rules (respect-rules), so a proxied domain is resolved
+    // through the proxy by a foreign resolver; only geosite:cn reaches the domestic resolver.
     dns: {
       enable: true,
       "enhanced-mode": "fake-ip",
       "fake-ip-range": "198.18.0.1/16",
-      nameserver: ["https://223.5.5.5/dns-query", "https://1.1.1.1/dns-query"],
+      "respect-rules": true,
+      "default-nameserver": ["223.5.5.5", "119.29.29.29"],
+      nameserver: ["https://1.1.1.1/dns-query", "https://8.8.8.8/dns-query"],
+      "nameserver-policy": { "geosite:cn,private": ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"] },
+      "proxy-server-nameserver": ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"],
+      "direct-nameserver": ["https://223.5.5.5/dns-query", "https://doh.pub/dns-query"],
     },
     proxies,
     "proxy-groups": [
@@ -290,7 +359,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
       {
         name: "♻️ 自动选择",
         type: "url-test",
-        proxies: proxyNames.length > 0 ? proxyNames : ["DIRECT"],
+        proxies: nonEmpty(proxyNames),
         url: "http://www.gstatic.com/generate_204",
         interval: 300,
         tolerance: 50,
@@ -298,12 +367,12 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
       {
         name: "🤖 AI Service",
         type: "select",
-        proxies: usProxies.length > 0 ? [...usProxies, "🚀 节点选择"] : ["🚀 节点选择"],
+        proxies: [...aiProxies, "🚀 节点选择"],
       },
       {
         name: "📺 流媒体视频",
         type: "select",
-        proxies: ["🚀 节点选择", ...(hkProxies.length ? hkProxies : []), ...(jpProxies.length ? jpProxies : [])],
+        proxies: ["🚀 节点选择", ...chainNames, ...hkProxies, ...jpProxies],
       },
       ...(hkProxies.length > 0 ? [{ name: "🇭🇰 香港节点", type: "url-test", proxies: hkProxies, url: "http://www.gstatic.com/generate_204", interval: 300 }] : []),
       ...(jpProxies.length > 0 ? [{ name: "🇯🇵 日本节点", type: "url-test", proxies: jpProxies, url: "http://www.gstatic.com/generate_204", interval: 300 }] : []),
@@ -346,7 +415,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
         if (rule.geoip) {
           rule.geoip.forEach((g) => {
             const cleanGeo = g.replace(/^geoip:/, "").toUpperCase();
-            clashRules.push(`GEOIP,${cleanGeo},${target}${cleanGeo === "PRIVATE" ? ",no-resolve" : ""}`);
+            clashRules.push(`GEOIP,${cleanGeo},${target},no-resolve`);
           });
         }
         if (rule.ips) {
@@ -365,7 +434,7 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
           "GEOSITE,netflix,📺 流媒体视频",
           "GEOIP,private,🎯 全球直连,no-resolve",
           "GEOSITE,cn,🎯 全球直连",
-          "GEOIP,CN,🎯 全球直连"
+          "GEOIP,CN,🎯 全球直连,no-resolve"
         );
       }
       clashRules.push("MATCH,🐟 漏网之鱼");
@@ -376,72 +445,132 @@ export function renderClashYaml(proxiesData: ReturnType<typeof assembleProxies>)
   return YAML.stringify(config);
 }
 
-// Render Sing-box JSON Configuration
-export function renderSingboxJson(proxiesData: ReturnType<typeof assembleProxies>): string {
+const SINGBOX_GEOSITE_URL = "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set";
+const SINGBOX_GEOIP_URL = "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set";
+
+// "443", "80,443", "1000-2000" → sing-box port / port_range fields
+function singboxPorts(spec: string) {
+  const port: number[] = [];
+  const port_range: string[] = [];
+  for (const part of spec.split(",").map((p) => p.trim()).filter(Boolean)) {
+    const range = part.match(/^(\d+)\s*[-:]\s*(\d+)$/);
+    if (range) port_range.push(`${range[1]}:${range[2]}`);
+    else if (/^\d+$/.test(part)) port.push(Number(part));
+  }
+  return { ...(port.length ? { port } : {}), ...(port_range.length ? { port_range } : {}) };
+}
+
+// Render Sing-box JSON Configuration (sing-box 1.12+ format: rule_set, typed DNS servers, rule actions)
+export function renderSingboxJson(proxiesData: AssembledProxy[]): string {
   const outbounds = proxiesData
     .map((p) => toSingboxOutbound(p.node, p.host, p.port, p.name))
     .filter(Boolean);
 
   const tags = outbounds.map((o: any) => o.tag);
+  const chainTags = proxiesData.filter((p) => p.chain).map((p) => p.name);
 
-  // Generate singbox route rules
-  const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+  const ruleSets = new Map<string, { tag: string; type: "remote"; format: "binary"; url: string; download_detour: string }>();
+  const ruleSetTag = (kind: "geosite" | "geoip", name: string) => {
+    const clean = name.replace(/^(geosite|geoip):/, "").toLowerCase();
+    const tag = `${kind}-${clean}`;
+    if (!ruleSets.has(tag)) {
+      const base = kind === "geosite" ? SINGBOX_GEOSITE_URL : SINGBOX_GEOIP_URL;
+      ruleSets.set(tag, { tag, type: "remote", format: "binary", url: `${base}/${tag}.srs`, download_detour: "select" });
+    }
+    return tag;
+  };
+
   const routeRules: any[] = [];
+  for (const rule of db.getRoutingRules().filter((r) => r.enabled)) {
+    let action: Record<string, unknown>;
+    if (rule.targetOutbound === "DIRECT") action = { outbound: "direct" };
+    else if (rule.targetOutbound === "BLOCK") action = { action: "reject" };
+    else if (rule.targetOutbound === "UNLOCK_OUT") action = { outbound: chainTags.length > 0 ? "unlock" : "select" };
+    else action = { outbound: "select" };
 
-  for (const rule of activeRules) {
-    let outbound = "select";
-    if (rule.targetOutbound === "DIRECT") outbound = "direct";
-    else if (rule.targetOutbound === "BLOCK") outbound = "block";
-    else if (rule.targetOutbound === "UNLOCK_OUT") outbound = "auto";
-
-    const sRule: any = { outbound };
-    if (rule.geosite && rule.geosite.length > 0) sRule.geosite = rule.geosite;
+    const geoipNames = (rule.geoip || []).map((g) => g.replace(/^geoip:/, "").toLowerCase());
+    const sRule: any = {};
+    const sets = [
+      ...(rule.geosite || []).map((g) => ruleSetTag("geosite", g)),
+      ...geoipNames.filter((g) => g !== "private").map((g) => ruleSetTag("geoip", g)),
+    ];
+    if (sets.length > 0) sRule.rule_set = sets;
+    if (geoipNames.includes("private")) sRule.ip_is_private = true;
     if (rule.domains && rule.domains.length > 0) {
       sRule.domain_suffix = rule.domains.map((d) => d.replace(/^domain:/, "").replace(/^\*\./, ""));
     }
-    if (rule.geoip && rule.geoip.length > 0) sRule.geoip = rule.geoip;
     if (rule.ips && rule.ips.length > 0) sRule.ip_cidr = rule.ips;
-    if (rule.port) sRule.port = rule.port;
+    if (rule.port && rule.port.trim()) Object.assign(sRule, singboxPorts(rule.port));
+    if (rule.protocol?.includes("bittorrent")) sRule.protocol = ["bittorrent"];
 
-    if (sRule.geosite || sRule.domain_suffix || sRule.geoip || sRule.ip_cidr || sRule.port) {
-      routeRules.push(sRule);
-    }
+    if (Object.keys(sRule).length > 0) routeRules.push({ ...sRule, ...action });
   }
+  const cnSite = ruleSetTag("geosite", "cn");
+  const cnIp = ruleSetTag("geoip", "cn");
 
   const singboxConfig = {
+    log: { level: "warn" },
+    // DNS anti-leak: everything is resolved by a foreign DoH server through the proxy, except
+    // geosite:cn, which uses the domestic resolver directly. hijack-dns below makes sure the
+    // system resolver cannot bypass this.
     dns: {
       servers: [
-        { tag: "dns_proxy", address: "https://1.1.1.1/dns-query", address_resolver: "dns_direct" },
-        { tag: "dns_direct", address: "https://223.5.5.5/dns-query", detour: "direct" },
+        { type: "https", tag: "dns-remote", server: "1.1.1.1", detour: "select" },
+        { type: "https", tag: "dns-direct", server: "223.5.5.5" },
       ],
+      rules: [{ rule_set: [cnSite], server: "dns-direct" }],
+      final: "dns-remote",
+      strategy: "prefer_ipv4",
     },
+    inbounds: [
+      {
+        type: "tun",
+        tag: "tun-in",
+        address: ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
+        auto_route: true,
+        strict_route: true,
+        stack: "mixed",
+      },
+      { type: "mixed", tag: "mixed-in", listen: "127.0.0.1", listen_port: 7890 },
+    ],
     outbounds: [
       {
         type: "selector",
         tag: "select",
-        outbounds: ["auto", ...tags, "direct"],
+        outbounds: ["auto", ...(chainTags.length > 0 ? ["unlock"] : []), ...tags, "direct"],
       },
       {
         type: "urltest",
         tag: "auto",
         outbounds: tags.length ? tags : ["direct"],
-        url: "http://www.gstatic.com/generate_204",
+        url: "https://www.gstatic.com/generate_204",
       },
+      ...(chainTags.length > 0 ? [{ type: "selector", tag: "unlock", outbounds: [...chainTags, "select"] }] : []),
       ...outbounds,
       { type: "direct", tag: "direct" },
-      { type: "block", tag: "block" },
     ],
     route: {
-      rules: routeRules,
+      rules: [
+        { action: "sniff" },
+        { protocol: "dns", action: "hijack-dns" },
+        { ip_is_private: true, outbound: "direct" },
+        ...routeRules,
+        { rule_set: [cnSite, cnIp], outbound: "direct" },
+      ],
+      rule_set: Array.from(ruleSets.values()),
+      final: "select",
       auto_detect_interface: true,
+      // Resolves proxy server hostnames; node addresses are normally IPs
+      default_domain_resolver: "dns-direct",
     },
+    experimental: { cache_file: { enabled: true } },
   };
 
   return JSON.stringify(singboxConfig, null, 2);
 }
 
 // Render Base64 / Standard URL List (VLESS & Shadowsocks)
-export function renderBase64(proxiesData: ReturnType<typeof assembleProxies>): string {
+export function renderBase64(proxiesData: AssembledProxy[]): string {
   const urls = proxiesData
     .map(p =>
       p.node.protocol === "shadowsocks"
@@ -524,7 +653,7 @@ export function toEgernProxy(node: NodeItem, customHost?: string, customPort?: n
 }
 
 // Render Egern YAML Configuration
-export function renderEgernYaml(proxiesData: ReturnType<typeof assembleProxies>, subUrl?: string): string {
+export function renderEgernYaml(proxiesData: AssembledProxy[], subUrl?: string): string {
   const proxies = proxiesData
     .map(p => toEgernProxy(p.node, p.host, p.port, p.name))
     .filter(Boolean);
