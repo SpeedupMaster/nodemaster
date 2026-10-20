@@ -371,10 +371,8 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
 
   const handleGenerateRandomToken = () => {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let rand = "";
-    for (let i = 0; i < 24; i++) {
-      rand += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const rand = Array.from(bytes, (b) => chars.charAt(b % chars.length)).join("");
     setCustomTokenInput(`sub_${rand}`);
   };
 
@@ -387,6 +385,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
     }
     if (!/^[a-zA-Z0-9_-]+$/.test(cleanToken)) {
       setUrlError("Token 仅支持英文字母、数字、下划线(_)与中划线(-)");
+      return;
+    }
+    if (cleanToken.length < 16 || cleanToken.length > 128) {
+      setUrlError("Token 长度需为 16–128 位，过短容易被猜到并泄露节点凭据");
       return;
     }
 

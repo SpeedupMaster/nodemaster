@@ -45,40 +45,9 @@ export function setStoredUser(user: AdminUser | null) {
   }
 }
 
-// Global fetch wrapper that automatically attaches the Authorization header
-export async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const token = getStoredToken();
-  const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
-
-  const targetUrl = new URL(input instanceof Request ? input.url : String(input), window.location.href);
-  const sameApi = targetUrl.origin === window.location.origin && targetUrl.pathname.startsWith("/api/");
-  if (sameApi && token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const response = await window.fetch(input, {
-    ...init,
-    headers,
-  });
-
-  if (sameApi && response.status === 401 && getStoredToken() === token) {
-    if (targetUrl.pathname !== "/api/auth/login") {
-      setStoredToken(null);
-      setStoredUser(null);
-      window.dispatchEvent(new CustomEvent("nodemaster:unauthorized"));
-    }
-  }
-
-  return response;
-}
-
-// Initialize global interceptor so existing fetch() calls throughout the app attach the auth header seamlessly
-export function initAuthInterceptor() {
-  if (typeof window === "undefined") return;
-  if ((window.fetch as any).__nodemasterAuth) return;
-  const originalFetch = window.fetch;
-
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+// Wraps a fetch implementation so same-origin /api/ calls carry the session token and a real 401 logs out
+function withAuth(fetchImpl: typeof window.fetch): typeof window.fetch {
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
     const token = getStoredToken();
     const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
 
@@ -88,7 +57,7 @@ export function initAuthInterceptor() {
       headers.set("Authorization", `Bearer ${token}`);
     }
 
-    const response = await originalFetch(input, {
+    const response = await fetchImpl(input, {
       ...init,
       headers,
     });
@@ -103,5 +72,12 @@ export function initAuthInterceptor() {
 
     return response;
   };
+}
+
+// Initialize global interceptor so existing fetch() calls throughout the app attach the auth header seamlessly
+export function initAuthInterceptor() {
+  if (typeof window === "undefined") return;
+  if ((window.fetch as any).__nodemasterAuth) return;
+  window.fetch = withAuth(window.fetch.bind(window));
   (window.fetch as any).__nodemasterAuth = true;
 }

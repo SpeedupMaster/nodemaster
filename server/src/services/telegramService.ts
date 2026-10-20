@@ -1,6 +1,9 @@
 import { db } from "../db/index.js";
 import { NodeItem, TelegramConfig, TelegramAlertLog } from "../types/index.js";
 
+// Telegram HTML parse mode rejects the whole message on unescaped <, > or &
+const esc = (value: unknown) => String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 class TelegramService {
   private lastKnownStatus = new Map<string, string>(); // nodeId -> status
   private alertCooldowns = new Map<string, number>(); // key -> timestamp
@@ -87,7 +90,8 @@ class TelegramService {
     if (!config.enabled || !config.botToken || !config.chatId) return;
 
     for (const node of nodes) {
-      const prevStatus = this.lastKnownStatus.get(node.id) || "online";
+      // First sighting (e.g. after a restart) only records the baseline; it is not a transition.
+      const prevStatus = this.lastKnownStatus.get(node.id) ?? node.status;
       this.lastKnownStatus.set(node.id, node.status);
 
       // 1. 离线通知 / 恢复在线通知 (Offline / Recovery)
@@ -96,9 +100,9 @@ class TelegramService {
           const isCircuit = node.status === "circuit_broken";
           const title = isCircuit ? "⚠️ 节点熔断告警" : "🔴 节点离线告警";
           const msg = `<b>${title}</b>\n\n` +
-            `<b>节点标识:</b> ${node.name}\n` +
-            `<b>连接地址:</b> <code>${node.ip}:${node.port}</code>\n` +
-            `<b>节点区域:</b> ${node.countryName || node.country} (${node.country})\n` +
+            `<b>节点标识:</b> ${esc(node.name)}\n` +
+            `<b>连接地址:</b> <code>${esc(node.ip)}:${node.port}</code>\n` +
+            `<b>节点区域:</b> ${esc(node.countryName || node.country)} (${esc(node.country)})\n` +
             `<b>当前状态:</b> ${isCircuit ? "触发熔断保护 (Circuit Broken)" : "已离线 (Offline)"}\n` +
             `<b>告警时间:</b> ${this.formatDate()}`;
 
@@ -116,8 +120,8 @@ class TelegramService {
         } else if ((prevStatus === "offline" || prevStatus === "circuit_broken") && node.status === "online") {
           const title = "🟢 节点恢复上线";
           const msg = `<b>${title}</b>\n\n` +
-            `<b>节点标识:</b> ${node.name}\n` +
-            `<b>连接地址:</b> <code>${node.ip}:${node.port}</code>\n` +
+            `<b>节点标识:</b> ${esc(node.name)}\n` +
+            `<b>连接地址:</b> <code>${esc(node.ip)}:${node.port}</code>\n` +
             `<b>当前延迟:</b> ${node.latencyMs} ms\n` +
             `<b>恢复时间:</b> ${this.formatDate()}`;
 
@@ -148,7 +152,7 @@ class TelegramService {
           const limitGB = (node.trafficLimitBytes / (1024 * 1024 * 1024)).toFixed(0);
           const title = "⚠️ 流量额度预警";
           const msg = `<b>${title}</b>\n\n` +
-            `<b>节点标识:</b> ${node.name}\n` +
+            `<b>节点标识:</b> ${esc(node.name)}\n` +
             `<b>已用流量:</b> ${usedGB} GB / ${limitGB} GB (<b>${pct.toFixed(1)}%</b>)\n` +
             `<b>预警阈值:</b> ${config.trafficThresholdPercent}%\n` +
             `<b>配额重置:</b> 每月 ${node.trafficResetDay || 1} 日\n` +
@@ -183,9 +187,9 @@ class TelegramService {
               : "未设置费用金额";
 
             const msg = `<b>${title}</b>\n\n` +
-              `<b>节点标识:</b> ${node.name}\n` +
-              `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
-              `<b>到期日期:</b> <code>${node.expiresAt}</code> (<b>${isExpired ? "已过期" : `剩余 ${diffDays} 天`}</b>)\n` +
+              `<b>节点标识:</b> ${esc(node.name)}\n` +
+              `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
+              `<b>到期日期:</b> <code>${esc(node.expiresAt)}</code> (<b>${isExpired ? "已过期" : `剩余 ${diffDays} 天`}</b>)\n` +
               `<b>续费周期:</b> ${costStr}\n` +
               `<b>自动续费:</b> ${node.autoRenew ? "✅ 已开启自动续费" : "⚠️ 未开启自动续费 (请及时手动续期)"}\n` +
               `<b>提醒时间:</b> ${this.formatDate()}`;
@@ -212,11 +216,11 @@ class TelegramService {
           this.setCooldown(cooldownKey);
           const title = "🔥 CPU 占用过高预警";
           const msg = `<b>${title}</b>\n\n` +
-            `<b>节点标识:</b> ${node.name}\n` +
-            `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
+            `<b>节点标识:</b> ${esc(node.name)}\n` +
+            `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
             `<b>当前 CPU:</b> <b>${node.cpuUsage}%</b> (阈值: ${config.cpuThresholdPercent}%)\n` +
             `<b>系统负载:</b> ${node.loadAvg ? node.loadAvg.join(", ") : "N/A"}\n` +
-            `<b>在线时长:</b> ${node.uptime || "N/A"}\n` +
+            `<b>在线时长:</b> ${esc(node.uptime || "N/A")}\n` +
             `<b>告警时间:</b> ${this.formatDate()}`;
 
           const res = await this.sendMessage(msg);
@@ -242,8 +246,8 @@ class TelegramService {
           const memUsedGB = ((node.memUsedBytes || 0) / (1024 * 1024 * 1024)).toFixed(1);
           const title = "💾 内存耗尽预警";
           const msg = `<b>${title}</b>\n\n` +
-            `<b>节点标识:</b> ${node.name}\n` +
-            `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
+            `<b>节点标识:</b> ${esc(node.name)}\n` +
+            `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
             `<b>当前内存:</b> <b>${node.memUsage}%</b> (阈值: ${config.memThresholdPercent}%)\n` +
             `<b>内存使用:</b> ${memUsedGB} GB / ${memTotalGB} GB\n` +
             `<b>告警时间:</b> ${this.formatDate()}`;
@@ -292,9 +296,9 @@ class TelegramService {
       case "offline":
         title = "🔴 节点离线告警 (测试模拟)";
         msg = `<b>${title}</b>\n\n` +
-          `<b>节点标识:</b> ${node.name}\n` +
-          `<b>连接地址:</b> <code>${node.ip}:${node.port}</code>\n` +
-          `<b>节点区域:</b> ${node.countryName || node.country}\n` +
+          `<b>节点标识:</b> ${esc(node.name)}\n` +
+          `<b>连接地址:</b> <code>${esc(node.ip)}:${node.port}</code>\n` +
+          `<b>节点区域:</b> ${esc(node.countryName || node.country)}\n` +
           `<b>当前状态:</b> 离线 (Offline - 模拟已掉线)\n` +
           `<b>告警时间:</b> ${this.formatDate()}`;
         break;
@@ -302,7 +306,7 @@ class TelegramService {
       case "traffic":
         title = "⚠️ 流量额度预警 (测试模拟)";
         msg = `<b>${title}</b>\n\n` +
-          `<b>节点标识:</b> ${node.name}\n` +
+          `<b>节点标识:</b> ${esc(node.name)}\n` +
           `<b>已用流量:</b> 860 GB / 1000 GB (<b>86.0%</b>)\n` +
           `<b>预警阈值:</b> 80%\n` +
           `<b>重置日期:</b> 每月 1 日\n` +
@@ -312,9 +316,9 @@ class TelegramService {
       case "renewal":
         title = "📅 VPS 续费到期提醒 (测试模拟)";
         msg = `<b>${title}</b>\n\n` +
-          `<b>节点标识:</b> ${node.name}\n` +
-          `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
-          `<b>到期日期:</b> <code>${node.expiresAt || "2026-10-10"}</code> (<b>剩余 7 天</b>)\n` +
+          `<b>节点标识:</b> ${esc(node.name)}\n` +
+          `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
+          `<b>到期日期:</b> <code>${esc(node.expiresAt || "2026-10-10")}</code> (<b>剩余 7 天</b>)\n` +
           `<b>续费周期:</b> ¥38 / 月付\n` +
           `<b>自动续费:</b> ⚠️ 未开启自动续费 (请及时手动续期)\n` +
           `<b>提醒时间:</b> ${this.formatDate()}`;
@@ -323,8 +327,8 @@ class TelegramService {
       case "cpu":
         title = "🔥 CPU 占用过高预警 (测试模拟)";
         msg = `<b>${title}</b>\n\n` +
-          `<b>节点标识:</b> ${node.name}\n` +
-          `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
+          `<b>节点标识:</b> ${esc(node.name)}\n` +
+          `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
           `<b>当前 CPU:</b> <b>93.4%</b> (预警阈值: 85%)\n` +
           `<b>系统负载:</b> 2.14, 1.85, 1.20\n` +
           `<b>在线时长:</b> 28天 14小时\n` +
@@ -334,8 +338,8 @@ class TelegramService {
       case "mem":
         title = "💾 内存耗尽预警 (测试模拟)";
         msg = `<b>${title}</b>\n\n` +
-          `<b>节点标识:</b> ${node.name}\n` +
-          `<b>公网 IP:</b> <code>${node.ip}</code>\n` +
+          `<b>节点标识:</b> ${esc(node.name)}\n` +
+          `<b>公网 IP:</b> <code>${esc(node.ip)}</code>\n` +
           `<b>当前内存:</b> <b>89.1%</b> (预警阈值: 85%)\n` +
           `<b>内存使用:</b> 1.78 GB / 2.00 GB\n` +
           `<b>告警时间:</b> ${this.formatDate()}`;

@@ -301,6 +301,22 @@ export class Database {
           this.data.admin!.sessionVersion = crypto.randomUUID();
           changed = true;
         }
+        // Explicit, opt-in recovery for a forgotten password. A separate variable is used so that
+        // leaving NODEMASTER_ADMIN_PASSWORD set never silently reverts a password changed in the UI.
+        const resetPassword = process.env.NODEMASTER_RESET_ADMIN_PASSWORD;
+        if (resetPassword && (resetPassword.length < 12 || resetPassword === "admin123456")) {
+          console.error("[Security] NODEMASTER_RESET_ADMIN_PASSWORD ignored: it must contain at least 12 characters and cannot be the legacy password.");
+        } else if (resetPassword) {
+          // Skip when already applied, so restarts with the variable still set don't revoke sessions again.
+          const current = this.data.admin!;
+          if (crypto.pbkdf2Sync(resetPassword, current.salt, 100000, 64, "sha512").toString("hex") !== current.passwordHash) {
+            const salt = crypto.randomBytes(16).toString("hex");
+            const passwordHash = crypto.pbkdf2Sync(resetPassword, salt, 100000, 64, "sha512").toString("hex");
+            this.data.admin = { ...this.data.admin!, passwordHash, salt, sessionVersion: crypto.randomUUID(), updatedAt: Date.now() };
+            changed = true;
+            console.warn("[Security] Admin password was reset from NODEMASTER_RESET_ADMIN_PASSWORD and all sessions were revoked. Remove the variable now.");
+          }
+        }
         for (const n of this.data.nodes) {
           if (n.reality) {
             const publicKey = deriveRealityPublicKey(n.reality.privateKey);

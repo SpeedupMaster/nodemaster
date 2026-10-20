@@ -1,19 +1,33 @@
 import "dotenv/config";
 import express from "express";
 import http from "http";
-import cors from "cors";
-import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { apiRouter } from "./routes/api.js";
 import { wsHub } from "./services/wsHub.js";
 import { db } from "./db/index.js";
 
-dotenv.config();
-
 const app = express();
 const server = http.createServer(app);
 
+// Behind nginx/Caddy set TRUST_PROXY (e.g. "1", "loopback" or a proxy IP) so req.ip and
+// req.protocol reflect the real client; otherwise login throttling and generated script URLs break.
+const trustProxy = process.env.TRUST_PROXY?.trim();
+if (trustProxy && trustProxy !== "false") {
+  app.set("trust proxy", trustProxy === "true" ? true : /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy);
+}
+app.disable("x-powered-by");
+
 // Middlewares
-app.use(cors({ origin: "*" }));
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  // Tokens can appear in subscription/WebSocket URLs; never leak them through Referer.
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
+  next();
+});
 app.use(express.json({ limit: "128kb" }));
 
 // Routes
@@ -25,19 +39,10 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    app: "NodeMaster Server",
-    version: "1.0.0",
-    nodesCount: db.getNodes().length,
-  });
+  res.json({ status: "ok", app: "NodeMaster Server", version: "1.0.0" });
 });
 
 // Static Web Hosting (Production Build)
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WEB_DIST = path.resolve(__dirname, "../../web/dist");
@@ -52,12 +57,18 @@ if (fs.existsSync(WEB_DIST)) {
           res.setHeader("Service-Worker-Allowed", "/");
         } else if (filePath.endsWith(".webmanifest")) {
           res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+        } else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          // Vite emits content-hashed file names under /assets
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "no-cache");
         }
       },
     })
   );
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/ws")) return next();
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.join(WEB_DIST, "index.html"));
   });
 }

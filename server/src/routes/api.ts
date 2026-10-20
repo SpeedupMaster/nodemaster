@@ -132,6 +132,7 @@ apiRouter.post("/auth/change-password", (req, res) => {
 
   const { hash, salt } = hashPassword(newPassword);
   db.updateAdmin({ passwordHash: hash, salt, sessionVersion: crypto.randomUUID() });
+  wsHub.closeRevokedClients();
 
   const token = signToken({ sub: admin.username, role: "admin" });
   res.json({
@@ -553,6 +554,10 @@ apiRouter.put("/subscriptions/:id", (req, res) => {
       // 校验 token 字符合法性（字母、数字、下划线、中划线）
       if (!/^[a-zA-Z0-9_-]+$/.test(cleanToken)) {
         return res.status(400).json({ success: false, message: "Token 仅支持字母、数字、下划线和连字符(-)" });
+      }
+      // Subscription tokens are the only credential guarding node secrets; keep them unguessable.
+      if (cleanToken.length < 16 || cleanToken.length > 128) {
+        return res.status(400).json({ success: false, message: "Token 长度需为 16–128 位" });
       }
       updates.token = cleanToken;
     }
