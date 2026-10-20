@@ -5,7 +5,7 @@ import {
   Database,
   Lightning,
   HardDrives,
-  ShareNetwork,
+  Graph,
   ArrowUp,
   ArrowDown,
 } from "@phosphor-icons/react";
@@ -38,12 +38,23 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
     if (!containerRef.current) return;
     gsap.from(".telemetry-card", {
       opacity: 0,
-      y: 12,
-      stagger: 0.06,
-      duration: 0.4,
-      ease: "power2.out",
+      y: 16,
+      scale: 0.98,
+      stagger: 0.07,
+      duration: 0.6,
+      ease: "expo.out",
+      clearProps: "transform,translate,scale,opacity",
     });
   }, { scope: containerRef });
+
+  // Feed pointer position to the .card-spotlight sheen
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>(".card-spotlight");
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+    card.style.setProperty("--my", `${e.clientY - rect.top}px`);
+  };
 
   const formatGB = (bytes: number) => (bytes / (1024 * 1024 * 1024)).toFixed(1);
   const usedGB = Number(formatGB(totalTrafficUsed));
@@ -59,15 +70,17 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
   const down = formatSpeed(totalDownSpeed);
 
   return (
-    <div ref={containerRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div ref={containerRef} onPointerMove={handlePointerMove} className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {/* Card 1: Traffic Usage (Full width on mobile, 1 col on desktop) */}
-      <div className="telemetry-card col-span-2 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
+      <div className="telemetry-card col-span-2 lg:col-span-1 p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0 group card-lift card-spotlight">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider truncate">本月流量消耗</span>
-            <Database className="w-4 h-4 text-accent shrink-0 ml-1" />
+            <span className="font-medium tracking-wide truncate">本月流量消耗</span>
+            <span className="icon-tile w-8 h-8 shrink-0 ml-1 bg-accent/10 border-accent/25 text-accent">
+              <Database weight="duotone" className="w-4 h-4" />
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+          <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
             <RollingCounter
               value={usedGB}
               decimals={1}
@@ -86,12 +99,12 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
           </div>
           <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 rounded-full ${
+              className={`bar-shine h-full transition-[width] duration-700 ease-out-expo rounded-full ${
                 trafficPct > 90
                   ? "bg-status-danger"
                   : trafficPct > 70
                   ? "bg-status-warning"
-                  : "bg-accent"
+                  : "bg-gradient-accent"
               }`}
               style={{ width: `${trafficPct}%` }}
             />
@@ -100,13 +113,15 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
       </div>
 
       {/* Card 2: Live Speed (Half width on mobile) */}
-      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
+      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0 group card-lift card-spotlight">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider truncate">实时吞吐带宽</span>
-            <Lightning className="w-4 h-4 text-emerald-400 shrink-0 ml-1" />
+            <span className="font-medium tracking-wide truncate">实时吞吐带宽</span>
+            <span className="icon-tile w-8 h-8 shrink-0 ml-1 bg-emerald-500/10 border-emerald-500/25 text-emerald-400">
+              <Lightning weight="duotone" className="w-4 h-4" />
+            </span>
           </div>
-          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+          <div className="mt-1.5 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
             <div className="flex items-center gap-1 min-w-0">
               <ArrowDown className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <RollingCounter
@@ -130,19 +145,24 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
 
         <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono text-ink-muted">
           <span className="truncate">采样率</span>
-          <span className="text-emerald-400 font-medium whitespace-nowrap">3s 动态</span>
+          <span className="text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-soft" />
+            3s 动态
+          </span>
         </div>
       </div>
 
       {/* Card 3: Node Health (Half width on mobile) */}
-      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
+      <div className="telemetry-card col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0 group card-lift card-spotlight">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider truncate">在管 VPS 节点</span>
-            <HardDrives className="w-4 h-4 text-purple-400 shrink-0 ml-1" />
+            <span className="font-medium tracking-wide truncate">在管 VPS 节点</span>
+            <span className="icon-tile w-8 h-8 shrink-0 ml-1 bg-sky-500/10 border-sky-500/25 text-sky-400">
+              <HardDrives weight="duotone" className="w-4 h-4" />
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xl sm:text-2xl font-bold text-ink font-mono">{onlineCount}</span>
+          <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-bold text-ink font-mono tabular-nums">{onlineCount}</span>
             <span className="text-xs text-ink-muted font-mono truncate">/ {totalCount} 在线</span>
           </div>
         </div>
@@ -154,14 +174,16 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
       </div>
 
       {/* Card 4: Relay Status (Full width on mobile, 1 col on desktop) */}
-      <div className="telemetry-card col-span-2 sm:col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-lg bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0">
+      <div className="telemetry-card col-span-2 sm:col-span-1 lg:col-span-1 p-3.5 sm:p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden flex flex-col justify-between min-w-0 group card-lift card-spotlight">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-muted">
-            <span className="font-mono uppercase tracking-wider truncate">链式解锁代理</span>
-            <ShareNetwork className="w-4 h-4 text-purple-400 shrink-0 ml-1" />
+            <span className="font-medium tracking-wide truncate">链式解锁代理</span>
+            <span className="icon-tile w-8 h-8 shrink-0 ml-1 bg-purple-500/10 border-purple-500/25 text-purple-400">
+              <Graph weight="duotone" className="w-4 h-4" />
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xl sm:text-2xl font-bold text-ink font-mono">{relaysCount}</span>
+          <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-xl sm:text-2xl font-bold text-ink font-mono tabular-nums">{relaysCount}</span>
             <span className="text-xs text-ink-muted font-mono truncate">条链式链路</span>
           </div>
         </div>

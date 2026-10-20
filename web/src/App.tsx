@@ -17,7 +17,8 @@ const LatencyMonitorView = lazy(() => import("./components/ping/LatencyMonitorVi
 const NodeDetailModal = lazy(() => import("./components/probe/NodeDetailModal").then(m => ({ default: m.NodeDetailModal })));
 import { GlobalTooltip } from "./components/common/Tooltip";
 const TrafficAnalyticsView = lazy(() => import("./components/traffic/TrafficAnalyticsView").then(m => ({ default: m.TrafficAnalyticsView })));
-import { Broadcast, ArrowUpRight, ArrowDownRight, ShareNetwork } from "@phosphor-icons/react";
+import { Broadcast, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
+import { Logo } from "./components/common/Logo";
 import { NodeItem } from "./types";
 import { useAuth } from "./context/AuthContext";
 import { LoginPage } from "./components/auth/LoginPage";
@@ -62,6 +63,21 @@ const getTabFromUrl = (): string => {
   }
   return "dashboard";
 };
+
+/** Placeholder layout shown while a lazily loaded page chunk downloads */
+function PageSkeleton() {
+  return (
+    <div role="status" aria-label="正在加载页面" className="space-y-4 animate-fade-in">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-24 rounded-xl" />
+        ))}
+      </div>
+      <div className="skeleton h-12 rounded-xl" />
+      <div className="skeleton h-72 rounded-xl" />
+    </div>
+  );
+}
 
 export function App() {
   const { isAuthenticated, loading: authLoading, token } = useAuth();
@@ -131,8 +147,8 @@ export function App() {
     if (!mainContentRef.current) return;
     gsap.fromTo(
       mainContentRef.current,
-      { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.25, ease: "power2.out", clearProps: "transform" }
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", clearProps: "transform,translate,scale,opacity" }
     );
   }, { dependencies: [currentTab] });
 
@@ -148,12 +164,13 @@ export function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-paper flex flex-col items-center justify-center text-ink select-none">
-        <div className="w-12 h-12 rounded-xl bg-accent/20 border border-accent/40 flex items-center justify-center text-accent animate-pulse mb-3.5 shadow-lg shadow-accent/10">
-          <ShareNetwork weight="bold" className="w-7 h-7" />
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center text-ink select-none animate-fade-in">
+        <Logo size={52} animated className="mb-5 animate-float" />
         <div className="text-sm font-semibold tracking-wide text-ink">NodeMaster 控制中心</div>
         <div className="text-xs text-ink-muted mt-1.5 font-mono">正在验证安全访问凭证...</div>
+        <div className="mt-4 w-40 h-0.5 rounded-full bg-paper-3 overflow-hidden">
+          <div className="h-full w-full skeleton bg-gradient-accent opacity-80" />
+        </div>
       </div>
     );
   }
@@ -168,7 +185,7 @@ export function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-paper text-ink">
+    <div className="flex min-h-screen text-ink">
       {/* N3 Side-rail Navigation & Mobile Drawer */}
       <Sidebar
         currentTab={currentTab}
@@ -197,7 +214,7 @@ export function App() {
         {/* Mobile Global Real-time Throughput (Sticky below Header on mobile < 768px) */}
         <div className="md:hidden sticky top-16 z-10 bg-paper-2/95 backdrop-blur-md border-b border-rule px-4 py-2 flex items-center justify-between text-xs select-none">
           <div className="flex items-center gap-1.5 font-mono text-ink-muted">
-            <Broadcast className="w-3.5 h-3.5 text-accent animate-pulse" />
+            <Broadcast weight="duotone" className="w-3.5 h-3.5 text-accent animate-pulse-soft" />
             <span className="text-[11px] font-medium">全局吞吐</span>
           </div>
           <div className="flex items-center gap-3.5 font-mono text-xs">
@@ -216,7 +233,7 @@ export function App() {
 
         <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6">
           <div ref={mainContentRef}>
-            <Suspense fallback={<div role="status" className="p-6 text-ink-muted">正在加载页面…</div>}>
+            <Suspense fallback={<PageSkeleton />}>
             {currentTab === "dashboard" && (
               <div className="space-y-6">
                 <OverviewCards

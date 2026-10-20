@@ -57,8 +57,9 @@ export const NodeList: React.FC<NodeListProps> = ({
       opacity: 0,
       y: 16,
       stagger: 0.05,
-      duration: 0.35,
-      ease: "power2.out",
+      duration: 0.5,
+      ease: "expo.out",
+      clearProps: "transform,translate,scale,opacity",
     });
   }, { scope: containerRef, dependencies: [typeFilter] });
 

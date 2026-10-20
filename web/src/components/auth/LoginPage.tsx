@@ -4,7 +4,6 @@ import {
   User,
   Eye,
   EyeSlash,
-  ShareNetwork,
   WarningCircle,
   ArrowRight,
   Warning,
@@ -20,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import gsap from "gsap";
 import { useAuth } from "../../context/AuthContext";
+import { Logo } from "../common/Logo";
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -46,11 +46,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   useEffect(() => {
     if (cardRef.current) {
-      gsap.fromTo(
+      const tl = gsap.timeline();
+      tl.fromTo(
         cardRef.current,
-        { opacity: 0, y: 16, scale: 0.98 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "power3.out" }
+        { opacity: 0, y: 20, scale: 0.98 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "expo.out", clearProps: "transform" }
+      ).from(
+        cardRef.current.querySelectorAll("[data-login-stagger], form > *"),
+        { opacity: 0, y: 10, duration: 0.5, stagger: 0.06, ease: "expo.out", clearProps: "transform,opacity" },
+        "-=0.5"
       );
+      return () => {
+        tl.revert(); // restore pre-animation state so StrictMode's re-run starts clean
+      };
     }
   }, []);
 
@@ -167,12 +175,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="hidden sm:block absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent rounded-t-3xl pointer-events-none" />
 
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-6 sm:mb-7">
+        <div data-login-stagger className="flex flex-col items-center text-center mb-6 sm:mb-7">
           {/* Logo with Tasteful Ambient Rim */}
           <div className="relative mb-3.5 sm:mb-4">
-            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-900/40 border border-sky-300/30">
-              <ShareNetwork weight="fill" className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow" aria-hidden="true" />
-            </div>
+            <Logo size={56} animated className="animate-float" />
           </div>
 
           <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-white">

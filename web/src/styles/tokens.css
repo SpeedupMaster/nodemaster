@@ -43,4 +43,23 @@
   --radius-md: 6px;
   --radius-lg: 10px;
   --radius-full: 9999px;
+
+  /* 8. Elevation (layered shadows with a faint top highlight) */
+  --highlight-top: inset 0 1px 0 0 oklch(100% 0 0 / 0.04);
+  --shadow-xs: 0 1px 2px 0 oklch(0% 0 0 / 0.25);
+  --shadow-card: var(--highlight-top), 0 1px 2px 0 oklch(0% 0 0 / 0.22), 0 4px 12px -6px oklch(0% 0 0 / 0.35);
+  --shadow-lift: var(--highlight-top), 0 2px 4px 0 oklch(0% 0 0 / 0.25), 0 14px 32px -12px oklch(0% 0 0 / 0.55);
+  --shadow-pop: 0 0 0 1px oklch(100% 0 0 / 0.04), 0 12px 28px -8px oklch(0% 0 0 / 0.6), 0 32px 64px -24px oklch(0% 0 0 / 0.55);
+  --shadow-glow: 0 0 0 1px oklch(68% 0.19 240 / 0.35), 0 6px 20px -4px oklch(68% 0.19 240 / 0.45);
+
+  /* 9. Brand gradient (matches favicon.svg) */
+  --gradient-brand: linear-gradient(135deg, oklch(76% 0.14 230) 0%, oklch(55% 0.21 262) 55%, oklch(51% 0.22 276) 100%);
+  --gradient-accent: linear-gradient(135deg, oklch(70% 0.19 240) 0%, oklch(60% 0.21 262) 100%);
+
+  /* 10. Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
 }

@@ -84,7 +84,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   const down = formatSpeed(node.downlinkSpeedBytes);
 
   return (
-    <div className="h-full rounded-lg bg-paper-2 border border-rule hover:border-rule-active transition-all p-5 flex flex-col justify-between group">
+    <div className="h-full rounded-xl bg-paper-2 border border-rule card-lift p-5 flex flex-col justify-between group">
       <div className="flex-1 flex flex-col justify-between">
         {/* Card Header: Node Title & Badges */}
         <div className="flex items-start justify-between gap-2.5">

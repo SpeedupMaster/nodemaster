@@ -88,7 +88,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
     gsap.fromTo(
       ".probe-item-anim",
       { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, stagger: 0.04, duration: 0.25, ease: "power2.out" }
+      { opacity: 1, y: 0, stagger: 0.035, duration: 0.45, ease: "expo.out", clearProps: "transform,translate,scale" }
     );
   }, { scope: containerRef, dependencies: [viewMode, regionFilter] });
 
@@ -108,7 +108,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
       {/* Probe Telemetry Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
         {/* Card 1: 在管探针总数 */}
-        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
             <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">在管探针总数</div>
             <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5 flex items-baseline gap-1 truncate">
@@ -116,13 +116,13 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               <span className="text-xs text-ink-muted font-normal">/ {nodes.length} 在线</span>
             </div>
           </div>
-          <div className="p-1.5 sm:p-2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
-            <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
+            <ShieldCheck weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
 
         {/* Card 2: 全网出入吞吐 */}
-        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
             <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">全网出入吞吐</div>
             <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 flex flex-col xs:flex-row items-start xs:items-center gap-0.5 sm:gap-2 truncate">
@@ -136,34 +136,34 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               </span>
             </div>
           </div>
-          <div className="p-1.5 sm:p-2 rounded-md bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
-            <Lightning className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
+            <Lightning weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
 
         {/* Card 3: 全网平均 CPU 负载 */}
-        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
             <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">平均 CPU 负载</div>
             <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5">
               {avgCpu}%
             </div>
           </div>
-          <div className="p-1.5 sm:p-2 rounded-md bg-accent/10 text-accent border border-accent/20 shrink-0 ml-1.5">
-            <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-accent/10 text-accent border border-accent/20 shrink-0 ml-1.5">
+            <Cpu weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
 
         {/* Card 4: 物理内存总占用 */}
-        <div className="p-3 sm:p-3.5 rounded-lg bg-paper-2 border border-rule flex items-center justify-between min-w-0">
+        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
             <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">物理内存总占用</div>
             <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 truncate">
               {formatBytes(totalMemUsed)} <span className="text-[10px] font-normal text-ink-muted">/ {formatBytes(totalMemTotal)}</span>
             </div>
           </div>
-          <div className="p-1.5 sm:p-2 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
-            <Database className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
+            <Database weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
       </div>
@@ -253,7 +253,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
             <div
               key={node.id}
               onClick={() => onSelectNode?.(node)}
-              className="probe-item-anim rounded-xl bg-paper-2 border border-rule p-3.5 space-y-3 hover:border-rule-active active:bg-paper-hover transition-all cursor-pointer shadow-xs select-none"
+              className="probe-item-anim card-lift rounded-xl bg-paper-2 border border-rule p-3.5 space-y-3 active:bg-paper-hover cursor-pointer select-none"
               title="点击查看详细延迟时序与硬件指标"
             >
               {/* Header: Node Name + Country + Status Badge */}
@@ -627,7 +627,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
             return (
               <div
                 key={node.id}
-                className="probe-item-anim rounded-lg bg-paper-2 border border-rule hover:border-rule-active p-5 space-y-4 transition-all"
+                className="probe-item-anim card-lift rounded-xl bg-paper-2 border border-rule p-5 space-y-4"
               >
                 {/* Header */}
                 <div

@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { CircleNotch } from "@phosphor-icons/react";
 
 /* Hallmark · component: Button · genre: modern-minimal · theme: Cobalt
@@ -26,7 +26,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    "inline-flex items-center justify-center font-medium transition-all duration-150 select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 active:translate-y-[1px] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none";
+    "group relative inline-flex items-center justify-center font-medium transition-all duration-200 ease-out-expo select-none cursor-pointer focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none";
 
   const sizeClasses = {
     sm: "text-xs px-2.5 py-1 gap-1.5",
@@ -38,9 +38,9 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary:
-      "bg-accent text-paper font-semibold hover:bg-accent-hover active:bg-accent-hover shadow-sm hover:shadow",
+      "bg-gradient-accent text-white font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_1px_2px_0_rgba(0,0,0,0.3)] hover:shadow-glow hover:brightness-110",
     secondary:
-      "bg-paper-2 text-ink border border-rule hover:bg-paper-hover hover:border-rule-active hover:text-ink active:bg-paper-active",
+      "bg-paper-2 text-ink border border-rule shadow-xs hover:bg-paper-hover hover:border-rule-active hover:text-ink active:bg-paper-active",
     danger:
       "bg-status-danger-bg text-status-danger border border-status-danger/30 hover:bg-status-danger hover:text-paper active:bg-status-danger/90",
     ghost:

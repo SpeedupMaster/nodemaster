@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   List,
   X,
-  User,
   Key,
   SignOut,
   CaretDown,
@@ -92,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 border-b border-rule bg-paper/75 backdrop-blur-md px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-20 select-none">
+      <header className="h-16 border-b border-rule bg-paper/70 backdrop-blur-xl backdrop-saturate-150 px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-20 select-none">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Mobile Hamburger Drawer Trigger */}
           <button
@@ -117,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          <div className="min-w-0">
+          <div key={currentTab} className="min-w-0 animate-fade-up">
             <h1 className="text-sm sm:text-base font-semibold text-ink leading-tight truncate">
               {info.title}
             </h1>
@@ -128,8 +127,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-paper-2 border border-rule text-xs text-ink-secondary font-mono">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-online-bg/60 border border-status-online/20 text-xs text-ink-secondary font-mono">
+            <ShieldCheck weight="duotone" className="w-4 h-4 text-emerald-400" />
             <span>熔断防护已激活</span>
           </div>
 
@@ -140,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
             size="sm"
             onClick={onRefresh}
             loading={loading}
-            icon={<ArrowsClockwise className="w-4 h-4" />}
+            icon={<ArrowsClockwise className="w-4 h-4 transition-transform duration-500 ease-out-expo group-hover:rotate-180" />}
             aria-label="刷新数据"
             className="min-h-[38px] px-2.5 sm:px-3 text-xs"
           >
@@ -163,21 +162,31 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-paper-2 hover:bg-paper-3 border border-rule text-xs text-ink transition-colors cursor-pointer"
+              aria-haspopup="menu"
+              aria-expanded={isUserMenuOpen}
+              className={`flex items-center gap-1.5 pl-1 pr-2 py-1 min-h-[38px] rounded-lg bg-paper-2 hover:bg-paper-3 border text-xs text-ink transition-colors cursor-pointer ${
+                isUserMenuOpen ? "border-rule-active" : "border-rule"
+              }`}
               title="管理员账户与安全设置"
             >
-              <div className="w-6 h-6 rounded-md bg-accent/15 text-accent flex items-center justify-center font-bold">
-                <User weight="bold" className="w-3.5 h-3.5" />
+              <div className="w-7 h-7 rounded-md bg-gradient-accent text-white flex items-center justify-center font-bold uppercase shadow-xs">
+                {(user?.username || "admin").slice(0, 1)}
               </div>
               <span className="hidden sm:inline font-mono font-medium text-xs max-w-[80px] truncate">
                 {user?.username || "admin"}
               </span>
-              <CaretDown className="w-3 h-3 text-ink-muted" />
+              <CaretDown
+                weight="bold"
+                className={`w-3 h-3 text-ink-muted transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-1.5 w-48 bg-paper-2 border border-rule rounded-xl shadow-xl py-1.5 z-30 text-xs">
-                <div className="px-3 py-1.5 border-b border-rule text-ink-muted">
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-52 origin-top-right bg-paper-2 border border-rule rounded-xl shadow-pop p-1.5 z-30 text-xs animate-pop-in"
+              >
+                <div className="px-2.5 pt-1.5 pb-2 mb-1 border-b border-rule text-ink-muted">
                   <div className="font-semibold text-ink font-mono">{user?.username || "admin"}</div>
                   <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -191,9 +200,10 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsUserMenuOpen(false);
                     setIsPasswordModalOpen(true);
                   }}
-                  className="w-full px-3 py-2 text-left text-ink hover:bg-paper-3 flex items-center gap-2 cursor-pointer transition-colors"
+                  role="menuitem"
+                  className="w-full px-2.5 py-2 rounded-lg text-left text-ink hover:bg-paper-3 flex items-center gap-2 cursor-pointer transition-colors"
                 >
-                  <Key className="w-4 h-4 text-accent" />
+                  <Key weight="duotone" className="w-4 h-4 text-accent" />
                   <span>修改管理密码</span>
                 </button>
 
@@ -203,7 +213,8 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsUserMenuOpen(false);
                     logout();
                   }}
-                  className="w-full px-3 py-2 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer transition-colors"
+                  role="menuitem"
+                  className="w-full px-2.5 py-2 rounded-lg text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer transition-colors"
                 >
                   <SignOut className="w-4 h-4" />
                   <span>退出管理员登录</span>

@@ -19,10 +19,10 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="relative w-full">
       <div
-        className={`w-full flex items-center rounded-md bg-paper border transition-all ${
+        className={`w-full flex items-center rounded-lg bg-paper/70 border transition-[border-color,box-shadow] duration-200 ${
           error
             ? "border-status-danger ring-1 ring-status-danger/20"
-            : "border-rule hover:border-rule-active focus-within:border-accent focus-within:ring-1 focus-within:ring-accent/30"
+            : "border-rule hover:border-rule-active focus-within:border-accent/70 focus-within:ring-[3px] focus-within:ring-accent/15"
         } ${props.disabled ? "opacity-50 cursor-not-allowed bg-paper-3" : ""}`}
       >
         {prefixIcon && (
