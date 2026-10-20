@@ -11,6 +11,7 @@ export class WsHub {
   private agentClients = new Map<string, WebSocket>(); // nodeId -> WebSocket
   private webClients = new Map<WebSocket, string>();
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private lastSent = new Map<string, string>(); // nodeId -> last JSON pushed to browsers
 
   public init(server: Server) {
     this.wss = new WebSocketServer({ server, path: "/ws", maxPayload: 128 * 1024 });
@@ -82,7 +83,7 @@ export class WsHub {
   private handleAgentReport(nodeId: string, data: Partial<NodeItem>) {
     const node = ingestTelemetry(nodeId, data);
     this.agentClients.get(nodeId)?.send(JSON.stringify({ type: "DIRECTIVES", ...agentDirectives(node) }));
-    this.broadcastNodeUpdate(nodeId);
+    // Telemetry is pushed to browsers by the heartbeat as a coalesced NODES_PATCH.
   }
 
   public closeRevokedClients() {
@@ -95,7 +96,7 @@ export class WsHub {
     this.heartbeatTimer = setInterval(() => {
       maintainNodes();
       this.closeRevokedClients();
-      this.broadcastToWeb({ type: "TELEMETRY_BATCH", nodes: db.getNodes(), timestamp: Date.now() });
+      this.broadcastChangedNodes();
       telegramService.checkNodeAlerts(db.getNodes()).catch(console.error);
     }, 3000);
     this.heartbeatTimer.unref();
@@ -108,9 +109,24 @@ export class WsHub {
     this.wss?.close();
   }
 
+  /** Sends only nodes whose state changed since they were last pushed to browsers. */
+  private broadcastChangedNodes() {
+    if (!this.webClients.size) return;
+    const changed: NodeItem[] = [];
+    const present = new Set<string>();
+    for (const node of db.getNodes()) {
+      present.add(node.id);
+      const json = JSON.stringify(node);
+      if (this.lastSent.get(node.id) !== json) { this.lastSent.set(node.id, json); changed.push(node); }
+    }
+    for (const id of this.lastSent.keys()) if (!present.has(id)) this.lastSent.delete(id);
+    if (changed.length) this.broadcastToWeb({ type: "NODES_PATCH", nodes: changed, timestamp: Date.now() });
+  }
+
   public broadcastNodeUpdate(nodeId: string) {
     const node = db.getNodeById(nodeId);
     if (!node) return;
+    this.lastSent.set(node.id, JSON.stringify(node));
     this.broadcastToWeb({
       type: "NODE_UPDATE",
       node,
@@ -118,7 +134,7 @@ export class WsHub {
   }
 
   public broadcastToWeb(payload: any) {
-    this.closeRevokedClients();
+    // Revoked sessions are closed by the 3s heartbeat and immediately on logout/password change.
     const str = JSON.stringify(payload);
     for (const client of this.webClients.keys()) {
       if (client.readyState === WebSocket.OPEN) {

@@ -268,7 +268,7 @@ export class Database {
         }
         let changed = false;
         if (!this.data.latencyTasks) {
-          this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
+          this.data.latencyTasks = structuredClone(INITIAL_LATENCY_TASKS);
           changed = true;
         }
         if (!this.data.routingRules) {
@@ -565,7 +565,7 @@ export class Database {
   }
 
   public resetLatencyTasks(): LatencyTask[] {
-    this.data.latencyTasks = [...INITIAL_LATENCY_TASKS];
+    this.data.latencyTasks = structuredClone(INITIAL_LATENCY_TASKS);
     this.save();
     return this.getLatencyTasks();
   }
@@ -711,7 +711,8 @@ export class Database {
     if (this.data.telegramLogs.length > 100) {
       this.data.telegramLogs = this.data.telegramLogs.slice(0, 100);
     }
-    this.save();
+    // Alert history is not critical state; coalesce bursts of alerts into one write.
+    this.scheduleSave();
   }
 
   public clearTelegramLogs(): void {

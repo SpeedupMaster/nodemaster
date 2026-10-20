@@ -2,6 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { NodeItem, RelayLink, SubscriptionToken, LatencyTask, RoutingRule } from "../types";
 import { getStoredToken, setStoredToken } from "../services/api";
 
+// Replaces changed nodes in place and appends new ones; untouched nodes keep their object identity
+// so memoized children can skip re-rendering.
+function mergeNodes(prev: NodeItem[], changed: NodeItem[]): NodeItem[] {
+  if (!changed.length) return prev;
+  const updates = new Map(changed.map((n) => [n.id, n]));
+  const next = prev.map((n) => {
+    const updated = updates.get(n.id);
+    if (!updated) return n;
+    updates.delete(n.id);
+    return updated;
+  });
+  return updates.size ? [...next, ...updates.values()] : next;
+}
+
 export function useData(enabled: boolean = true, sessionToken?: string | null) {
   const [nodes, setNodes] = useState<NodeItem[]>([]);
   const [relays, setRelays] = useState<RelayLink[]>([]);
@@ -83,10 +97,12 @@ export function useData(enabled: boolean = true, sessionToken?: string | null) {
             if (msg.relays) setRelays(msg.relays);
             if (msg.subscriptions) setSubscriptions(msg.subscriptions);
             if (msg.routingRules) setRoutingRules(msg.routingRules);
+          } else if (msg.type === "NODES_PATCH" && Array.isArray(msg.nodes)) {
+            setNodes((prev) => mergeNodes(prev, msg.nodes));
           } else if (msg.type === "TELEMETRY_BATCH") {
             if (msg.nodes) setNodes(msg.nodes);
           } else if (msg.type === "NODE_UPDATE" && msg.node) {
-            setNodes((prev) => prev.some(n => n.id === msg.node.id) ? prev.map(n => n.id === msg.node.id ? msg.node : n) : [...prev, msg.node]);
+            setNodes((prev) => mergeNodes(prev, [msg.node]));
           } else if (msg.type === "NODE_DELETED" && msg.id) {
             setNodes((prev) => prev.filter((n) => n.id !== msg.id));
           } else if (msg.type === "RELAYS_UPDATE" && msg.relays) {

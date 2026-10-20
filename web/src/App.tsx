@@ -168,7 +168,6 @@ export function App() {
   }
 
   return (
-    <Suspense fallback={<div role="status" className="p-6 text-ink-muted">正在加载页面…</div>}>
     <div className="flex min-h-screen bg-paper text-ink">
       {/* N3 Side-rail Navigation & Mobile Drawer */}
       <Sidebar
@@ -217,6 +216,7 @@ export function App() {
 
         <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6">
           <div ref={mainContentRef}>
+            <Suspense fallback={<div role="status" className="p-6 text-ink-muted">正在加载页面…</div>}>
             {currentTab === "dashboard" && (
               <div className="space-y-6">
                 <OverviewCards
@@ -286,6 +286,7 @@ export function App() {
             {currentTab === "notifications" && (
               <TelegramNotificationView nodes={nodes} />
             )}
+            </Suspense>
           </div>
         </main>
 
@@ -300,11 +301,11 @@ export function App() {
       />
 
       {/* Global Node Detail & Latency Time Series Modal */}
-      {selectedNodeDetail && <NodeDetailModal
+      {selectedNodeDetail && <Suspense fallback={null}><NodeDetailModal
         node={selectedNodeDetail}
         isOpen={!!selectedNodeDetail}
         onClose={() => setSelectedNodeDetail(null)}
-      />}
+      /></Suspense>}
 
       {/* Global Unified Tooltip Portal & Native Title Interceptor */}
       <GlobalTooltip />
@@ -312,7 +313,6 @@ export function App() {
       {/* PWA Status and Install Banner */}
       <PWAStatusBanner />
     </div>
-    </Suspense>
   );
 }
 

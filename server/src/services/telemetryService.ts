@@ -8,32 +8,37 @@ const integer = (v: unknown): v is number => finite(v) && Number.isSafeInteger(v
 const OFFLINE_MS = 30000;
 
 export function maintainNodes(now = Date.now()) {
-  for (const node of db.getNodes()) {
-    const updates: Partial<NodeItem> = {};
-    const period = billingPeriod(now, node.trafficResetDay || db.getConfig().trafficResetDay || 1);
-    if (!node.trafficPeriodStart) updates.trafficPeriodStart = period;
-    else if (period > node.trafficPeriodStart) {
-      updates.trafficPeriodStart = period;
-      updates.trafficUsedBytes = 0;
-      if (node.status === "circuit_broken") {
-        updates.status = now - node.lastSeen > OFFLINE_MS ? "offline" : "online";
-        updates.configVersion = Math.max(now, (node.configVersion || 0) + 1);
-        updates.configSyncStatus = "pending";
-      }
+  for (const node of db.getNodes()) maintainNode(node, now);
+}
+
+function maintainNode(node: NodeItem, now: number) {
+  const updates: Partial<NodeItem> = {};
+  const period = billingPeriod(now, node.trafficResetDay || db.getConfig().trafficResetDay || 1);
+  if (!node.trafficPeriodStart) updates.trafficPeriodStart = period;
+  else if (period > node.trafficPeriodStart) {
+    updates.trafficPeriodStart = period;
+    updates.trafficUsedBytes = 0;
+    if (node.status === "circuit_broken") {
+      updates.status = now - node.lastSeen > OFFLINE_MS ? "offline" : "online";
+      updates.configVersion = Math.max(now, (node.configVersion || 0) + 1);
+      updates.configSyncStatus = "pending";
     }
-    if (now - node.lastSeen > OFFLINE_MS) {
-      if ((updates.status || node.status) !== "circuit_broken") updates.status = "offline";
-      updates.uplinkSpeedBytes = 0;
-      updates.downlinkSpeedBytes = 0;
-    }
-    if (Object.entries(updates).some(([key, value]) => value !== (node as any)[key])) db.updateNode(node.id, updates, true);
   }
+  if (now - node.lastSeen > OFFLINE_MS) {
+    if ((updates.status || node.status) !== "circuit_broken") updates.status = "offline";
+    updates.uplinkSpeedBytes = 0;
+    updates.downlinkSpeedBytes = 0;
+  }
+  if (Object.entries(updates).some(([key, value]) => value !== (node as any)[key])) db.updateNode(node.id, updates, true);
 }
 
 export function ingestTelemetry(nodeId: string, data: Record<string, any>, now = Date.now()) {
-  maintainNodes(now);
-  const node = db.getNodeById(nodeId);
-  if (!node) throw new Error("Node not found");
+  const current = db.getNodeById(nodeId);
+  if (!current) throw new Error("Node not found");
+  // Only this node needs a billing-period rollover check before counting new traffic;
+  // the 3s heartbeat maintains all other nodes.
+  maintainNode(current, now);
+  const node = db.getNodeById(nodeId)!;
   if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Invalid telemetry");
   const updates: Partial<NodeItem> = { lastSeen: now, status: node.status === "circuit_broken" ? "circuit_broken" : "online" };
   const countersValid = typeof data.bootId === "string" && data.bootId.length <= 100 && integer(data.sequence) && integer(data.networkRxBytes) && integer(data.networkTxBytes);

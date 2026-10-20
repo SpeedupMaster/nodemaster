@@ -644,7 +644,6 @@ apiRouter.post("/nodes/telemetry", (req, res) => {
   if (!node) return res.status(401).json({ success: false, message: "无效节点凭证" });
   try {
     const updated = ingestTelemetry(node.id, req.body);
-    wsHub.broadcastNodeUpdate(node.id);
     res.json({ success: true, ...agentDirectives(updated) });
   } catch (error: any) { res.status(400).json({ success: false, message: error.message }); }
 });

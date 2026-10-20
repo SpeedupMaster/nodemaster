@@ -3,9 +3,19 @@
  * Production-ready PWA caching, offline shell support, and asset lifecycle management
  */
 
-const CACHE_VERSION = 'nodemaster-v1.0.0';
+const CACHE_VERSION = 'nodemaster-v1.1.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+// Content-hashed Vite bundles: immutable, so cache-first; capped so files from old releases get evicted
+const ASSET_CACHE = `${CACHE_VERSION}-assets`;
+const MAX_ASSET_ENTRIES = 80;
+
+// Cache.keys() returns entries in insertion order, so dropping from the front evicts the oldest
+async function trimCache(name, max) {
+  const cache = await caches.open(name);
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - max)).map((key) => cache.delete(key)));
+}
 
 const PRECACHE_ASSETS = [
   '/',
@@ -37,7 +47,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((name) => {
-          if (name.startsWith('nodemaster-') && name !== STATIC_CACHE && name !== RUNTIME_CACHE) {
+          if (name.startsWith('nodemaster-') && name !== STATIC_CACHE && name !== RUNTIME_CACHE && name !== ASSET_CACHE) {
             console.log('[SW] Evicting outdated cache bucket:', name);
             return caches.delete(name);
           }
@@ -115,9 +125,29 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Static assets (/assets/*, fonts, icons): Stale-While-Revalidate or Cache-First
+  // 5a. Hashed bundles under /assets/: Cache-First, never revalidated (the file name changes on every build)
+  if (url.origin === self.location.origin && url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) return cachedResponse;
+        return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            event.waitUntil(
+              caches.open(ASSET_CACHE)
+                .then((cache) => cache.put(request, responseClone))
+                .then(() => trimCache(ASSET_CACHE, MAX_ASSET_ENTRIES))
+            );
+          }
+          return networkResponse;
+        });
+      })
+    );
+    return;
+  }
+
+  // 5b. Other static files (icons, fonts): Stale-While-Revalidate
   const isStaticAsset =
-    url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.endsWith('.js') ||
     url.pathname.endsWith('.css') ||
