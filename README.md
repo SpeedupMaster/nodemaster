@@ -171,9 +171,38 @@ pnpm dev
 | :--- | :--- | :--- |
 | `PORT` | `3880` | 服务端监听端口 |
 | `HOST` | `0.0.0.0` | 绑定的监听 IP 地址 |
-| `NODEMASTER_DATA_DIR` | `server/data` | 数据持久化存储目录（含数据库与部署脚本） |
-| `NODEMASTER_ADMIN_PASSWORD` | *(自动生成随机)* | 首次部署管理员密码（长度至少 12 位）；若未设置，密码将保存至 `data/bootstrap-admin.txt` |
-| `JWT_SECRET` | *(自动派生)* | 会话签名密钥；未显式指定时由服务端初次启动自动生成强随机密钥 |
+| `NODEMASTER_DATA_DIR` | `server/data` | 运行时数据目录（数据库、遥测历史、初始凭据），需持久化 |
+| `NODEMASTER_ASSETS_DIR` | `server/data` | 随版本发布的安装脚本、探针与订阅模板目录（Docker 镜像中为 `/app/server/assets`，无需挂载） |
+| `NODEMASTER_ADMIN_PASSWORD` | *(自动生成随机)* | **仅首次部署**时的管理员密码（长度至少 12 位）；若未设置，密码将保存至 `data/bootstrap-admin.txt` |
+| `NODEMASTER_RESET_ADMIN_PASSWORD` | *(空)* | 忘记密码时使用：启动时将管理员密码重置为该值并注销所有会话，**生效后请立即删除** |
+| `TRUST_PROXY` | *(关闭)* | 部署在 nginx / Caddy 等反向代理之后时设置（如 `1` 或 `loopback`），使登录限流与脚本中的面板地址获取真实客户端 IP 与 HTTPS 协议 |
+
+会话签名密钥由服务端首次启动时自动生成强随机值，并保存在数据库中，无需手动配置。
+
+### 🔒 反向代理与 HTTPS（强烈建议）
+
+管理员密码、探针 Token 与 Reality 私钥都会经过面板传输，公网部署请务必启用 HTTPS。以 nginx 为例：
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name panel.example.com;
+    # ssl_certificate / ssl_certificate_key ...
+
+    location / {
+        proxy_pass http://127.0.0.1:3880;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # WebSocket (/ws)
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+同时为 NodeMaster 设置 `TRUST_PROXY=1`（或代理所在 IP），并将端口仅绑定到本机（如 Docker 使用 `-p 127.0.0.1:3880:3880`）。Caddy 用户只需 `reverse_proxy 127.0.0.1:3880`，同样需要设置 `TRUST_PROXY`。
 
 ---
 
@@ -189,11 +218,11 @@ NodeMaster 遵循零信任安全原则，数据库绝不保存明文密码，且
   ```
   *初次登录后，请立即在右上角控制台菜单中修改密码，系统将自动失效并清理旧凭据。*
 - **忘记管理密码恢复**：
-  若遗忘密码，只需在宿主机环境变量中设置新密码并重启服务：
+  若遗忘密码，设置 `NODEMASTER_RESET_ADMIN_PASSWORD` 并重启服务，密码会被重置且所有已登录会话失效：
   ```bash
-  export NODEMASTER_ADMIN_PASSWORD="YourNewStrongPassword"
-  pnpm start
+  NODEMASTER_RESET_ADMIN_PASSWORD="YourNewStrongPassword" pnpm start
   ```
+  Docker 用户可将其临时加入 `environment` 后重建容器。**登录成功后请删除该变量并再次重启**，否则之后在界面中修改的密码会在下次重启时被重置回该值。
 
 ---
 

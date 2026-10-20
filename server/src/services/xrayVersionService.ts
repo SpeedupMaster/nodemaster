@@ -1,6 +1,7 @@
 import https from "https";
 import fs from "node:fs";
 import { db } from "../db/index.js";
+import { asset } from "../paths.js";
 import { wsHub } from "./wsHub.js";
 import { XrayVersionInfo, XrayVersionNodeStatus } from "../types/index.js";
 
@@ -199,5 +200,5 @@ export async function batchUpgradeXray(customVersion?: string): Promise<{
 export function generateUpgradeScript(panelUrl: string, targetVersion: string): string {
   const version = normalizeVersion(targetVersion);
   if (!/^v[0-9]+[.][0-9]+[.][0-9]+$/.test(version)) throw new Error("Invalid version");
-  return fs.readFileSync(new URL("../../data/xray-upgrade.sh", import.meta.url), "utf8").replaceAll("{{VERSION}}", version);
+  return fs.readFileSync(asset("xray-upgrade.sh"), "utf8").replaceAll("{{VERSION}}", version);
 }

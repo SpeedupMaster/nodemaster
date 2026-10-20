@@ -5,8 +5,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install pnpm (pinned for reproducible lockfile handling)
+RUN npm install -g pnpm@11.17.0
 
 # Copy workspace definitions
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
@@ -29,39 +29,41 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 
+# Runtime state lives in /app/server/data (mount a volume here);
+# bundled installer scripts and templates live in /app/server/assets so a mounted
+# data volume can neither hide them nor pin them to an old release.
 ENV NODE_ENV=production \
     PORT=3880 \
-    HOST=0.0.0.0
+    HOST=0.0.0.0 \
+    NODEMASTER_DATA_DIR=/app/server/data \
+    NODEMASTER_ASSETS_DIR=/app/server/assets
 
-# Install curl for container healthcheck
-RUN apk add --no-cache curl && npm install -g pnpm
+RUN npm install -g pnpm@11.17.0
 
 # Copy package manifests
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY server/package.json ./server/
 COPY web/package.json ./web/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+# Install backend production dependencies only (the frontend ships as static files)
+RUN pnpm install --frozen-lockfile --prod --filter ./server && npm uninstall -g pnpm
 
 # Copy compiled backend dist
 COPY --from=builder /app/server/dist ./server/dist
 
-# Copy backend static data and installer scripts
-COPY --from=builder /app/server/data ./server/data
+# Copy installer scripts, probe agent and templates
+COPY --from=builder /app/server/data ./server/assets
+RUN mkdir -p ./server/data
 
 # Copy compiled frontend dist
 COPY --from=builder /app/web/dist ./web/dist
 
-# Copy shared definition files
-COPY --from=builder /app/shared ./shared
-
 # Expose default listening port
 EXPOSE 3880
 
-# Health check
+# Health check (busybox wget ships with alpine; no extra packages needed)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -fsS http://127.0.0.1:3880/health || exit 1
+  CMD wget -qO /dev/null "http://127.0.0.1:${PORT}/health" || exit 1
 
 # Start NodeMaster server
 CMD ["node", "server/dist/index.js"]

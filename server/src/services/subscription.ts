@@ -1,13 +1,10 @@
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import YAML from "yaml";
 import { NodeItem, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
+import { asset } from "../paths.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const CLASH_TEMPLATE_PATH = path.resolve(__dirname, "../../data/clash-template.yaml");
+const CLASH_TEMPLATE_PATH = asset("clash-template.yaml");
 
 // Helper to construct VLESS URL
 export function toVlessUrl(node: NodeItem, customHost?: string, customPort?: number, aliasName?: string): string {

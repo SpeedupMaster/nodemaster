@@ -9,5 +9,8 @@ services:
       - PORT=3880
       - HOST=0.0.0.0
       # - NODEMASTER_ADMIN_PASSWORD=YourStrongPasswordHere
+      # Behind nginx/Caddy: trust the proxy so client IP and https are detected correctly
+      # - TRUST_PROXY=1
+    # Only runtime data is mounted; installer scripts ship inside the image (/app/server/assets).
     volumes:
       - ./data:/app/server/data

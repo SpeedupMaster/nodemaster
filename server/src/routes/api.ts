@@ -4,9 +4,8 @@ import { ingestTelemetry, agentDirectives } from "../services/telemetryService.j
 import { billingPeriod } from "../services/security.js";
 import crypto from "crypto";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { db } from "../db/index.js";
+import { asset } from "../paths.js";
 import { generateRealityCredentials, generateShadowsocksCredentials, generateXrayServerConfig, compileRuleForPreview } from "../services/xrayConfig.js";
 import { assembleProxies, renderClashYaml, renderSingboxJson, renderEgernYaml, renderBase64, toVlessUrl } from "../services/subscription.js";
 import { wsHub } from "../services/wsHub.js";
@@ -26,8 +25,6 @@ import {
   requireAuth,
 } from "../services/authService.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const apiRouter = Router();
 apiRouter.use(validateRequest);
@@ -700,11 +697,11 @@ apiRouter.get("/xray/upgrade.sh", async (req, res) => {
 // 6. Dual Deployment Installer Script (Proxy Node + Probe Agent)
 // -------------------------------------------------------------
 apiRouter.get("/probe.py", (req, res) => {
-  res.type("text/plain").sendFile(path.resolve(__dirname, "../../data/probe.py"));
+  res.type("text/plain").sendFile(asset("probe.py"));
 });
 apiRouter.get("/install.sh", (req, res) => {
   const panelUrl = `${req.protocol}://${req.get("host")}`;
-  const scriptPath = path.resolve(__dirname, "../../data/install.sh");
+  const scriptPath = asset("install.sh");
   if (fs.existsSync(scriptPath)) {
     const raw = fs.readFileSync(scriptPath, "utf-8");
     res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
@@ -760,7 +757,7 @@ fi
 // -------------------------------------------------------------
 apiRouter.get("/tcp-tune.sh", (req, res) => {
   const panelUrl = `${req.protocol}://${req.get("host")}`;
-  const scriptPath = path.resolve(__dirname, "../../data/tcp-tune.sh");
+  const scriptPath = asset("tcp-tune.sh");
   if (fs.existsSync(scriptPath)) {
     const raw = fs.readFileSync(scriptPath, "utf-8");
     res.setHeader("Content-Type", "text/x-shellscript; charset=utf-8");
