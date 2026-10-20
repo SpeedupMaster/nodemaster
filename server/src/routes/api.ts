@@ -466,6 +466,7 @@ apiRouter.post("/relays", (req, res) => {
     mode: mode || "ai_media",
     customServices: customServices || [],
     customDomains: customDomains || [],
+    chainUuid: crypto.randomUUID(),
     transitNodeId: mainId,
     exitNodeId: unlockId,
     transitPort: 443,

@@ -30,7 +30,12 @@ export interface DatabaseSchema {
   telegramConfig?: TelegramConfig;
   telegramLogs?: TelegramAlertLog[];
   admin?: AdminUser;
+  // Bumped whenever generated node configs change shape, so every node is re-synced once after upgrade
+  configSchemaVersion?: number;
 }
+
+// 2: chained relays get a dedicated client UUID; server routing blocks private ranges and maps PROXY to DIRECT
+const CONFIG_SCHEMA_VERSION = 2;
 
 const DEFAULT_CONFIG: SystemConfig = {
   port: 3880,
@@ -337,6 +342,20 @@ export class Database {
             changed = true;
           }
         }
+        for (const r of this.data.relays) {
+          if (!r.chainUuid) {
+            r.chainUuid = crypto.randomUUID();
+            changed = true;
+          }
+        }
+        if ((this.data.configSchemaVersion || 0) < CONFIG_SCHEMA_VERSION) {
+          this.data.configSchemaVersion = CONFIG_SCHEMA_VERSION;
+          for (const n of this.data.nodes) {
+            n.configVersion = Math.max(Date.now(), (n.configVersion || 0) + 1);
+            n.configSyncStatus = "pending";
+          }
+          changed = true;
+        }
         if (changed) {
           const migrationBackup = `${DATA_FILE}.pre-migration.bak`;
           if (!fs.existsSync(migrationBackup)) fs.copyFileSync(DATA_FILE, migrationBackup);
@@ -374,9 +393,10 @@ export class Database {
     return {
       nodes: [],
       relays: [],
+      configSchemaVersion: CONFIG_SCHEMA_VERSION,
       subscriptions: [],
       config: { ...DEFAULT_CONFIG, jwtSecret: crypto.randomBytes(48).toString("base64url") },
-      latencyTasks: [...INITIAL_LATENCY_TASKS],
+      latencyTasks: structuredClone(INITIAL_LATENCY_TASKS),
       routingRules: JSON.parse(JSON.stringify(INITIAL_ROUTING_RULES)),
       telegramConfig: { ...DEFAULT_TELEGRAM_CONFIG },
       telegramLogs: [],

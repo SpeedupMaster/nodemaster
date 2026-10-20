@@ -3,6 +3,10 @@ import { newRealityKeyPair } from "./security.js";
 import { NodeItem, XrayRealityConfig, ShadowsocksConfig, RoutingRule, RelayLink } from "../types/index.js";
 import { db } from "../db/index.js";
 
+// Email tags identify VLESS clients in routing rules ("user" field)
+export const DIRECT_CLIENT_EMAIL = "nodemaster_client@local";
+export const CHAIN_CLIENT_EMAIL = "nodemaster_chain@local";
+
 export interface ServiceDefinition {
   id: string;
   name: string;
@@ -330,7 +334,8 @@ export function generateXrayServerConfig(
               port: targetUnlockNode.port || 8388,
               method: ss.method || "2022-blake3-aes-128-gcm",
               password: ss.password,
-              uot: true,
+              // UDP-over-TCP is only implemented for the 2022 ciphers on the Xray server side
+              ...(String(ss.method || "2022-blake3-aes-128-gcm").startsWith("2022-") ? { uot: true } : {}),
             },
           ],
         },
@@ -371,30 +376,31 @@ export function generateXrayServerConfig(
     }
   }
 
-  // Dynamic Routing rules from DB
-  const routingRules: any[] = [];
+  // Routing.
+  // The main node exposes two VLESS clients: the plain direct entry and, when a relay is active, a
+  // dedicated chain client used by the 🔗 subscription entry. Only the chain client is ever routed to
+  // UNLOCK_OUT, so the two entries behave differently. Shadowsocks inbounds cannot tell users apart,
+  // so for them the relay applies to every connection (legacy behaviour).
+  const vlessTag = `VLESS_REALITY_${node.id}`;
+  const ssTag = `SS_${node.id}`;
+  const chainUuid = targetUnlockNode && node.protocol !== "shadowsocks" ? relay?.chainUuid : undefined;
+  const chainScope: Record<string, unknown> = chainUuid ? { user: [CHAIN_CLIENT_EMAIL] } : {};
+
+  // Server side, "private" means the VPS's own loopback/LAN/cloud metadata: never reachable through
+  // the proxy, whatever the panel rules say (a client-side "LAN direct" rule must not become an SSRF).
+  const routingRules: any[] = [
+    { type: "field", ip: ["geoip:private"], outboundTag: "BLOCK" },
+    { type: "field", domain: ["geosite:private"], outboundTag: "BLOCK" },
+    { type: "field", protocol: ["bittorrent"], outboundTag: "BLOCK" },
+  ];
 
   if (targetUnlockNode && unlockMode === "all") {
-    // All traffic routed through unlock node
-    routingRules.push({
-      type: "field",
-      inboundTag: [`VLESS_REALITY_${node.id}`, `SS_${node.id}`],
-      outboundTag: "UNLOCK_OUT",
-    });
-  } else if (targetUnlockNode && (unlockMode === "custom" || (relay && relay.customServices && relay.customServices.length > 0))) {
-    // 1. Basic security & private network interception
-    routingRules.push(
-      { type: "field", ip: ["geoip:private"], outboundTag: "BLOCK" },
-      { type: "field", domain: ["geosite:private"], outboundTag: "BLOCK" },
-      { type: "field", protocol: ["bittorrent"], outboundTag: "BLOCK" }
-    );
-
-    // 2. Custom selected services routing to UNLOCK_OUT
-    const selectedServices = relay?.customServices || [];
+    routingRules.push({ type: "field", inboundTag: [vlessTag, ssTag], ...chainScope, outboundTag: "UNLOCK_OUT" });
+  } else if (targetUnlockNode && (unlockMode === "custom" || (relay?.customServices?.length ?? 0) > 0)) {
     const matchedDomains: string[] = [];
     const matchedIps: string[] = [];
 
-    for (const sId of selectedServices) {
+    for (const sId of relay?.customServices || []) {
       const svc = UNLOCK_SERVICES.find((s) => s.id === sId);
       if (svc) {
         svc.geosite.forEach((g) => matchedDomains.push(g.startsWith("geosite:") ? g : `geosite:${g}`));
@@ -404,124 +410,54 @@ export function generateXrayServerConfig(
       }
     }
 
-    if (relay?.customDomains && relay.customDomains.length > 0) {
-      relay.customDomains.forEach((d) => {
-        const trimmed = d.trim();
-        if (!trimmed) return;
-        if (trimmed.startsWith("geoip:") || /^\d+\.\d+\.\d+\.\d+/.test(trimmed)) {
-          matchedIps.push(trimmed);
-        } else {
-          matchedDomains.push(trimmed.includes(":") ? trimmed : `domain:${trimmed}`);
-        }
-      });
+    for (const d of relay?.customDomains || []) {
+      const trimmed = d.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith("geoip:") || /^\d+\.\d+\.\d+\.\d+/.test(trimmed) || trimmed.includes("/")) {
+        matchedIps.push(trimmed);
+      } else {
+        matchedDomains.push(trimmed.includes(":") ? trimmed : `domain:${trimmed}`);
+      }
     }
 
-    if (matchedDomains.length > 0 || matchedIps.length > 0) {
-      const customRule: any = {
-        type: "field",
-        outboundTag: "UNLOCK_OUT",
-      };
-      if (matchedDomains.length > 0) customRule.domain = Array.from(new Set(matchedDomains));
-      if (matchedIps.length > 0) customRule.ip = Array.from(new Set(matchedIps));
-      routingRules.push(customRule);
+    // Xray ORs the conditions inside one rule only across values of the same field, so domains and
+    // IPs need separate rules.
+    if (matchedDomains.length > 0) {
+      routingRules.push({ type: "field", ...chainScope, domain: Array.from(new Set(matchedDomains)), outboundTag: "UNLOCK_OUT" });
     }
-
-    // 3. Fallback direct for all other traffic
-    routingRules.push({
-      type: "field",
-      inboundTag: [`VLESS_REALITY_${node.id}`, `SS_${node.id}`],
-      outboundTag: "DIRECT",
-    });
+    if (matchedIps.length > 0) {
+      routingRules.push({ type: "field", ...chainScope, ip: Array.from(new Set(matchedIps)), outboundTag: "UNLOCK_OUT" });
+    }
   } else {
-    // Load active routing rules from database
-    const activeRules = db.getRoutingRules().filter((r) => r.enabled);
+    // Panel routing rules. On the server only BLOCK and UNLOCK_OUT matter: everything else (DIRECT,
+    // and PROXY, which on a client means "use the proxy" — the server IS the proxy) leaves through the
+    // default DIRECT outbound. Mapping PROXY to UNLOCK_OUT used to send all fallback traffic through
+    // the unlock node.
+    for (const rule of db.getRoutingRules().filter((r) => r.enabled)) {
+      if (rule.inboundNodeIds && rule.inboundNodeIds.length > 0 && !rule.inboundNodeIds.includes(node.id)) continue;
 
-    for (const rule of activeRules) {
-      // If rule targets specific inbounds, check if current node is included
-      if (
-        rule.inboundNodeIds &&
-        rule.inboundNodeIds.length > 0 &&
-        !rule.inboundNodeIds.includes(node.id)
-      ) {
-        continue;
-      }
+      let outboundTag: string;
+      if (rule.targetOutbound === "BLOCK") outboundTag = "BLOCK";
+      else if (rule.targetOutbound === "UNLOCK_OUT" && targetUnlockNode) outboundTag = "UNLOCK_OUT";
+      else outboundTag = "DIRECT";
 
-      // Determine outbound tag
-      let tag = rule.targetOutbound;
-      if (tag === "UNLOCK_OUT") {
-        tag = targetUnlockNode ? "UNLOCK_OUT" : "DIRECT";
-      } else if (tag === "PROXY") {
-        tag = targetUnlockNode ? "UNLOCK_OUT" : "DIRECT";
-      }
+      const conditions: Record<string, unknown> = {};
+      const domains = [
+        ...(rule.geosite || []).map((g) => (g.startsWith("geosite:") ? g : `geosite:${g}`)),
+        ...(rule.domains || []).map((d) => (d.includes(":") ? d : `domain:${d}`)),
+      ];
+      const ips = [...(rule.geoip || []).map((g) => (g.startsWith("geoip:") ? g : `geoip:${g}`)), ...(rule.ips || [])];
+      if (rule.protocol && rule.protocol.length > 0) conditions.protocol = rule.protocol;
+      if (rule.port && rule.port.trim()) conditions.port = rule.port.trim();
+      // A rule without any condition is a catch-all (e.g. the fallback preset); on the server that is
+      // simply the default outbound, and emitting it would shadow every rule after it.
+      if (domains.length === 0 && ips.length === 0 && Object.keys(conditions).length === 0) continue;
 
-      const fieldRule: any = {
-        type: "field",
-        outboundTag: tag,
-      };
-
-      // Collect domains & geosites
-      const domains: string[] = [];
-      if (rule.geosite && rule.geosite.length > 0) {
-        rule.geosite.forEach((g) => {
-          domains.push(g.startsWith("geosite:") ? g : `geosite:${g}`);
-        });
-      }
-      if (rule.domains && rule.domains.length > 0) {
-        rule.domains.forEach((d) => {
-          domains.push(d.includes(":") ? d : `domain:${d}`);
-        });
-      }
-      if (domains.length > 0) {
-        fieldRule.domain = domains;
-      }
-
-      // Collect IPs & geoips
-      const ips: string[] = [];
-      if (rule.geoip && rule.geoip.length > 0) {
-        rule.geoip.forEach((g) => {
-          ips.push(g.startsWith("geoip:") ? g : `geoip:${g}`);
-        });
-      }
-      if (rule.ips && rule.ips.length > 0) {
-        rule.ips.forEach((ip) => {
-          ips.push(ip);
-        });
-      }
-      if (ips.length > 0) {
-        fieldRule.ip = ips;
-      }
-
-      // Protocols
-      if (rule.protocol && rule.protocol.length > 0) {
-        fieldRule.protocol = rule.protocol;
-      }
-
-      // Port
-      if (rule.port && rule.port.trim()) {
-        fieldRule.port = rule.port.trim();
-      }
-
-      // If at least one matching condition exists, push rule
-      if (fieldRule.domain || fieldRule.ip || fieldRule.protocol || fieldRule.port) {
-        routingRules.push(fieldRule);
-      } else if (
-        rule.builtInPresetId === "preset_fallback" ||
-        rule.name.includes("兜底") ||
-        rule.name.includes("Fallback")
-      ) {
-        fieldRule.inboundTag = [`VLESS_REALITY_${node.id}`, `SS_${node.id}`];
-        routingRules.push(fieldRule);
-      }
+      const scope = outboundTag === "UNLOCK_OUT" ? chainScope : {};
+      if (domains.length > 0) routingRules.push({ type: "field", ...scope, ...conditions, domain: domains, outboundTag });
+      if (ips.length > 0) routingRules.push({ type: "field", ...scope, ...conditions, ip: ips, outboundTag });
+      if (domains.length === 0 && ips.length === 0) routingRules.push({ type: "field", ...scope, ...conditions, outboundTag });
     }
-  }
-
-  // Ensure fallback defaults if no routing rules matched
-  if (routingRules.length === 0) {
-    routingRules.push(
-      { type: "field", ip: ["geoip:private"], outboundTag: "BLOCK" },
-      { type: "field", domain: ["geosite:private"], outboundTag: "BLOCK" },
-      { type: "field", protocol: ["bittorrent"], outboundTag: "BLOCK" }
-    );
   }
 
   // Define inbounds based on node protocol
@@ -555,13 +491,15 @@ export function generateXrayServerConfig(
       port: node.port || 443,
       protocol: "vless",
       settings: {
-        flow: reality.flow || "xtls-rprx-vision",
         clients: [
           {
             id: reality.uuid,
             flow: reality.flow || "xtls-rprx-vision",
-            email: "nodemaster_client@local",
+            email: DIRECT_CLIENT_EMAIL,
           },
+          ...(chainUuid
+            ? [{ id: chainUuid, flow: reality.flow || "xtls-rprx-vision", email: CHAIN_CLIENT_EMAIL }]
+            : []),
         ],
         decryption: "none",
       },
@@ -596,7 +534,10 @@ export function generateXrayServerConfig(
     inbounds: node.status === "circuit_broken" ? [] : inbounds,
     outbounds,
     routing: {
-      domainStrategy: "AsIs",
+      // Resolve a domain only when no domain rule matched, so geoip rules (unlock IP ranges, and the
+      // private-range block above, e.g. against DNS-rebinding names pointing at 127.0.0.1) also apply
+      // to connections addressed by domain.
+      domainStrategy: "IPIfNonMatch",
       rules: routingRules,
     },
   };
@@ -658,12 +599,15 @@ export function compileRuleForPreview(rule: Partial<RoutingRule>) {
   }
 
   // 3. Sing-box JSON
-  const singboxRule: any = {
-    outbound: target.toLowerCase(),
-  };
-  if (rule.geosite && rule.geosite.length > 0) singboxRule.geosite = rule.geosite;
+  // sing-box 1.12+: geosite/geoip fields were removed in favour of rule_set; block is a rule action
+  const singboxRule: any =
+    target === "BLOCK" ? { action: "reject" } : { outbound: target === "DIRECT" ? "direct" : target === "UNLOCK_OUT" ? "unlock" : "select" };
+  const ruleSets = [
+    ...(rule.geosite || []).map((g) => `geosite-${g.replace(/^geosite:/, "").toLowerCase()}`),
+    ...(rule.geoip || []).map((g) => `geoip-${g.replace(/^geoip:/, "").toLowerCase()}`),
+  ];
+  if (ruleSets.length > 0) singboxRule.rule_set = ruleSets;
   if (rule.domains && rule.domains.length > 0) singboxRule.domain_suffix = rule.domains;
-  if (rule.geoip && rule.geoip.length > 0) singboxRule.geoip = rule.geoip;
   if (rule.ips && rule.ips.length > 0) singboxRule.ip_cidr = rule.ips;
   if (rule.port && rule.port.trim()) singboxRule.port = rule.port.trim();
 

@@ -104,6 +104,9 @@ export interface RelayLink {
   mode?: "ai_media" | "all" | "custom";
   customServices?: string[];
   customDomains?: string[];
+  // Dedicated VLESS client on the main node: the 🔗 subscription entry authenticates with it,
+  // letting the server tell chained traffic apart from the plain direct entry
+  chainUuid?: string;
   transitNodeId?: string;
   exitNodeId?: string;
   transitPort?: number;
