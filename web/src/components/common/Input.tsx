@@ -19,7 +19,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="relative w-full">
       <div
-        className={`w-full flex items-center rounded-lg bg-paper/70 border transition-[border-color,box-shadow] duration-200 ${
+        className={`w-full h-[34px] flex items-center rounded-lg bg-paper/70 border transition-[border-color,box-shadow] duration-200 ${
           error
             ? "border-status-danger ring-1 ring-status-danger/20"
             : "border-rule hover:border-rule-active focus-within:border-accent/70 focus-within:ring-[3px] focus-within:ring-accent/15"

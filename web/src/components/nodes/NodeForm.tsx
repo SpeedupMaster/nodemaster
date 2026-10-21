@@ -149,7 +149,7 @@ const Field: React.FC<{
   children: React.ReactNode;
 }> = ({ label, presets, active, onPreset, children }) => (
   <div>
-    <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+    <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0 h-6">
       <label className="text-xs font-medium text-ink-muted shrink-0 whitespace-nowrap flex items-center gap-1">{label}</label>
       {presets && (
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5 shrink min-w-0">
@@ -158,7 +158,7 @@ const Field: React.FC<{
               key={p.value}
               type="button"
               onClick={() => onPreset?.(p.value)}
-              className={`text-[10px] px-2 py-0.5 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border select-none touch-manipulation ${
+              className={`h-5 text-[10px] leading-none px-2 sm:px-1.5 rounded font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all border flex items-center justify-center select-none touch-manipulation ${
                 active === p.value
                   ? "bg-accent/15 text-accent border-accent/40 font-semibold"
                   : "bg-paper-3 text-ink-secondary hover:text-ink hover:bg-paper-hover border-rule"

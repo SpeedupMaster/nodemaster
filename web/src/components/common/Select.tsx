@@ -77,7 +77,7 @@ export const Select: React.FC<SelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-md bg-paper border transition-all text-xs select-none cursor-pointer focus:outline-none ${
+        className={`w-full h-[34px] flex items-center justify-between px-3 py-2 rounded-md bg-paper border transition-all text-xs select-none cursor-pointer focus:outline-none ${
           isOpen
             ? "border-accent ring-1 ring-accent/30 bg-paper-hover"
             : "border-rule hover:border-rule-active hover:bg-paper-hover"
