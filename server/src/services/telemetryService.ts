@@ -46,9 +46,9 @@ export function ingestTelemetry(nodeId: string, data: Record<string, any>, now =
   const numericKeys = ["cpuUsage", "memUsage", "diskUsage", "memTotalBytes", "memUsedBytes", "diskTotalBytes", "diskUsedBytes", "uplinkSpeedBytes", "downlinkSpeedBytes", "tcpCount", "udpCount"] as const;
   for (const key of numericKeys) {
     if (data[key] !== undefined && !finite(data[key])) throw new Error(`Invalid ${key}`);
-    if (finite(data[key])) updates[key] = key.endsWith("Usage") ? Math.min(100, data[key]) : data[key];
+    if (finite(data[key])) updates[key] = key.endsWith("Usage") ? Math.round(Math.min(100, data[key]) * 100) / 100 : data[key];
   }
-  if (Array.isArray(data.loadAvg) && data.loadAvg.length === 3 && data.loadAvg.every(finite)) updates.loadAvg = data.loadAvg as [number, number, number];
+  if (Array.isArray(data.loadAvg) && data.loadAvg.length === 3 && data.loadAvg.every(finite)) updates.loadAvg = data.loadAvg.map((v: number) => Math.round(v * 100) / 100) as [number, number, number];
   for (const key of ["uptime", "os", "arch", "tcpCongestion"] as const) {
     if (typeof data[key] === "string") updates[key] = data[key].slice(0, 200);
   }

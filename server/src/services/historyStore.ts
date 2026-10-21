@@ -179,7 +179,7 @@ export class HistoryStore {
   public loadHistory(nodeId: string, range: string) {
     const all = this.samples(range, nodeId);
     const rows = all.length ? thin(all, all[0].timestamp, Date.now()) : all;
-    return { timestamps: rows.map(p => p.timestamp), cpu: rows.map(p => p.cpu), mem: rows.map(p => p.mem), disk: rows.map(p => p.disk), netIn: rows.map(p => p.down), netOut: rows.map(p => p.up) };
+    return { timestamps: rows.map(p => p.timestamp), cpu: rows.map(p => round(p.cpu)), mem: rows.map(p => round(p.mem)), disk: rows.map(p => round(p.disk)), netIn: rows.map(p => p.down), netOut: rows.map(p => p.up) };
   }
   /** `tasks` must already be filtered to the ones that apply to this node. */
   public latencyHistory(nodeId: string, range: string, tasks: LatencyTask[]): NodeLatencyHistory[] {

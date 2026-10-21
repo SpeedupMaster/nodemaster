@@ -21,7 +21,7 @@ import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
 import { RollingCounter } from "../common/RollingCounter";
 import { Tooltip } from "../common/Tooltip";
-import { formatSpeed, toGB } from "../../utils/format";
+import { formatSpeed, toGB, formatPct } from "../../utils/format";
 
 interface NodeCardProps {
   node: NodeItem;
@@ -311,7 +311,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               <span className="flex items-center gap-1">
                 <Cpu className="w-3 h-3 text-ink-muted" /> CPU
               </span>
-              <span className="text-ink">{node.cpuUsage}%</span>
+              <span className="text-ink">{formatPct(node.cpuUsage)}%</span>
             </div>
             <div className="w-full h-1 rounded-full bg-paper-3 overflow-hidden">
               <div
@@ -328,7 +328,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               <span className="flex items-center gap-1">
                 <HardDrive className="w-3 h-3 text-ink-muted" /> 内存
               </span>
-              <span className="text-ink">{node.memUsage}%</span>
+              <span className="text-ink">{formatPct(node.memUsage)}%</span>
             </div>
             <div className="w-full h-1 rounded-full bg-paper-3 overflow-hidden">
               <div

@@ -18,3 +18,4 @@ export function formatBytes(bytes: number | undefined, digits = 1): string {
 
 /** Bytes as GB with a fixed number of decimals, for "used / limit GB" displays. */
 export const toGB = (bytes: number, digits = 1) => (bytes / GB).toFixed(digits);
+export const formatPct = (val: number | undefined) => Number((val || 0).toFixed(2));

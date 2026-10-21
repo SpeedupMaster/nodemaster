@@ -141,10 +141,10 @@ class Probe:
             return sum(max(0, len(pathlib.Path('/proc/net', name).read_text().splitlines()) - 1) for name in names if pathlib.Path('/proc/net', name).exists())
         return {
             'token': TOKEN, 'bootId': BOOT, 'sequence': time.monotonic_ns() // 1000000,
-            'networkRxBytes': rx, 'networkTxBytes': tx, 'cpuUsage': cpu_usage,
-            'memTotalBytes': memory['MemTotal'], 'memUsedBytes': mem_used, 'memUsage': mem_used / memory['MemTotal'] * 100,
-            'diskTotalBytes': disk_total, 'diskUsedBytes': disk_used, 'diskUsage': disk_used / max(1, disk_total) * 100,
-            'uplinkSpeedBytes': up, 'downlinkSpeedBytes': down, 'loadAvg': list(os.getloadavg()),
+            'networkRxBytes': rx, 'networkTxBytes': tx, 'cpuUsage': round(cpu_usage, 2),
+            'memTotalBytes': memory['MemTotal'], 'memUsedBytes': mem_used, 'memUsage': round(mem_used / memory['MemTotal'] * 100, 2),
+            'diskTotalBytes': disk_total, 'diskUsedBytes': disk_used, 'diskUsage': round(disk_used / max(1, disk_total) * 100, 2),
+            'uplinkSpeedBytes': round(up), 'downlinkSpeedBytes': round(down), 'loadAvg': [round(v, 2) for v in os.getloadavg()],
             'uptime': str(int(float(pathlib.Path('/proc/uptime').read_text().split()[0]))) + ' 秒',
             'os': os_name, 'arch': os.uname().machine, 'tcpCongestion': tcp_cc,
             'tcpCount': connections(['tcp', 'tcp6']), 'udpCount': connections(['udp', 'udp6']),

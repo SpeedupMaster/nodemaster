@@ -19,6 +19,7 @@ import {
 import { NodeItem, NodeLatencyHistory } from "../../types";
 import { Badge } from "../common/Badge";
 import { api } from "../../services/api";
+import { formatPct } from "../../utils/format";
 
 // Line colours for latency targets, assigned by position
 const SERIES_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"];
@@ -1187,10 +1188,10 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     <span>实时 CPU 占用</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
-                    {node.cpuUsage}%
+                    {formatPct(node.cpuUsage)}%
                   </div>
                   <div className="text-[10px] font-mono text-ink-muted mt-0.5">
-                    Load: {node.loadAvg ? node.loadAvg.join(", ") : "0.15, 0.22, 0.18"}
+                    Load: {node.loadAvg ? node.loadAvg.map(formatPct).join(", ") : "0.15, 0.22, 0.18"}
                   </div>
                 </div>
 
@@ -1200,7 +1201,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     <span>物理内存负载</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
-                    {node.memUsage}%
+                    {formatPct(node.memUsage)}%
                   </div>
                   <div className="text-[10px] font-mono text-ink-muted mt-0.5">
                     {node.memTotalBytes
@@ -1215,7 +1216,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     <span>硬盘存储占用</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
-                    {node.diskUsage}%
+                    {formatPct(node.diskUsage)}%
                   </div>
                   <div className="text-[10px] font-mono text-ink-muted mt-0.5">
                     {node.diskTotalBytes
@@ -1248,17 +1249,17 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                     <span>综合算力与硬件资源时序消耗</span>
                     {peakMetric === "cpu" && peakCpuVal > 0 && (
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-sky-500/40 bg-sky-500/10 text-sky-400">
-                        CPU 峰值 {peakCpuVal}%
+                        CPU 峰值 {formatPct(peakCpuVal)}%
                       </span>
                     )}
                     {peakMetric === "mem" && peakMemVal > 0 && (
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-purple-500/40 bg-purple-500/10 text-purple-400">
-                        内存 峰值 {peakMemVal}%
+                        内存 峰值 {formatPct(peakMemVal)}%
                       </span>
                     )}
                     {peakMetric === "disk" && peakDiskVal > 0 && (
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-zinc-400/40 bg-zinc-400/10 text-zinc-200">
-                        磁盘 峰值 {peakDiskVal}%
+                        磁盘 峰值 {formatPct(peakDiskVal)}%
                       </span>
                     )}
                   </h2>
@@ -1495,7 +1496,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               fill={color}
                               className="text-[9px] font-mono font-bold"
                             >
-                              {label} {val}%
+                              {label} {formatPct(val)}%
                             </text>
                           </g>
                         );
@@ -1570,7 +1571,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               <span>CPU 占用</span>
                             </span>
                             <span className="font-bold text-ink">
-                              {loadData.cpu[loadHoverIdx]}%
+                              {formatPct(loadData.cpu[loadHoverIdx])}%
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[11px]">
@@ -1579,7 +1580,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               <span>物理内存</span>
                             </span>
                             <span className="font-bold text-ink">
-                              {loadData.mem[loadHoverIdx]}%
+                              {formatPct(loadData.mem[loadHoverIdx])}%
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[11px]">
@@ -1588,7 +1589,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               <span>磁盘存储</span>
                             </span>
                             <span className="font-bold text-ink">
-                              {loadData.disk[loadHoverIdx]}%
+                              {formatPct(loadData.disk[loadHoverIdx])}%
                             </span>
                           </div>
                         </div>

@@ -19,7 +19,7 @@ import {
   Lightning,
   ShieldCheck,
 } from "@phosphor-icons/react";
-import { formatSpeed, formatBytes, toGB } from "../../utils/format";
+import { formatSpeed, formatBytes, toGB, formatPct } from "../../utils/format";
 
 gsap.registerPlugin(useGSAP);
 
@@ -298,7 +298,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <Cpu className="w-3 h-3 text-accent" />
                       <span>CPU 负载</span>
                     </span>
-                    <span className="font-mono font-semibold text-ink">{node.cpuUsage}%</span>
+                    <span className="font-mono font-semibold text-ink">{formatPct(node.cpuUsage)}%</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                     <div
@@ -313,7 +313,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                     />
                   </div>
                   <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted mt-1">
-                    <span>Load {node.loadAvg ? node.loadAvg[0] : 0.15}</span>
+                    <span>Load {node.loadAvg ? formatPct(node.loadAvg[0]) : 0.15}</span>
                     <span>{node.uptime || "28天"}</span>
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <Database className="w-3 h-3 text-sky-400" />
                       <span>内存占用</span>
                     </span>
-                    <span className="font-mono font-semibold text-ink">{node.memUsage}%</span>
+                    <span className="font-mono font-semibold text-ink">{formatPct(node.memUsage)}%</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                     <div
@@ -479,9 +479,9 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       {/* CPU Usage & Load */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
                         <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
-                          <span className="text-ink font-semibold">{node.cpuUsage}%</span>
+                          <span className="text-ink font-semibold">{formatPct(node.cpuUsage)}%</span>
                           <span className="text-[10px] text-ink-muted shrink-0 font-mono">
-                            Load {node.loadAvg ? node.loadAvg[0] : 0.15}
+                            Load {node.loadAvg ? formatPct(node.loadAvg[0]) : 0.15}
                           </span>
                         </div>
                         <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
@@ -501,7 +501,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       {/* RAM Usage */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
                         <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
-                          <span className="text-ink font-semibold">{node.memUsage}%</span>
+                          <span className="text-ink font-semibold">{formatPct(node.memUsage)}%</span>
                           <span className="text-[10px] text-ink-muted shrink-0 whitespace-nowrap font-mono">
                             {formatCompactBytes(memUsed)} / {formatCompactBytes(memTotal)}
                           </span>
@@ -519,7 +519,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       {/* Disk Storage */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
                         <div className="flex items-center justify-between text-xs mb-1 gap-2 whitespace-nowrap">
-                          <span className="text-ink font-semibold">{node.diskUsage}%</span>
+                          <span className="text-ink font-semibold">{formatPct(node.diskUsage)}%</span>
                           <span className="text-[10px] text-ink-muted shrink-0 whitespace-nowrap font-mono">
                             {formatCompactBytes(diskUsed)} / {formatCompactBytes(diskTotal)}
                           </span>
@@ -674,7 +674,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <span className="flex items-center gap-1">
                         <Cpu className="w-3 h-3 text-accent" /> CPU
                       </span>
-                      <span className="font-semibold text-ink">{node.cpuUsage}%</span>
+                      <span className="font-semibold text-ink">{formatPct(node.cpuUsage)}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                       <div
@@ -683,7 +683,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       />
                     </div>
                     <div className="text-[10px] text-ink-muted mt-1">
-                      Load {node.loadAvg ? node.loadAvg[0] : 0.15}
+                      Load {node.loadAvg ? formatPct(node.loadAvg[0]) : 0.15}
                     </div>
                   </div>
 
@@ -692,7 +692,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <span className="flex items-center gap-1">
                         <Database className="w-3 h-3 text-sky-400" /> 内存
                       </span>
-                      <span className="font-semibold text-ink">{node.memUsage}%</span>
+                      <span className="font-semibold text-ink">{formatPct(node.memUsage)}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                       <div
@@ -710,7 +710,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <span className="flex items-center gap-1">
                         <HardDrive className="w-3 h-3 text-purple-400" /> 硬盘
                       </span>
-                      <span className="font-semibold text-ink">{node.diskUsage}%</span>
+                      <span className="font-semibold text-ink">{formatPct(node.diskUsage)}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                       <div
