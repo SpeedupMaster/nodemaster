@@ -14,15 +14,15 @@ export interface ShadowsocksConfig {
   password: string;
 }
 
-export type NodeProtocol = "vless-reality" | "shadowsocks";
+export type NodeProtocol = "vless-reality" | "shadowsocks" | "probe";
 
 export interface NodeItem {
   id: string;
   name: string;
   ip: string;
   port: number;
-  // Role in the topology; always "unlock" for shadowsocks and "direct" for vless-reality nodes
-  type: "direct" | "unlock";
+  // Role in the topology; "unlock" for shadowsocks, "direct" for vless-reality, "probe" for standalone probe-only nodes
+  type: "direct" | "unlock" | "probe";
   protocol: NodeProtocol;
   status: "online" | "offline" | "circuit_broken";
   country: string;

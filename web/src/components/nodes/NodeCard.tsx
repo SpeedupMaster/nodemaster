@@ -75,6 +75,8 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       ? Math.min(100, (node.trafficUsedBytes / node.trafficLimitBytes) * 100)
       : 0;
 
+  const isProbe = node.type === "probe" || node.protocol === "probe";
+
   const up = formatSpeed(node.uplinkSpeedBytes);
   const down = formatSpeed(node.downlinkSpeedBytes);
 
@@ -94,14 +96,22 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             <div className="text-xs font-mono text-ink-muted mt-1 flex items-center gap-1.5 flex-wrap">
               <span className="text-ink-secondary font-medium shrink-0">{node.countryName}</span>
               <span className="shrink-0">•</span>
-              <span className="shrink-0">{node.ip}:{node.port}</span>
+              <span className="shrink-0">{node.type === "probe" || node.port === 0 ? node.ip : `${node.ip}:${node.port}`}</span>
               <span className="shrink-0">•</span>
               <span
                 className={`uppercase text-[11px] font-medium font-mono shrink-0 ${
-                  node.protocol === "shadowsocks" ? "text-purple-400" : "text-accent"
+                  node.type === "probe" || node.protocol === "probe"
+                    ? "text-sky-400"
+                    : node.protocol === "shadowsocks"
+                    ? "text-purple-400"
+                    : "text-accent"
                 }`}
               >
-                {node.protocol === "shadowsocks" ? "Shadowsocks" : node.protocol}
+                {node.type === "probe" || node.protocol === "probe"
+                  ? "独立探针"
+                  : node.protocol === "shadowsocks"
+                  ? "Shadowsocks"
+                  : node.protocol}
               </span>
               {node.xrayVersion && (
                 <>
@@ -247,10 +257,10 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               </Badge>
             )}
             <Badge
-              variant={node.type === "unlock" ? "unlock" : "accent"}
+              variant={node.type === "probe" ? "probe" : node.type === "unlock" ? "unlock" : "accent"}
               size="sm"
             >
-              {node.type === "unlock" ? "专属解锁" : "主力直连"}
+              {node.type === "probe" ? "独立探针" : node.type === "unlock" ? "专属解锁" : "主力直连"}
             </Badge>
           </div>
         </div>
@@ -372,29 +382,33 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       {/* Card Actions */}
       <div className="mt-5 pt-3 border-t border-rule flex items-center justify-between text-xs gap-1.5">
         <div className="flex items-center gap-1 shrink-0">
-          <Tooltip content="复制客户端 VLESS 链接">
-            <button
-              onClick={handleCopy}
-              className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              {copied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-              <span className="text-[11px] font-mono">链接</span>
-            </button>
-          </Tooltip>
+          {!isProbe && (
+            <Tooltip content={node.protocol === "shadowsocks" ? "复制 Shadowsocks 链接" : "复制客户端 VLESS 链接"}>
+              <button
+                onClick={handleCopy}
+                className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                {copied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+                <span className="text-[11px] font-mono">链接</span>
+              </button>
+            </Tooltip>
+          )}
 
-          <Tooltip content="查看 Xray 服务端配置">
-            <button
-              onClick={() => onViewConfig(node)}
-              className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-            >
-              <Code className="w-3.5 h-3.5" />
-              <span className="text-[11px] font-mono">配置</span>
-            </button>
-          </Tooltip>
+          {!isProbe && (
+            <Tooltip content="查看 Xray 服务端配置">
+              <button
+                onClick={() => onViewConfig(node)}
+                className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Code className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-mono">配置</span>
+              </button>
+            </Tooltip>
+          )}
 
           <Tooltip content="一键部署命令">
             <button
@@ -406,7 +420,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </button>
           </Tooltip>
 
-          {onViewVersion && (
+          {onViewVersion && !isProbe && (
             <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "尚未上报"})`}>
               <button
                 onClick={onViewVersion}
@@ -438,7 +452,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </button>
           </Tooltip>
 
-          {onSyncConfig && (
+          {onSyncConfig && !isProbe && (
             <Tooltip content="一键热重载：立即同步最新配置至 VPS (无需登录 SSH)">
               <button
                 onClick={() => onSyncConfig(node)}

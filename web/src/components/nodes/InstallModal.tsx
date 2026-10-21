@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import { NodeItem } from "../../types";
@@ -27,9 +27,16 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
   const [copiedTuneOfficial, setCopiedTuneOfficial] = useState(false);
   const [copiedTunePanel, setCopiedTunePanel] = useState(false);
   const [copiedUpdateProbe, setCopiedUpdateProbe] = useState(false);
-  const [deployMode, setDeployMode] = useState<"all" | "probe_only">("all");
+  const isProbeOnlyNode = node?.type === "probe" || node?.protocol === "probe";
+  const [deployMode, setDeployMode] = useState<"all" | "probe_only">(() => (isProbeOnlyNode ? "probe_only" : "all"));
   const [enableBbr, setEnableBbr] = useState(true);
   const [enableIpv4First, setEnableIpv4First] = useState(false);
+
+  useEffect(() => {
+    if (node) {
+      setDeployMode(node.type === "probe" || node.protocol === "probe" ? "probe_only" : "all");
+    }
+  }, [node]);
 
   if (!node) return null;
 

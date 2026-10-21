@@ -48,6 +48,7 @@ export const NodeList: React.FC<NodeListProps> = ({
     if (typeFilter === "all") return true;
     if (typeFilter === "direct") return node.type === "direct";
     if (typeFilter === "unlock") return node.type === "unlock";
+    if (typeFilter === "probe") return node.type === "probe";
     if (typeFilter === "circuit_broken") return node.status === "circuit_broken";
     return true;
   });
@@ -96,6 +97,7 @@ export const NodeList: React.FC<NodeListProps> = ({
             { id: "all", label: "全部节点" },
             { id: "direct", label: "主力直连" },
             { id: "unlock", label: "专属解锁" },
+            { id: "probe", label: "独立探针" },
             { id: "circuit_broken", label: "超额熔断" },
           ].map((t) => (
             <button

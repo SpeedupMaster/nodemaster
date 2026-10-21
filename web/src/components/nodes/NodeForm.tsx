@@ -6,9 +6,9 @@ import { Button } from "../common/Button";
 import { DatePicker } from "../common/DatePicker";
 import { NodeItem, NodeInput } from "../../types";
 import { GB } from "../../utils/format";
-import { Globe, Key, Sparkle, ArrowsClockwise, CalendarBlank } from "@phosphor-icons/react";
+import { Globe, Key, Sparkle, ArrowsClockwise, CalendarBlank, Pulse } from "@phosphor-icons/react";
 
-type NodeKind = "direct" | "unlock";
+type NodeKind = "direct" | "unlock" | "probe";
 
 interface NodeFormProps {
   /** The node to edit; omit to add a new one. */
@@ -72,6 +72,7 @@ interface FormState {
 const KIND_DEFAULTS: Record<NodeKind, Pick<FormState, "port" | "country" | "tags">> = {
   direct: { port: "443", country: "HK", tags: "主力直连, 原生IP, 千兆带宽" },
   unlock: { port: "8388", country: "US", tags: "原生住宅, Shadowsocks, 流媒体解锁, OpenAI" },
+  probe: { port: "0", country: "HK", tags: "独立探针, 系统监控, 内核调优" },
 };
 
 function initialState(node?: NodeItem | null): FormState {
@@ -95,12 +96,12 @@ function initialState(node?: NodeItem | null): FormState {
       tags: KIND_DEFAULTS.direct.tags,
     };
   }
-  const kind: NodeKind = node.protocol === "shadowsocks" ? "unlock" : "direct";
+  const kind: NodeKind = node.type === "probe" || node.protocol === "probe" ? "probe" : node.protocol === "shadowsocks" ? "unlock" : "direct";
   return {
     kind,
     name: node.name,
     ip: node.ip,
-    port: String(node.port),
+    port: String(node.port || ""),
     country: node.country || "HK",
     bandwidthMbps: String(node.bandwidthMbps || 1000),
     trafficLimitGB: String(Math.round(node.trafficLimitBytes / GB)),
@@ -119,12 +120,13 @@ function initialState(node?: NodeItem | null): FormState {
 
 function toInput(form: FormState, isNew: boolean): NodeInput {
   const unlock = form.kind === "unlock";
+  const isProbe = form.kind === "probe";
   return {
     name: form.name.trim(),
     ip: form.ip.trim(),
-    port: Number(form.port) || Number(KIND_DEFAULTS[form.kind].port),
+    port: isProbe ? 0 : (Number(form.port) || Number(KIND_DEFAULTS[form.kind].port)),
     // The protocol is fixed once a node exists
-    ...(isNew ? { protocol: unlock ? "shadowsocks" : "vless-reality" } : {}),
+    ...(isNew ? { protocol: isProbe ? "probe" : unlock ? "shadowsocks" : "vless-reality" } : {}),
     country: form.country,
     countryName: countryName(form.country),
     bandwidthMbps: Number(form.bandwidthMbps) || 1000,
@@ -136,7 +138,7 @@ function toInput(form: FormState, isNew: boolean): NodeInput {
     expiresAt: form.expiresAt.trim() || null,
     autoRenew: form.autoRenew,
     tags: form.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean),
-    ...(unlock ? { shadowsocks: { method: form.ssMethod, password: form.ssPassword } } : { sni: form.sni.trim() }),
+    ...(isProbe ? {} : unlock ? { shadowsocks: { method: form.ssMethod, password: form.ssPassword } } : { sni: form.sni.trim() }),
   };
 }
 
@@ -191,6 +193,14 @@ const KIND_CARDS: { kind: NodeKind; title: string; badge: string; desc: string; 
     protocol: "Shadowsocks",
     icon: <Sparkle weight="bold" className="w-4 h-4" />,
   },
+  {
+    kind: "probe",
+    title: "独立监控探针",
+    badge: "仅监控探针",
+    desc: "通用服务器/云主机，仅部署系统探针与网络调优，不开启代理协议",
+    protocol: "无代理 (仅监控)",
+    icon: <Pulse weight="bold" className="w-4 h-4" />,
+  },
 ];
 
 export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSubmit }) => {
@@ -213,6 +223,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setKind = (kind: NodeKind) => setForm((f) => ({ ...f, kind, ...KIND_DEFAULTS[kind] }));
   const isUnlock = form.kind === "unlock";
+  const isProbe = form.kind === "probe";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,7 +249,9 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
       title={isNew ? "添加新的 VPS 节点" : "编辑 VPS 节点配置"}
       subtitle={
         isNew
-          ? isUnlock
+          ? isProbe
+            ? "纳管通用服务器或云主机，仅部署系统探针与跨境网络调优，不开启代理协议"
+            : isUnlock
             ? "纳管原生解锁机，自动生成 Shadowsocks 服务端配置"
             : "纳管主力直连机，自动生成 Xray-core Reality 配置"
           : `修改节点 ${node.name} 的网络连接属性与规格配额`
@@ -279,10 +292,10 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
         {isNew ? (
           <div>
             <label className="block text-xs font-medium text-ink-muted mb-1.5">节点拓扑类型 *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {KIND_CARDS.map((c) => {
                 const active = form.kind === c.kind;
-                const tone = c.kind === "unlock" ? "purple" : "accent";
+                const tone = c.kind === "unlock" ? "purple" : c.kind === "probe" ? "sky" : "accent";
                 return (
                   <button
                     key={c.kind}
@@ -292,13 +305,15 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
                       active
                         ? tone === "purple"
                           ? "bg-purple-950/20 border-purple-500 ring-1 ring-purple-500/40 shadow-sm"
+                          : tone === "sky"
+                          ? "bg-sky-950/20 border-sky-500 ring-1 ring-sky-500/40 shadow-sm"
                           : "bg-accent/10 border-accent ring-1 ring-accent/40 shadow-sm"
                         : "bg-paper border-rule hover:border-rule-active hover:bg-paper-hover"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 w-full">
                       <span className={`flex items-center gap-2 text-xs font-semibold ${active ? "text-ink" : "text-ink-secondary"}`}>
-                        <span className={active ? (tone === "purple" ? "text-purple-400" : "text-accent") : "text-ink-muted"}>{c.icon}</span>
+                        <span className={active ? (tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-sky-400" : "text-accent") : "text-ink-muted"}>{c.icon}</span>
                         {c.title}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono whitespace-nowrap shrink-0">
@@ -307,8 +322,8 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
                     </div>
                     <p className="text-[11px] text-ink-muted mt-2 leading-relaxed">{c.desc}</p>
                     <div className="mt-3 pt-2 border-t border-rule/50 flex items-center justify-between text-[10px] font-mono w-full">
-                      <span className={tone === "purple" ? "text-purple-400" : "text-accent"}>协议: {c.protocol}</span>
-                      <span className="text-ink-muted">端口: {KIND_DEFAULTS[c.kind].port}</span>
+                      <span className={tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-sky-400" : "text-accent"}>协议: {c.protocol}</span>
+                      <span className="text-ink-muted">{c.kind === "probe" ? "无需代理端口" : `端口: ${KIND_DEFAULTS[c.kind].port}`}</span>
                     </div>
                   </button>
                 );
@@ -323,10 +338,14 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
             </div>
             <span
               className={`px-2 py-0.5 rounded font-medium text-[10px] border ${
-                isUnlock ? "bg-purple-500/10 text-purple-300 border-purple-500/30" : "bg-accent/10 text-accent border-accent/30"
+                isProbe
+                  ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                  : isUnlock
+                  ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
+                  : "bg-accent/10 text-accent border-accent/30"
               }`}
             >
-              {isUnlock ? "流媒体解锁机 (Shadowsocks)" : "主力直连机 (VLESS-Reality)"}
+              {isProbe ? "独立监控探针 (仅探针/无代理)" : isUnlock ? "流媒体解锁机 (Shadowsocks)" : "主力直连机 (VLESS-Reality)"}
             </span>
           </div>
         )}
@@ -336,20 +355,26 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
             required
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
-            placeholder={isUnlock ? "例如: US-Residential-Unlock-02" : "例如: HK-BGP-Direct-02"}
+            placeholder={isProbe ? "例如: Oracle-Tokyo-Monitor-01" : isUnlock ? "例如: US-Residential-Unlock-02" : "例如: HK-BGP-Direct-02"}
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2">
-            <Field label="公网 IP 地址 *">
-              <Input required value={form.ip} onChange={(e) => set("ip", e.target.value)} placeholder="例如: 154.23.189.90" />
+        {isProbe ? (
+          <Field label="公网 IP 地址 *">
+            <Input required value={form.ip} onChange={(e) => set("ip", e.target.value)} placeholder="例如: 154.23.189.90" />
+          </Field>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <Field label="公网 IP 地址 *">
+                <Input required value={form.ip} onChange={(e) => set("ip", e.target.value)} placeholder="例如: 154.23.189.90" />
+              </Field>
+            </div>
+            <Field label="服务端口">
+              <Input type="number" value={form.port} onChange={(e) => set("port", e.target.value)} suffixText="端口" />
             </Field>
           </div>
-          <Field label="服务端口">
-            <Input type="number" value={form.port} onChange={(e) => set("port", e.target.value)} suffixText="端口" />
-          </Field>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <Field
@@ -491,7 +516,17 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
           </Field>
         </div>
 
-        {isUnlock ? (
+        {isProbe ? (
+          <div className="p-3.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-xs text-sky-200 flex items-start gap-2.5">
+            <Pulse className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="font-semibold text-sky-300">纯探针监控与网络调优模式</div>
+              <div className="text-[11px] text-sky-300/80 leading-relaxed">
+                该节点为通用云主机/独立探针，不开启代理监听端口，亦无需配置伪装域名或加密密钥。一键纳管时仅部署指标采集探针守护进程与跨境网络内核调优。
+              </div>
+            </div>
+          </div>
+        ) : isUnlock ? (
           <div className="space-y-3 p-3.5 rounded-lg bg-paper-3/40 border border-purple-500/20">
             <span className="text-xs font-semibold text-purple-300 flex items-center gap-1.5">
               <Key className="w-3.5 h-3.5 text-purple-400" />

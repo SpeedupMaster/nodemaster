@@ -23,9 +23,9 @@ export const DEFAULT_SS_CIPHER = SS_CIPHERS[0];
 /** Key length in bytes required by the SS-2022 ciphers (and used for generated AEAD passwords). */
 export const ssKeyLength = (cipher: string) => (cipher === "2022-blake3-aes-128-gcm" ? 16 : 32);
 
-export const DEFAULT_TRAFFIC_LIMIT = { direct: 1000 * GB, unlock: 2000 * GB };
+export const DEFAULT_TRAFFIC_LIMIT = { direct: 1000 * GB, unlock: 2000 * GB, probe: 1000 * GB };
 export const DEFAULT_BANDWIDTH_MBPS = 1000;
-export const DEFAULT_TAGS = { direct: ["Xray", "Reality", "主力直连"], unlock: ["住宅IP", "Shadowsocks", "流媒体解锁"] };
+export const DEFAULT_TAGS = { direct: ["Xray", "Reality", "主力直连"], unlock: ["住宅IP", "Shadowsocks", "流媒体解锁"], probe: ["独立探针", "系统监控"] };
 
 /** A node without telemetry for this long is considered offline. */
 export const OFFLINE_AFTER_MS = 30_000;

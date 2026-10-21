@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -20,6 +20,7 @@ pnpm-debug.log*
 # Editor & OS
 .vscode/
 .idea/
+.claude/
 .DS_Store
 Thumbs.db
 

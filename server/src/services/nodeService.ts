@@ -22,8 +22,8 @@ export function parseNodeInput(body: any): NodeInput {
   return {
     name: optString(body, "name"),
     ip: optString(body, "ip", HOST_OR_IP),
-    port: optNumber(body, "port", PORT),
-    protocol: optEnum(body, "protocol", ["vless-reality", "shadowsocks"] as const),
+    port: optNumber(body, "port", { min: 0, max: 65535, integer: true }),
+    protocol: optEnum(body, "protocol", ["vless-reality", "shadowsocks", "probe"] as const),
     country: optString(body, "country"),
     countryName: optString(body, "countryName"),
     trafficLimitBytes: optNumber(body, "trafficLimitBytes", { integer: true }),
@@ -58,18 +58,19 @@ function plainFields(input: NodeInput): Partial<NodeItem> {
 export function createNode(input: NodeInput): NodeItem {
   const name = required(input.name, "名称与 IP 为必填项");
   const ip = required(input.ip, "名称与 IP 为必填项");
-  const kind = input.protocol === "shadowsocks" ? "unlock" : "direct";
+  const kind = input.protocol === "shadowsocks" ? "unlock" : input.protocol === "probe" ? "probe" : "direct";
   const now = Date.now();
+  const defaultPort = kind === "unlock" ? DEFAULT_SS_PORT : kind === "probe" ? 0 : DEFAULT_REALITY_PORT;
   const node: NodeItem = {
     id: newId("node"),
     name,
     ip,
-    port: kind === "unlock" ? DEFAULT_SS_PORT : DEFAULT_REALITY_PORT,
+    port: input.port !== undefined ? input.port : defaultPort,
     type: kind,
-    protocol: kind === "unlock" ? "shadowsocks" : "vless-reality",
+    protocol: kind === "unlock" ? "shadowsocks" : kind === "probe" ? "probe" : "vless-reality",
     status: "offline",
     country: "US",
-    countryName: kind === "unlock" ? "美国原生住宅" : "海外主力节点",
+    countryName: kind === "unlock" ? "美国原生住宅" : kind === "probe" ? "通用云主机" : "海外主力节点",
     token: `tok_${crypto.randomBytes(16).toString("hex")}`,
     trafficUsedBytes: 0,
     trafficLimitBytes: DEFAULT_TRAFFIC_LIMIT[kind],
@@ -90,7 +91,9 @@ export function createNode(input: NodeInput): NodeItem {
     tags: input.tags?.length ? input.tags : [...DEFAULT_TAGS[kind]],
     ...(kind === "unlock"
       ? { shadowsocks: generateShadowsocksCredentials(input.shadowsocks?.method, input.shadowsocks?.password || undefined) }
-      : { reality: generateRealityCredentials(input.sni || DEFAULT_SNI) }),
+      : kind === "direct"
+      ? { reality: generateRealityCredentials(input.sni || DEFAULT_SNI) }
+      : {}),
     ...bumpConfigVersion({}, now),
   };
   node.trafficPeriodStart = billingPeriod(now, node.trafficResetDay || 1);

@@ -136,6 +136,20 @@ test('node configs are never generated with invented credentials', () => {
   const node = makeNode('no-keys', { reality: undefined });
   assert.throws(() => getNodeXrayConfig(node));
 });
+test('probe nodes omit proxy credentials and return empty xray config without error', async () => {
+  const created = await request('/api/nodes', 'POST', { name: 'Oracle-Probe', ip: '1.2.3.4', protocol: 'probe' });
+  assert.equal(created.status, 200);
+  const node = created.data.data;
+  assert.equal(node.type, 'probe');
+  assert.equal(node.protocol, 'probe');
+  assert.equal(node.port, 0);
+  assert.equal(node.reality, undefined);
+  assert.equal(node.shadowsocks, undefined);
+  const cfg = await (await fetch(`${base}/api/nodes/by-token/${node.token}/xray-config`)).json();
+  assert.equal(cfg.success, true);
+  assert.deepEqual(cfg.data.inbounds, []);
+  assert.deepEqual(cfg.data.outbounds, []);
+});
 test('upgrade remains pending until the actual installed version is reported', async () => {
   makeNode('upgrade', { xrayVersion: 'v1.0.0', status: 'offline' });
   await upgradeNodeXray('upgrade', 'v2.0.0');

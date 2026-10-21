@@ -34,6 +34,9 @@ probeRouter.get("/nodes/by-token/:token", (req, res) => {
 probeRouter.get("/nodes/by-token/:token/xray-config", (req, res) => {
   const node = nodeByToken(req.params.token);
   if (!node) throw new HttpError(404, "Token 无效或节点不存在");
+  if (node.type === "probe" || node.protocol === "probe") {
+    return ok(res, { log: { loglevel: "warning" }, inbounds: [], outbounds: [] });
+  }
   ok(res, getNodeXrayConfig(node));
 });
 

@@ -177,8 +177,8 @@ function migrate(data: any): boolean {
       for (const key of ["transitNodeId", "exitNodeId", "transitPort", "trafficBytes", "latencyMs"]) delete r[key];
     }
     for (const n of data.nodes) {
-      if (n.protocol !== "shadowsocks") n.protocol = "vless-reality";
-      n.type = n.protocol === "shadowsocks" ? "unlock" : "direct";
+      if (n.protocol !== "shadowsocks" && n.protocol !== "probe") n.protocol = "vless-reality";
+      n.type = n.protocol === "shadowsocks" ? "unlock" : n.protocol === "probe" ? "probe" : "direct";
       delete n.sni;
     }
     for (const s of data.subscriptions) { delete s.trafficLimitBytes; delete s.trafficUsedBytes; }
