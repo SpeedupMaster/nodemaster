@@ -370,12 +370,12 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       </div>
 
       {/* Card Actions */}
-      <div className="mt-5 pt-3 border-t border-rule flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1">
+      <div className="mt-5 pt-3 border-t border-rule flex items-center justify-between text-xs gap-1.5">
+        <div className="flex items-center gap-1 shrink-0">
           <Tooltip content="复制客户端 VLESS 链接">
             <button
               onClick={handleCopy}
-              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
             >
               {copied ? (
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -389,7 +389,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           <Tooltip content="查看 Xray 服务端配置">
             <button
               onClick={() => onViewConfig(node)}
-              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Code className="w-3.5 h-3.5" />
               <span className="text-[11px] font-mono">配置</span>
@@ -399,7 +399,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           <Tooltip content="一键部署命令">
             <button
               onClick={() => onViewInstall(node)}
-              className="p-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+              className="px-2 py-1.5 rounded text-ink-secondary hover:text-ink hover:bg-paper-hover border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Terminal className="w-3.5 h-3.5 text-accent" />
               <span className="text-[11px] font-mono">命令</span>
@@ -410,20 +410,20 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "尚未上报"})`}>
               <button
                 onClick={onViewVersion}
-                className="p-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer"
+                className="px-2 py-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                <span className="text-[11px] font-mono">{node.xrayVersion || "内核"}</span>
+                <span className="text-[11px] font-mono">内核</span>
               </button>
             </Tooltip>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <Tooltip content="编辑节点配置">
             <button
               onClick={() => onEdit(node)}
-              className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer"
+              className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer shrink-0"
             >
               <PencilSimple className="w-3.5 h-3.5" />
             </button>
@@ -432,7 +432,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           <Tooltip content="重置当月流量统计">
             <button
               onClick={() => onResetTraffic(node.id)}
-              className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer"
+              className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer shrink-0"
             >
               <ArrowClockwise className="w-3.5 h-3.5" />
             </button>
@@ -442,7 +442,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             <Tooltip content="一键热重载：立即同步最新配置至 VPS (无需登录 SSH)">
               <button
                 onClick={() => onSyncConfig(node)}
-                className="p-1.5 rounded text-ink-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded text-ink-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer shrink-0"
               >
                 <ArrowsClockwise className="w-3.5 h-3.5" />
               </button>
@@ -452,7 +452,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           <Tooltip content="删除节点">
             <button
               onClick={() => onDelete(node.id)}
-              className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer"
+              className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer shrink-0"
             >
               <Trash className="w-3.5 h-3.5" />
             </button>
