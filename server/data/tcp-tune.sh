@@ -268,7 +268,7 @@ EOF
 optimize_nic_tune() {
     echo -e "\n${YELLOW}>>> 正在执行多核心中断分发 (RSS/RPS) 优化...${NC}"
     if ! command -v ethtool &>/dev/null; then 
-        apt-get update && apt-get install -y ethtool || yum install -y ethtool
+        DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update && DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y ethtool </dev/null || yum install -y ethtool </dev/null
     fi
     # ======= 【修改的代码：移除了 virtio，增加了常见虚拟接口的过滤】=======
     local interfaces=$(ls /sys/class/net | grep -vE 'lo|docker|veth|br-|any|tung3|sit0|tun|wg')

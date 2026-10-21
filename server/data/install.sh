@@ -86,12 +86,45 @@ CURRENT_STEP=1
 
 echo "[${CURRENT_STEP}/${TOTAL_STEPS}] 安装必要系统依赖 (curl, jq, unzip, tar, ethtool, iptables)..."
 CURRENT_STEP=$((CURRENT_STEP + 1))
-if command -v apt-get >/dev/null 2>&1; then
-  apt-get update -qq && apt-get install -y -qq curl jq unzip tar ethtool iptables python3 iputils-ping >/dev/null 2>&1
-elif command -v yum >/dev/null 2>&1; then
-  yum install -y -q curl jq unzip tar ethtool iptables python3 iputils >/dev/null 2>&1
-elif command -v apk >/dev/null 2>&1; then
-  apk add --no-cache curl jq unzip tar bash ethtool iptables python3 iputils >/dev/null 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export APT_LISTCHANGES_FRONTEND=none
+
+MISSING_CMDS=()
+for cmd in curl jq unzip tar ethtool iptables python3 ping; do
+  command -v "$cmd" >/dev/null 2>&1 || MISSING_CMDS+=("$cmd")
+done
+
+if [ "${#MISSING_CMDS[@]}" -eq 0 ]; then
+  echo "  ✓ 系统依赖已齐备，跳过包管理器更新"
+else
+  echo "  → 正在安装缺失依赖 (${MISSING_CMDS[*]})..."
+  if command -v apt-get >/dev/null 2>&1; then
+    APT_OPTS=(
+      -o DPkg::Lock::Timeout=60
+      -o Dpkg::Options::="--force-confdef"
+      -o Dpkg::Options::="--force-confold"
+      -o Acquire::Retries=2
+      -o Acquire::http::Timeout=15
+      -o Acquire::https::Timeout=15
+    )
+    apt-get "${APT_OPTS[@]}" update -qq </dev/null >/dev/null 2>&1 || \
+      apt-get "${APT_OPTS[@]}" -o Acquire::ForceIPv4=true update -qq </dev/null >/dev/null 2>&1 || true
+    apt-get "${APT_OPTS[@]}" install -y -qq --no-install-recommends --no-upgrade \
+      curl jq unzip tar ethtool iptables python3 iputils-ping </dev/null >/dev/null 2>&1 || \
+      apt-get "${APT_OPTS[@]}" -o Acquire::ForceIPv4=true install -y --no-install-recommends \
+      curl jq unzip tar ethtool iptables python3 iputils-ping </dev/null
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y -q curl jq unzip tar ethtool iptables python3 iputils </dev/null >/dev/null 2>&1 || \
+      dnf install -y curl jq unzip tar ethtool iptables python3 iputils </dev/null
+  elif command -v yum >/dev/null 2>&1; then
+    yum install -y -q curl jq unzip tar ethtool iptables python3 iputils </dev/null >/dev/null 2>&1 || \
+      yum install -y curl jq unzip tar ethtool iptables python3 iputils </dev/null
+  elif command -v apk >/dev/null 2>&1; then
+    apk add --no-cache curl jq unzip tar bash ethtool iptables python3 iputils </dev/null >/dev/null 2>&1 || \
+      apk add --no-cache curl jq unzip tar bash ethtool iptables python3 iputils </dev/null
+  fi
 fi
 for required in curl jq unzip python3 sha256sum; do command -v "$required" >/dev/null || { echo "Missing dependency: $required" >&2; exit 1; }; done
 
