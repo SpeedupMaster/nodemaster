@@ -27,11 +27,14 @@ def command(args, timeout=15):
     return result.stdout.strip()
 
 
+HEADERS = {'Content-Type': 'application/json', 'User-Agent': 'NodeMaster-Probe/1.0'}
+
+
 def request(path, body=None):
     if not path.startswith('/api/') or path.startswith('//'):
         raise ValueError('Invalid API path')
     payload = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(PANEL + path, payload, {'Content-Type': 'application/json'})
+    req = urllib.request.Request(PANEL + path, payload, HEADERS)
     with urllib.request.urlopen(req, timeout=12) as response:
         return json.load(response)
 
@@ -97,7 +100,8 @@ class Probe:
             if not re.fullmatch(r'v\d+\.\d+\.\d+', version): raise ValueError('Invalid version')
             script_path = upgrade['scriptUrl']
             if not script_path.startswith('/api/xray/upgrade.sh?'): raise ValueError('Invalid upgrade URL')
-            with urllib.request.urlopen(PANEL + script_path, timeout=20) as source:
+            req = urllib.request.Request(PANEL + script_path, headers={'User-Agent': 'NodeMaster-Probe/1.0'})
+            with urllib.request.urlopen(req, timeout=20) as source:
                 script = source.read(1024 * 1024).decode()
             result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=180)
             if result.returncode or read_version() != version: raise RuntimeError('Upgrade failed: ' + result.stderr[-300:])
@@ -132,6 +136,7 @@ class Probe:
         os_name = 'Linux'
         for line in pathlib.Path('/etc/os-release').read_text().splitlines() if pathlib.Path('/etc/os-release').exists() else []:
             if line.startswith('PRETTY_NAME='): os_name = line.split('=', 1)[1].strip('"')
+        tcp_cc = pathlib.Path('/proc/sys/net/ipv4/tcp_congestion_control').read_text().strip() if pathlib.Path('/proc/sys/net/ipv4/tcp_congestion_control').exists() else ''
         def connections(names):
             return sum(max(0, len(pathlib.Path('/proc/net', name).read_text().splitlines()) - 1) for name in names if pathlib.Path('/proc/net', name).exists())
         return {
@@ -141,7 +146,8 @@ class Probe:
             'diskTotalBytes': disk_total, 'diskUsedBytes': disk_used, 'diskUsage': disk_used / max(1, disk_total) * 100,
             'uplinkSpeedBytes': up, 'downlinkSpeedBytes': down, 'loadAvg': list(os.getloadavg()),
             'uptime': str(int(float(pathlib.Path('/proc/uptime').read_text().split()[0]))) + ' 秒',
-            'os': os_name, 'arch': os.uname().machine, 'tcpCount': connections(['tcp', 'tcp6']), 'udpCount': connections(['udp', 'udp6']),
+            'os': os_name, 'arch': os.uname().machine, 'tcpCongestion': tcp_cc,
+            'tcpCount': connections(['tcp', 'tcp6']), 'udpCount': connections(['udp', 'udp6']),
             'xrayVersion': read_version(), 'appliedConfigVersion': self.applied,
             'syncReport': self.sync_report, 'upgradeReport': self.upgrade_report, 'latencyResults': self.latency_results,
         }
@@ -154,7 +160,11 @@ class Probe:
             marker.touch(mode=0o600)
             command(['systemctl', 'stop', SERVICE])
         sync = response.get('sync')
-        if sync and installed and self.upgrade_future is None:
+        if sync and not installed:
+            target = int(sync['targetVersion'])
+            self.applied = target
+            self.sync_report = {'status': 'success', 'version': target}
+        elif sync and installed and self.upgrade_future is None:
             target = int(sync['targetVersion'])
             try:
                 config = request(sync['configUrl'])['data']
