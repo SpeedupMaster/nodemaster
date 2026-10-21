@@ -82,141 +82,18 @@ export const NodeCard: React.FC<NodeCardProps> = ({
 
   return (
     <div className="h-full rounded-xl bg-paper-2 border border-rule card-lift p-5 flex flex-col justify-between group">
-      <div className="flex-1 flex flex-col justify-between">
+      <div className="flex-1 flex flex-col">
         {/* Card Header: Node Title & Badges */}
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="min-w-0 flex-1 pr-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Tooltip content={node.name}>
-                <h4 className="font-semibold text-ink text-sm tracking-tight truncate cursor-default">
-                  {node.name}
-                </h4>
-              </Tooltip>
-            </div>
-            <div className="text-xs font-mono text-ink-muted mt-1 flex items-center gap-1.5 flex-wrap">
-              <span className="text-ink-secondary font-medium shrink-0">{node.countryName}</span>
-              <span className="shrink-0">•</span>
-              <span className="shrink-0">{node.type === "probe" || node.port === 0 ? node.ip : `${node.ip}:${node.port}`}</span>
-              <span className="shrink-0">•</span>
-              <span
-                className={`uppercase text-[11px] font-medium font-mono shrink-0 ${
-                  node.type === "probe" || node.protocol === "probe"
-                    ? "text-sky-400"
-                    : node.protocol === "shadowsocks"
-                    ? "text-purple-400"
-                    : "text-accent"
-                }`}
-              >
-                {node.type === "probe" || node.protocol === "probe"
-                  ? "独立探针"
-                  : node.protocol === "shadowsocks"
-                  ? "Shadowsocks"
-                  : node.protocol}
-              </span>
-              {node.xrayVersion && (
-                <>
-                  <span className="shrink-0">•</span>
-                  <span className="text-purple-400/90 text-[11px] font-medium font-mono shrink-0">
-                    Xray {node.xrayVersion}
-                  </span>
-                </>
-              )}
-              {node.tcpCongestion && (
-                <>
-                  <span className="shrink-0">•</span>
-                  <Tooltip
-                    content={`TCP 拥塞算法: ${node.tcpCongestion.toUpperCase()} (${
-                      node.tcpCongestion.toLowerCase() === "bbr"
-                        ? "已开启 BBR 硬件级跨境加速"
-                        : "系统默认"
-                    })`}
-                  >
-                    <span
-                      className={`text-[10px] font-medium font-mono shrink-0 px-1.5 py-0.2 rounded border cursor-help ${
-                        node.tcpCongestion.toLowerCase() === "bbr"
-                          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
-                          : "text-ink-muted bg-paper-3 border-rule"
-                      }`}
-                    >
-                      {node.tcpCongestion.toUpperCase()}
-                    </span>
-                  </Tooltip>
-                </>
-              )}
-              {node.bandwidthMbps && (
-                <>
-                  <span className="shrink-0">•</span>
-                  <span className="text-emerald-400/90 text-[11px] font-medium shrink-0">
-                    {node.bandwidthMbps >= 1000
-                      ? `${node.bandwidthMbps / 1000} Gbps`
-                      : `${node.bandwidthMbps} Mbps`}
-                  </span>
-                </>
-              )}
-              {node.costAmount != null && node.costAmount > 0 && (
-                <>
-                  <span className="shrink-0">•</span>
-                  <span className="text-amber-400/90 text-[11px] font-medium font-mono shrink-0 flex items-center">
-                    <span>
-                      {node.costCurrency === "USD"
-                        ? "$"
-                        : node.costCurrency === "EUR"
-                        ? "€"
-                        : "¥"}
-                      {node.costAmount}
-                    </span>
-                    <span className="text-amber-400/70 text-[10px] ml-0.5">
-                      {node.costPeriod === "annually"
-                        ? "/年"
-                        : node.costPeriod === "quarterly"
-                        ? "/季"
-                        : "/月"}
-                    </span>
-                  </span>
-                </>
-              )}
-              {node.expiresAt && (
-                <>
-                  <span className="shrink-0">•</span>
-                  {(() => {
-                    const info = getExpiryInfo(node.expiresAt);
-                    const isExp = info?.isExpired;
-                    const isSoon = info?.isExpiringSoon;
-                    return (
-                      <Tooltip
-                        content={`到期时间: ${node.expiresAt} (${
-                          isExp ? "已到期" : `剩余 ${info?.diffDays} 天`
-                        })${node.autoRenew ? " · 已开启自动续费" : " · 手动续费"}`}
-                      >
-                        <span
-                          className={`text-[11px] font-medium font-mono shrink-0 flex items-center gap-1 cursor-help ${
-                            isExp
-                              ? "text-status-danger font-semibold"
-                              : isSoon
-                              ? "text-amber-400 font-semibold"
-                              : "text-ink-secondary"
-                          }`}
-                        >
-                          <CalendarBlank className="w-3 h-3 shrink-0" />
-                          <span>
-                            {isExp ? "已到期" : `${info?.diffDays}天到期`}
-                          </span>
-                          {node.autoRenew && (
-                            <span
-                              className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
-                              title="已开启自动续费"
-                            />
-                          )}
-                        </span>
-                      </Tooltip>
-                    );
-                  })()}
-                </>
-              )}
-            </div>
+        <div className="flex items-center justify-between gap-2.5">
+          <div className="min-w-0 flex items-center gap-1.5">
+            <Tooltip content={node.name}>
+              <h4 className="font-semibold text-ink text-sm tracking-tight truncate cursor-default">
+                {node.name}
+              </h4>
+            </Tooltip>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             {node.configSyncStatus === "pending" && (
               <Tooltip content="主控配置已更新，VPS 探针正在自动热拉取并平滑重载 Xray (约3秒内生效)...">
                 <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse cursor-help">
@@ -257,16 +134,93 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               </Badge>
             )}
             <Badge
-              variant={node.type === "probe" ? "probe" : node.type === "unlock" ? "unlock" : "accent"}
+              variant={isProbe ? "probe" : node.type === "unlock" ? "unlock" : "accent"}
               size="sm"
             >
-              {node.type === "probe" ? "独立探针" : node.type === "unlock" ? "专属解锁" : "主力直连"}
+              {isProbe ? "独立探针" : node.type === "unlock" ? "专属解锁" : "主力直连"}
             </Badge>
           </div>
         </div>
 
+        {/* Location & IP Address Line */}
+        <div className="flex items-center gap-1.5 mt-2 text-xs font-mono text-ink-muted">
+          <span className="text-ink-secondary font-medium shrink-0">{node.countryName}</span>
+          <span className="text-rule shrink-0">•</span>
+          <span className="text-ink font-medium shrink-0 select-all font-mono">
+            {isProbe || node.port === 0 ? node.ip : `${node.ip}:${node.port}`}
+          </span>
+        </div>
+
+        {/* Specs & Core Metadata Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+          {node.bandwidthMbps && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+              {node.bandwidthMbps >= 1000 ? `${node.bandwidthMbps / 1000} Gbps` : `${node.bandwidthMbps} Mbps`}
+            </span>
+          )}
+
+          {node.tcpCongestion && (
+            <Tooltip
+              content={`TCP 拥塞算法: ${node.tcpCongestion.toUpperCase()} (${
+                node.tcpCongestion.toLowerCase() === "bbr" ? "已开启 BBR 硬件级跨境加速" : "系统默认"
+              })`}
+            >
+              <span
+                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border cursor-help ${
+                  node.tcpCongestion.toLowerCase() === "bbr"
+                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
+                    : "text-ink-muted bg-paper-3 border-rule"
+                }`}
+              >
+                {node.tcpCongestion.toUpperCase()}
+              </span>
+            </Tooltip>
+          )}
+
+          {!isProbe && node.xrayVersion && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/10 border border-purple-500/25">
+              Xray {node.xrayVersion}
+            </span>
+          )}
+
+          {node.costAmount != null && node.costAmount > 0 && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-amber-300 bg-amber-500/10 border border-amber-500/25">
+              <span>{node.costCurrency === "USD" ? "$" : node.costCurrency === "EUR" ? "€" : "¥"}{node.costAmount}</span>
+              <span className="text-amber-400/70 text-[9px] ml-0.5">
+                {node.costPeriod === "annually" ? "/年" : node.costPeriod === "quarterly" ? "/季" : "/月"}
+              </span>
+            </span>
+          )}
+
+          {node.expiresAt && (() => {
+            const info = getExpiryInfo(node.expiresAt);
+            const isExp = info?.isExpired;
+            const isSoon = info?.isExpiringSoon;
+            return (
+              <Tooltip
+                content={`到期时间: ${node.expiresAt} (${
+                  isExp ? "已到期" : `剩余 ${info?.diffDays} 天`
+                })${node.autoRenew ? " · 已开启自动续费" : " · 手动续费"}`}
+              >
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border cursor-help ${
+                    isExp
+                      ? "text-rose-400 bg-rose-500/10 border-rose-500/30 font-semibold"
+                      : isSoon
+                      ? "text-amber-300 bg-amber-500/10 border-amber-500/30 font-semibold"
+                      : "text-ink-secondary bg-paper-3 border-rule"
+                  }`}
+                >
+                  <CalendarBlank className="w-3 h-3 shrink-0" />
+                  <span>{isExp ? "已到期" : `${info?.diffDays}天到期`}</span>
+                </span>
+              </Tooltip>
+            );
+          })()}
+        </div>
+
         {/* Tags */}
-        <div className="flex flex-wrap gap-1 mt-3 min-h-[24px]">
+        <div className="flex flex-wrap items-center gap-1 mt-2.5 min-h-[22px]">
           {node.tags?.map((t) => (
             <span
               key={t}
