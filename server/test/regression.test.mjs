@@ -59,6 +59,8 @@ test('forged, malformed-role, missing-expiry and expired JWTs are rejected', asy
 });
 test('password change and logout revoke old sessions', async () => {
   const old = token;
+  const tooShort = await request('/api/auth/change-password', 'POST', { oldPassword: 'test-initial-password-123', newPassword: '1234567' });
+  assert.equal(tooShort.status, 400);
   const changed = await request('/api/auth/change-password', 'POST', { oldPassword: 'test-initial-password-123', newPassword: 'test-new-password-456' });
   assert.equal(changed.status, 200); token = changed.data.data.token;
   assert.equal((await request('/api/nodes', 'GET', undefined, old)).status, 401);

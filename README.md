@@ -173,7 +173,7 @@ pnpm dev
 | `HOST` | `0.0.0.0` | 绑定的监听 IP 地址 |
 | `NODEMASTER_DATA_DIR` | `server/data` | 运行时数据目录（数据库、遥测历史、初始凭据），需持久化 |
 | `NODEMASTER_ASSETS_DIR` | `server/data` | 随版本发布的安装脚本、探针与订阅模板目录（Docker 镜像中为 `/app/server/assets`，无需挂载） |
-| `NODEMASTER_ADMIN_PASSWORD` | *(自动生成随机)* | **仅首次部署**时的管理员密码（长度至少 12 位）；若未设置，密码将保存至 `data/bootstrap-admin.txt` |
+| `NODEMASTER_ADMIN_PASSWORD` | *(自动生成随机)* | **仅首次部署**时的管理员密码（长度至少 8 位）；若未设置，密码将保存至 `data/bootstrap-admin.txt` |
 | `NODEMASTER_RESET_ADMIN_PASSWORD` | *(空)* | 忘记密码时使用：启动时将管理员密码重置为该值并注销所有会话，**生效后请立即删除** |
 | `TRUST_PROXY` | *(关闭)* | 部署在 nginx / Caddy 等反向代理之后时设置（如 `1` 或 `loopback`），使登录限流与脚本中的面板地址获取真实客户端 IP 与 HTTPS 协议 |
 

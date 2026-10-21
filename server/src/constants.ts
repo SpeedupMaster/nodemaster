@@ -31,7 +31,7 @@ export const DEFAULT_TAGS = { direct: ["Xray", "Reality", "主力直连"], unloc
 export const OFFLINE_AFTER_MS = 30_000;
 export const HEARTBEAT_MS = 3_000;
 
-export const PASSWORD_MIN_LENGTH = 12;
+export const PASSWORD_MIN_LENGTH = 8;
 export const LEGACY_DEFAULT_PASSWORD = "admin123456";
 
 const XRAY_VERSION = /^v?\d+\.\d+\.\d+$/;
