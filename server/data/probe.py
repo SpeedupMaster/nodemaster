@@ -81,6 +81,37 @@ def measure_latency(task):
         return {'taskId': task['id'], 'latencyMs': 0, 'lossRate': 100, 'jitter': 0}
 
 
+def format_uptime(total_sec):
+    sec = int(total_sec)
+    MINUTE = 60
+    HOUR = 3600
+    DAY = 86400
+    MONTH = 30 * DAY
+    YEAR = 365 * DAY
+
+    if sec >= YEAR:
+        y = sec // YEAR
+        m = (sec % YEAR) // MONTH
+        return f'{y}年 {m}月' if m > 0 else f'{y}年'
+    if sec >= MONTH:
+        m = sec // MONTH
+        d = (sec % MONTH) // DAY
+        return f'{m}月 {d}天' if d > 0 else f'{m}月'
+    if sec >= DAY:
+        d = sec // DAY
+        h = (sec % DAY) // HOUR
+        return f'{d}天 {h}小时' if h > 0 else f'{d}天'
+    if sec >= HOUR:
+        h = sec // HOUR
+        m = (sec % HOUR) // MINUTE
+        return f'{h}小时 {m}分' if m > 0 else f'{h}小时'
+    if sec >= MINUTE:
+        m = sec // MINUTE
+        s = sec % MINUTE
+        return f'{m}分 {s}秒' if s > 0 else f'{m}分'
+    return f'{max(1, sec)}秒'
+
+
 class Probe:
     def __init__(self):
         self.previous = None
@@ -139,13 +170,14 @@ class Probe:
         tcp_cc = pathlib.Path('/proc/sys/net/ipv4/tcp_congestion_control').read_text().strip() if pathlib.Path('/proc/sys/net/ipv4/tcp_congestion_control').exists() else ''
         def connections(names):
             return sum(max(0, len(pathlib.Path('/proc/net', name).read_text().splitlines()) - 1) for name in names if pathlib.Path('/proc/net', name).exists())
+        uptime_raw = pathlib.Path('/proc/uptime').read_text().split()[0] if pathlib.Path('/proc/uptime').exists() else '0'
         return {
             'token': TOKEN, 'bootId': BOOT, 'sequence': time.monotonic_ns() // 1000000,
             'networkRxBytes': rx, 'networkTxBytes': tx, 'cpuUsage': round(cpu_usage, 2),
             'memTotalBytes': memory['MemTotal'], 'memUsedBytes': mem_used, 'memUsage': round(mem_used / memory['MemTotal'] * 100, 2),
             'diskTotalBytes': disk_total, 'diskUsedBytes': disk_used, 'diskUsage': round(disk_used / max(1, disk_total) * 100, 2),
             'uplinkSpeedBytes': round(up), 'downlinkSpeedBytes': round(down), 'loadAvg': [round(v, 2) for v in os.getloadavg()],
-            'uptime': str(int(float(pathlib.Path('/proc/uptime').read_text().split()[0]))) + ' 秒',
+            'uptime': format_uptime(float(uptime_raw)),
             'os': os_name, 'arch': os.uname().machine, 'tcpCongestion': tcp_cc,
             'tcpCount': connections(['tcp', 'tcp6']), 'udpCount': connections(['udp', 'udp6']),
             'xrayVersion': read_version(), 'appliedConfigVersion': self.applied,

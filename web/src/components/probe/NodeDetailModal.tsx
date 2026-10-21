@@ -19,7 +19,7 @@ import {
 import { NodeItem, NodeLatencyHistory } from "../../types";
 import { Badge } from "../common/Badge";
 import { api } from "../../services/api";
-import { formatPct } from "../../utils/format";
+import { formatPct, formatUptime } from "../../utils/format";
 
 // Line colours for latency targets, assigned by position
 const SERIES_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4", "#ec4899", "#84cc16"];
@@ -618,7 +618,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
               <div className="text-[11px] font-mono text-ink-muted flex items-center gap-2 mt-1 flex-wrap">
                 <span className="flex items-center gap-1 shrink-0">
                   <Clock className="w-3.5 h-3.5 text-ink-muted" />
-                  <span>在线时长: {node.uptime || "28天 14小时"}</span>
+                  <span>在线时长: {formatUptime(node.uptime)}</span>
                 </span>
                 <span>•</span>
                 <span>架构: {node.arch || "x86_64"}</span>

@@ -7,6 +7,53 @@ import type { NodeItem } from "../types/index.js";
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
 const integer = (v: unknown): v is number => finite(v) && Number.isSafeInteger(v);
 
+export function formatUptime(uptime: string | number | undefined): string {
+  if (!uptime && uptime !== 0) return "";
+  let totalSec = typeof uptime === "number" ? uptime : NaN;
+  if (typeof uptime === "string") {
+    if (/^\d+(\.\d+)?\s*秒?$/.test(uptime.trim())) {
+      totalSec = parseFloat(uptime);
+    } else {
+      return uptime.slice(0, 200);
+    }
+  }
+  if (!Number.isFinite(totalSec) || totalSec < 0) return typeof uptime === "string" ? uptime.slice(0, 200) : "";
+
+  const sec = Math.floor(totalSec);
+  const MINUTE = 60;
+  const HOUR = 3600;
+  const DAY = 86400;
+  const MONTH = 30 * DAY;
+  const YEAR = 365 * DAY;
+
+  if (sec >= YEAR) {
+    const y = Math.floor(sec / YEAR);
+    const m = Math.floor((sec % YEAR) / MONTH);
+    return m > 0 ? `${y}年 ${m}月` : `${y}年`;
+  }
+  if (sec >= MONTH) {
+    const m = Math.floor(sec / MONTH);
+    const d = Math.floor((sec % MONTH) / DAY);
+    return d > 0 ? `${m}月 ${d}天` : `${m}月`;
+  }
+  if (sec >= DAY) {
+    const d = Math.floor(sec / DAY);
+    const h = Math.floor((sec % DAY) / HOUR);
+    return h > 0 ? `${d}天 ${h}小时` : `${d}天`;
+  }
+  if (sec >= HOUR) {
+    const h = Math.floor(sec / HOUR);
+    const m = Math.floor((sec % HOUR) / MINUTE);
+    return m > 0 ? `${h}小时 ${m}分` : `${h}小时`;
+  }
+  if (sec >= MINUTE) {
+    const m = Math.floor(sec / MINUTE);
+    const s = sec % MINUTE;
+    return s > 0 ? `${m}分 ${s}秒` : `${m}分`;
+  }
+  return `${Math.max(1, sec)}秒`;
+}
+
 export function maintainNodes(now = Date.now()) {
   for (const node of db.getNodes()) maintainNode(node, now);
 }
@@ -49,7 +96,10 @@ export function ingestTelemetry(nodeId: string, data: Record<string, any>, now =
     if (finite(data[key])) updates[key] = key.endsWith("Usage") ? Math.round(Math.min(100, data[key]) * 100) / 100 : data[key];
   }
   if (Array.isArray(data.loadAvg) && data.loadAvg.length === 3 && data.loadAvg.every(finite)) updates.loadAvg = data.loadAvg.map((v: number) => Math.round(v * 100) / 100) as [number, number, number];
-  for (const key of ["uptime", "os", "arch", "tcpCongestion"] as const) {
+  if (data.uptime !== undefined) {
+    updates.uptime = formatUptime(data.uptime);
+  }
+  for (const key of ["os", "arch", "tcpCongestion"] as const) {
     if (typeof data[key] === "string") updates[key] = data[key].slice(0, 200);
   }
   let tx = 0, rx = 0;

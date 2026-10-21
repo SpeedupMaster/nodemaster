@@ -19,7 +19,7 @@ import {
   Lightning,
   ShieldCheck,
 } from "@phosphor-icons/react";
-import { formatSpeed, formatBytes, toGB, formatPct } from "../../utils/format";
+import { formatSpeed, formatBytes, toGB, formatPct, formatUptime } from "../../utils/format";
 
 gsap.registerPlugin(useGSAP);
 
@@ -314,7 +314,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   </div>
                   <div className="flex justify-between items-center text-[10px] font-mono text-ink-muted mt-1">
                     <span>Load {node.loadAvg ? formatPct(node.loadAvg[0]) : 0.15}</span>
-                    <span>{node.uptime || "28天"}</span>
+                    <span>{formatUptime(node.uptime)}</span>
                   </div>
                 </div>
 
@@ -472,7 +472,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                       <td className="py-3.5 px-3 text-xs text-ink-secondary whitespace-nowrap">
                         <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <Clock className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-                          <span>{node.uptime || "28天 14小时"}</span>
+                          <span>{formatUptime(node.uptime)}</span>
                         </div>
                       </td>
 
@@ -740,7 +740,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   <div className="flex items-center gap-2.5 text-ink-muted text-[11px]">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {node.uptime || "28天"}
+                      {formatUptime(node.uptime)}
                     </span>
                     <button
                       onClick={() => onSelectNode?.(node)}
