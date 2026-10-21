@@ -153,6 +153,19 @@ test('analytics aggregate only measured values and latency starts empty', () => 
   assert.equal(getTrafficAnalytics('7d').timeSeries.length, 8);
   assert.deepEqual(historyStore.latencyHistory('main', '1h', db.getLatencyTasksFor('main')), []);
 });
+test('daily traffic buckets start at midnight in the TZ the server runs with', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const script = `const { getTrafficAnalytics } = await import(${JSON.stringify(new URL('../dist/services/trafficService.js', import.meta.url).href)});
+    console.log(JSON.stringify(getTrafficAnalytics('7d').timeSeries.map(p => p.timestamp)));`;
+  for (const [tz, offsetMinutes] of [['Asia/Shanghai', 480], ['UTC', 0]]) {
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nodemaster-tz-'));
+    const env = { ...process.env, TZ: tz, NODEMASTER_DATA_DIR: dataDir };
+    const stamps = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { env }).toString());
+    fs.rmSync(dataDir, { recursive: true, force: true });
+    assert.equal(stamps.length, 8);
+    for (const t of stamps) assert.equal((t + offsetMinutes * 60_000) % 86_400_000, 0, `${tz}: ${new Date(t).toISOString()}`);
+  }
+});
 test('corrupt database is not overwritten', () => {
   db.flush(); const file = path.join(directory, 'nodemaster_db.json'); const valid = fs.readFileSync(file, 'utf8');
   fs.writeFileSync(file, '{broken'); assert.throws(() => new Database(), /original retained/); assert.equal(fs.readFileSync(file, 'utf8'), '{broken');
