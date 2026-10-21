@@ -1,7 +1,8 @@
 import { WebSocket, WebSocketServer } from "ws";
 import type { Server } from "http";
 import { db } from "../db/index.js";
-import type { NodeItem } from "../types/index.js";
+import type { PublicNodeItem } from "../types/index.js";
+import { publicNode } from "./nodeService.js";
 import { HEARTBEAT_MS } from "../constants.js";
 import { telegramService } from "./telegramService.js";
 import { maintainNodes } from "./telemetryService.js";
@@ -30,7 +31,7 @@ export class WsHub {
       }
 
       this.webClients.set(ws, token);
-      ws.send(JSON.stringify({ type: "INIT_STATE", nodes: db.getNodes(), relays: db.getRelays(), subscriptions: db.getSubscriptions() }));
+      ws.send(JSON.stringify({ type: "INIT_STATE", nodes: db.getNodes().map(publicNode), relays: db.getRelays(), subscriptions: db.getSubscriptions() }));
       ws.on("close", () => this.webClients.delete(ws));
     });
 
@@ -58,9 +59,9 @@ export class WsHub {
   /** Sends only nodes whose state changed since they were last pushed to browsers. */
   private broadcastChangedNodes() {
     if (!this.webClients.size) return;
-    const changed: NodeItem[] = [];
+    const changed: PublicNodeItem[] = [];
     const present = new Set<string>();
-    for (const node of db.getNodes()) {
+    for (const node of db.getNodes().map(publicNode)) {
       present.add(node.id);
       const json = JSON.stringify(node);
       if (this.lastSent.get(node.id) !== json) { this.lastSent.set(node.id, json); changed.push(node); }
@@ -70,8 +71,9 @@ export class WsHub {
   }
 
   public broadcastNodeUpdate(nodeId: string) {
-    const node = db.getNodeById(nodeId);
-    if (!node) return;
+    const stored = db.getNodeById(nodeId);
+    if (!stored) return;
+    const node = publicNode(stored);
     this.lastSent.set(node.id, JSON.stringify(node));
     this.broadcastToWeb({ type: "NODE_UPDATE", node });
   }

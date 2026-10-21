@@ -43,7 +43,7 @@ const VALID_TABS = [
 const TAB_TITLES: Record<string, string> = {
   dashboard: "实时仪表盘",
   nodes: "多 VPS 节点管理",
-  traffic: "业务流量统计与服务分析",
+  traffic: "流量统计",
   ping: "延迟监测",
   topology: "链式代理与解锁拓扑",
   subscription: "订阅分享与客户端导出",

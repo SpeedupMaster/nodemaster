@@ -148,6 +148,9 @@ test('analytics aggregate only measured values and latency starts empty', () => 
   assert.equal(analytics.totalRecordedBytes, expected);
   assert.equal(analytics.timeSeries.reduce((sum, p) => sum + p.totalBytes, 0), expected);
   for (const p of analytics.timeSeries) assert.equal(new Date(p.timestamp).getMinutes(), 0);
+  // every hour from local midnight through now is present, with or without traffic
+  assert.equal(analytics.timeSeries.length, new Date().getHours() + 1);
+  assert.equal(getTrafficAnalytics('7d').timeSeries.length, 8);
   assert.deepEqual(historyStore.latencyHistory('main', '1h', db.getLatencyTasksFor('main')), []);
 });
 test('corrupt database is not overwritten', () => {
@@ -343,4 +346,32 @@ test('frontend service catalog matches the server unlock services', () => {
 });
 after(async () => {
   db.flush(); server.closeAllConnections(); await new Promise(r => server.close(r)); fs.rmSync(directory, { recursive: true, force: true });
+});
+test('the Reality private key is never sent to the browser, only to the node itself', async () => {
+  const node = makeNode('secret-node');
+  const secret = node.reality.privateKey;
+  for (const url of ['/api/nodes', `/api/nodes/${node.id}/xray-config`]) {
+    const { status, data } = await request(url);
+    assert.equal(status, 200);
+    assert.ok(!JSON.stringify(data).includes(secret), `${url} leaks the private key`);
+  }
+  const created = await request('/api/nodes', 'POST', { name: 'fresh', ip: '1.2.3.4' });
+  assert.equal(created.data.data.reality.privateKey, undefined);
+  const own = await request(`/api/nodes/by-token/${node.token}/xray-config`, 'GET', undefined, null);
+  assert.ok(JSON.stringify(own.data).includes(secret), 'the node still receives its own key');
+  db.deleteNode(node.id); db.deleteNode(created.data.data.id);
+});
+test('periodic history writes are asynchronous and one at a time', async () => {
+  const { HistoryStore } = historyModule;
+  const file = path.join(directory, 'history-async.json');
+  const store = new HistoryStore(file); const node = { id: 'a', cpuUsage: 1, memUsage: 1, diskUsage: 1, uplinkSpeedBytes: 0, downlinkSpeedBytes: 0 };
+  store.record(node, 3, 4);
+  store.flushAsync();
+  assert.equal(fs.existsSync(file), false, 'the write has not blocked the caller');
+  store.record(node, 1, 1);
+  store.flushAsync(); // a second flush while writing is deferred, not run concurrently
+  await store.writing;
+  assert.equal(new HistoryStore(file).samples('all', 'a').reduce((s, p) => s + p.tx + p.rx, 0), 7);
+  store.flush();
+  assert.equal(new HistoryStore(file).samples('all', 'a').reduce((s, p) => s + p.tx + p.rx, 0), 9);
 });

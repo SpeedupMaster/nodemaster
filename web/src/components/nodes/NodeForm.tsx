@@ -527,7 +527,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
         ) : (
           <Field
             label="SNI 伪装域名 *"
-            presets={SNI_PRESETS.map((d) => ({ label: d.split(".")[1] || d, value: d }))}
+            presets={SNI_PRESETS.map((d) => ({ label: d.replace(/^www\./, "").split(".")[0], value: d }))}
             active={form.sni}
             onPreset={(v) => set("sni", v)}
           >

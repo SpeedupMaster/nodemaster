@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteJson } from "./security.js";
+import { atomicWriteJson, atomicWriteJsonAsync } from "./security.js";
 import { DATA_DIR } from "../paths.js";
 import { MINUTE, HOUR, DAY } from "../constants.js";
 import type { LatencyTask, NodeItem, NodeLatencyHistory } from "../types/index.js";
@@ -96,6 +96,7 @@ export class HistoryStore {
   private latencyByNode = new Map<string, LatencySample[]>();
   private timer?: NodeJS.Timeout;
   private dirty = false;
+  private writing?: Promise<void>;
   constructor(private file = path.join(DATA_DIR, "telemetry-history.json")) {
     if (fs.existsSync(file)) {
       const value: HistoryData = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -115,14 +116,30 @@ export class HistoryStore {
     if (!this.timer) {
       this.timer = setTimeout(() => {
         this.timer = undefined;
-        try { this.flush(); } catch (error) { console.error("History flush failed", error); this.changed(); }
+        this.flushAsync();
       }, 30000);
       this.timer.unref();
     }
   }
+  /** Periodic write: serialized here, written off the event loop; one write at a time. */
+  private flushAsync() {
+    if (this.writing) return this.changed();
+    const data = this.snapshot();
+    if (!data) return;
+    this.writing = atomicWriteJsonAsync(this.file, JSON.stringify(data))
+      .catch((error) => { console.error("History flush failed", error); this.changed(); })
+      .finally(() => { this.writing = undefined; });
+  }
+  /** Synchronous write for shutdown, so nothing recorded is lost on exit (the process exits right after, so an in-flight async write cannot land on top). */
   public flush() {
     clearTimeout(this.timer); this.timer = undefined;
-    if (!this.dirty) return;
+    const data = this.snapshot();
+    if (data) atomicWriteJson(this.file, data);
+  }
+  /** Compacts the in-memory history and returns what to persist, or null when nothing changed. */
+  private snapshot(): HistoryData | null {
+    if (!this.dirty) return null;
+    this.dirty = false;
     const now = Date.now();
     const samples: Sample[] = [], latency: LatencySample[] = [];
     for (const [nodeId, rows] of this.samplesByNode) {
@@ -133,8 +150,7 @@ export class HistoryStore {
       const kept = compact(rows, now, p => p.taskId, mergeLatency);
       if (kept.length) { this.latencyByNode.set(nodeId, kept); latency.push(...kept); } else this.latencyByNode.delete(nodeId);
     }
-    atomicWriteJson(this.file, { samples, latency } satisfies HistoryData);
-    this.dirty = false;
+    return { samples, latency };
   }
   public record(node: NodeItem, tx: number, rx: number, now = Date.now()) {
     const timestamp = Math.floor(now / MINUTE) * MINUTE;

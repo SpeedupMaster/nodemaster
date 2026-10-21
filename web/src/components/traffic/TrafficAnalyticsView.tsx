@@ -296,11 +296,11 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
               <ChartPieSlice className="w-4 h-4 text-accent" />
               节点流量分布
             </h3>
-            <span className="text-[11px] text-ink-muted font-mono">{data?.nodeDistributions.length ?? 0} 个节点</span>
+            <span className="text-[11px] text-ink-muted font-mono">{data?.nodeDistributions.length ?? 0} 个节点有流量</span>
           </div>
 
           <div className="space-y-3 pt-1">
-            {data?.nodeDistributions.length === 0 && <div className="text-xs text-ink-muted">暂无节点</div>}
+            {data?.nodeDistributions.length === 0 && <div className="text-xs text-ink-muted">所选时段暂无流量记录</div>}
             {data?.nodeDistributions.map((nd) => (
               <div key={nd.nodeId} className="space-y-1 font-mono text-xs">
                 <div className="flex items-center justify-between gap-2">

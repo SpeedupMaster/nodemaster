@@ -62,8 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
       desc: "支持 VLESS-Reality 免证书协议、Dokodemo 转发与实时指标统计",
     },
     traffic: {
-      title: "业务流量统计与服务分析",
-      desc: "按节点与协议维度的实时上行/下行流量消耗与统计分析",
+      title: "流量统计",
+      desc: "各节点网卡实测的上行/下行流量与时序走势",
     },
     ping: {
       title: "延迟监测",

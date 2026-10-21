@@ -28,7 +28,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "监控",
     items: [
       { id: "dashboard", label: "实时仪表盘", icon: Gauge },
-      { id: "traffic", label: "业务流量统计", icon: ChartBar },
+      { id: "traffic", label: "流量统计", icon: ChartBar },
       { id: "ping", label: "延迟监测", icon: Pulse },
     ],
   },

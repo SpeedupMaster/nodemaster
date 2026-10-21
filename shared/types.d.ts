@@ -79,6 +79,9 @@ export interface NodeItem {
 }
 
 /** Editable node fields accepted by POST /api/nodes and PUT /api/nodes/:id. */
+/** A node as sent to the browser: the Reality private key never leaves the server except to its own node. */
+export type PublicNodeItem = Omit<NodeItem, "reality"> & { reality?: Omit<XrayRealityConfig, "privateKey"> };
+
 export interface NodeInput {
   name?: string;
   ip?: string;

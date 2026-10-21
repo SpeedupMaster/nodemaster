@@ -4,11 +4,18 @@ import { billingPeriod, newId } from "./security.js";
 import { generateRealityCredentials, generateShadowsocksCredentials } from "./xrayConfig.js";
 import { InputError, HOSTNAME, HOST_OR_IP, PORT, nullableNumber, nullableString, optBoolean, optEnum, optNumber, optString, optStringArray, required } from "./validation.js";
 import { DEFAULT_BANDWIDTH_MBPS, DEFAULT_REALITY_PORT, DEFAULT_SNI, DEFAULT_SS_PORT, DEFAULT_TAGS, DEFAULT_TRAFFIC_LIMIT, SS_CIPHERS } from "../constants.js";
-import type { NodeInput, NodeItem } from "../types/index.js";
+import type { NodeInput, NodeItem, PublicNodeItem } from "../types/index.js";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Validates the editable node fields of a request body; absent fields stay undefined. */
+/** Strips the Reality private key before a node is sent to the browser (O8). */
+export function publicNode(node: NodeItem): PublicNodeItem {
+  if (!node.reality) return node;
+  const { privateKey: _secret, ...reality } = node.reality;
+  return { ...node, reality };
+}
+
 export function parseNodeInput(body: any): NodeInput {
   const ss = body.shadowsocks;
   if (ss !== undefined && (typeof ss !== "object" || ss === null || Array.isArray(ss))) throw new InputError("参数无效: shadowsocks");

@@ -496,10 +496,11 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
   const safeProxies: GroupProxyOption[] = useMemo(() => {
     const list: GroupProxyOption[] = [];
 
-    // 1. 直连节点 (排除纯 Shadowsocks / unlock / exit 落地机)
+    // Mirrors assembleProxies on the server: only online nodes are served
+    // 1. 直连节点 (排除纯 Shadowsocks 解锁机)
     nodes.forEach((n) => {
       const isNakedUnlock = n.protocol === "shadowsocks" || n.type === "unlock";
-      if (n.status !== "offline" && !isNakedUnlock && n.reality) {
+      if (n.status === "online" && !isNakedUnlock && n.reality) {
         list.push({
           name: n.name,
           type: formatProtocol(n.protocol),
@@ -514,7 +515,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         if (r.status !== "active") return;
         const main = nodes.find((n) => n.id === r.mainNodeId);
         const unlock = nodes.find((n) => n.id === r.unlockNodeId);
-        if (main && unlock && main.reality) {
+        if (main?.status === "online" && unlock?.status === "online" && main.reality) {
           list.push({
             name: `🔗 ${r.name || `${main.name} ➔ ${unlock.name} 解锁`}`,
             type: "Chained",

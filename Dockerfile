@@ -48,6 +48,9 @@ COPY web/package.json ./web/
 # Install backend production dependencies only (the frontend ships as static files)
 RUN pnpm install --frozen-lockfile --prod --filter ./server && npm uninstall -g pnpm
 
+# Zone data for TZ (daily traffic buckets start at local midnight); alpine ships none
+RUN apk add --no-cache tzdata
+
 # Copy compiled backend dist
 COPY --from=builder /app/server/dist ./server/dist
 

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, bumpConfigVersion } from "../db/index.js";
 import { billingPeriod } from "../services/security.js";
-import { createNode, parseNodeInput, updateNode } from "../services/nodeService.js";
+import { createNode, parseNodeInput, publicNode, updateNode } from "../services/nodeService.js";
 import { getNodeXrayConfig } from "../services/xrayConfig.js";
 import { historyStore } from "../services/historyStore.js";
 import { notFound } from "../services/validation.js";
@@ -14,18 +14,18 @@ export const nodesRouter = Router();
 const nodeOr404 = (id: string) => db.getNodeById(id) ?? notFound("节点");
 const range = (value: unknown) => (typeof value === "string" && value) || "1h";
 
-nodesRouter.get("/nodes", (_req, res) => ok(res, db.getNodes()));
+nodesRouter.get("/nodes", (_req, res) => ok(res, db.getNodes().map(publicNode)));
 
 nodesRouter.post("/nodes", (req, res) => {
   const node = createNode(parseNodeInput(req.body));
   wsHub.broadcastNodeUpdate(node.id);
-  ok(res, node);
+  ok(res, publicNode(node));
 });
 
 nodesRouter.put("/nodes/:id", (req, res) => {
   const updated = updateNode(nodeOr404(req.params.id), parseNodeInput(req.body));
   wsHub.broadcastNodeUpdate(updated.id);
-  ok(res, updated);
+  ok(res, publicNode(updated));
 });
 
 nodesRouter.delete("/nodes/:id", (req, res) => {
@@ -35,7 +35,11 @@ nodesRouter.delete("/nodes/:id", (req, res) => {
   ok(res, undefined, "节点已删除");
 });
 
-nodesRouter.get("/nodes/:id/xray-config", (req, res) => ok(res, getNodeXrayConfig(nodeOr404(req.params.id))));
+// The panel only displays this config; the node itself pulls the real one with its own token
+nodesRouter.get("/nodes/:id/xray-config", (req, res) => {
+  const config = getNodeXrayConfig(nodeOr404(req.params.id));
+  ok(res, JSON.parse(JSON.stringify(config, (key, value) => (key === "privateKey" ? "<已隐藏，仅下发给节点自身>" : value))));
+});
 
 nodesRouter.post("/nodes/:id/sync", (req, res) => {
   const updated = db.updateNode(req.params.id, bumpConfigVersion(nodeOr404(req.params.id)))!;
@@ -54,7 +58,7 @@ nodesRouter.post("/nodes/:id/reset-traffic", (req, res) => {
     ...bumpConfigVersion(node, now),
   })!;
   wsHub.broadcastNodeUpdate(updated.id);
-  ok(res, updated, "流量已重置");
+  ok(res, publicNode(updated), "流量已重置");
 });
 
 nodesRouter.get("/nodes/:id/history", (req, res) => {

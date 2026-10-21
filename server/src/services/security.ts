@@ -43,6 +43,19 @@ export function atomicWriteJson(file: string, data: unknown, backup = false): vo
   }
 }
 
+/** Same as atomicWriteJson without blocking the event loop; for large periodic snapshots. */
+export async function atomicWriteJsonAsync(file: string, json: string): Promise<void> {
+  await fs.promises.mkdir(path.dirname(file), { recursive: true });
+  const temporary = `${file}.tmp.${crypto.randomUUID()}`;
+  try {
+    const handle = await fs.promises.open(temporary, 'wx', 0o600);
+    try { await handle.writeFile(json); await handle.sync(); } finally { await handle.close(); }
+    await fs.promises.rename(temporary, file);
+  } finally {
+    await fs.promises.rm(temporary, { force: true });
+  }
+}
+
 /** Start of the billing period containing `now`; a reset day past the month's end falls on its last day. */
 export function billingPeriod(now: number, resetDay: number): number {
   const date = new Date(now);
