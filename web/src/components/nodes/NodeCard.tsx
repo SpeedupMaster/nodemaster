@@ -32,6 +32,7 @@ interface NodeCardProps {
   onDelete: (id: string) => void;
   onCopyUrl: (node: NodeItem) => void;
   onViewVersion?: () => void;
+  onViewProbeVersion?: () => void;
   onSyncConfig?: (node: NodeItem) => void;
 }
 
@@ -58,6 +59,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   onDelete,
   onCopyUrl,
   onViewVersion,
+  onViewProbeVersion,
   onSyncConfig,
 }) => {
   const [copied, setCopied] = React.useState(false);
@@ -180,6 +182,12 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           {!isProbe && node.xrayVersion && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/10 border border-purple-500/25">
               Xray {node.xrayVersion}
+            </span>
+          )}
+
+          {node.probeVersion && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+              探针 {node.probeVersion}
             </span>
           )}
 
@@ -382,6 +390,18 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
                 <span className="text-[11px] font-medium">内核</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {onViewProbeVersion && (
+            <Tooltip content={`检测与升级系统探针 (当前: ${node.probeVersion || "旧版本/未上报"})`}>
+              <button
+                onClick={onViewProbeVersion}
+                className="px-2 py-1.5 rounded text-ink-secondary hover:text-emerald-400 hover:bg-emerald-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[11px] font-medium">探针</span>
               </button>
             </Tooltip>
           )}

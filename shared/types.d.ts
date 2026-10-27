@@ -70,6 +70,11 @@ export interface NodeItem {
   desiredXrayVersion?: string;
   upgradeStatus?: "pending" | "failed" | "succeeded";
   upgradeError?: string;
+  // Probe Version & Online Upgrade
+  probeVersion?: string;
+  desiredProbeVersion?: string;
+  probeUpgradeStatus?: "pending" | "failed" | "succeeded";
+  probeUpgradeError?: string;
   // Dynamic Hot Sync
   configVersion?: number;
   appliedConfigVersion?: number;
@@ -120,6 +125,24 @@ export interface XrayVersionInfo {
   publishedAt: string;
   checkedAt: number;
   nodes: XrayVersionNodeStatus[];
+}
+
+export interface ProbeVersionNodeStatus {
+  nodeId: string;
+  nodeName: string;
+  currentVersion?: string;
+  desiredVersion?: string;
+  status: "up_to_date" | "outdated" | "unknown";
+  upgradeStatus?: "pending" | "failed" | "succeeded";
+  upgradeError?: string;
+  arch?: string;
+  os?: string;
+}
+
+export interface ProbeVersionInfo {
+  latestVersion: string;
+  checkedAt: number;
+  nodes: ProbeVersionNodeStatus[];
 }
 
 export interface RelayLink {

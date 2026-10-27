@@ -5,6 +5,7 @@ import { asset } from "../paths.js";
 import { agentDirectives, ingestTelemetry } from "../services/telemetryService.js";
 import { getNodeXrayConfig } from "../services/xrayConfig.js";
 import { generateUpgradeScript, getXrayVersionMatrix } from "../services/xrayVersionService.js";
+import { generateProbeUpgradeScript, getLatestProbeVersion } from "../services/probeVersionService.js";
 import { HttpError, InputError, optString } from "../services/validation.js";
 import { asyncRoute, ok, panelUrl } from "./util.js";
 
@@ -56,4 +57,8 @@ probeRouter.get("/probe.py", (_req, res) => res.type("text/plain").sendFile(asse
 probeRouter.get("/xray/upgrade.sh", asyncRoute(async (req, res) => {
   const version = optString(req.query, "version") || (await getXrayVersionMatrix()).latestVersion;
   res.type("text/x-shellscript; charset=utf-8").send(generateUpgradeScript(version));
+}));
+probeRouter.get("/probe/upgrade.sh", asyncRoute(async (req, res) => {
+  const version = optString(req.query, "version") || getLatestProbeVersion();
+  res.type("text/x-shellscript; charset=utf-8").send(generateProbeUpgradeScript(panelUrl(req), version));
 }));

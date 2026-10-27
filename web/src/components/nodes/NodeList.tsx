@@ -8,9 +8,10 @@ import { ConfigModal } from "./ConfigModal";
 import { InstallModal } from "./InstallModal";
 import { NodeForm } from "./NodeForm";
 import { XrayVersionModal } from "./XrayVersionModal";
+import { ProbeVersionModal } from "./ProbeVersionModal";
 import { Input } from "../common/Input";
 import { Button } from "../common/Button";
-import { MagnifyingGlass, ShieldCheck } from "@phosphor-icons/react";
+import { MagnifyingGlass, ShieldCheck, Cpu } from "@phosphor-icons/react";
 
 gsap.registerPlugin(useGSAP);
 
@@ -35,6 +36,7 @@ export const NodeList: React.FC<NodeListProps> = ({
   const [activeInstallNode, setActiveInstallNode] = useState<NodeItem | null>(null);
   const [activeEditNode, setActiveEditNode] = useState<NodeItem | null>(null);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [isProbeVersionModalOpen, setIsProbeVersionModalOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredNodes = nodes.filter((node) => {
@@ -118,6 +120,16 @@ export const NodeList: React.FC<NodeListProps> = ({
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => setIsProbeVersionModalOpen(true)}
+            icon={<Cpu className="w-3.5 h-3.5 text-emerald-400" />}
+            className="shrink-0"
+          >
+            系统探针管理
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setIsVersionModalOpen(true)}
             icon={<ShieldCheck className="w-3.5 h-3.5 text-purple-400" />}
             className="shrink-0"
@@ -152,6 +164,7 @@ export const NodeList: React.FC<NodeListProps> = ({
               onDelete={onDelete}
               onCopyUrl={handleCopyUrl}
               onViewVersion={() => setIsVersionModalOpen(true)}
+              onViewProbeVersion={() => setIsProbeVersionModalOpen(true)}
               onSyncConfig={handleSyncNode}
             />
           </div>
@@ -182,6 +195,12 @@ export const NodeList: React.FC<NodeListProps> = ({
       <XrayVersionModal
         isOpen={isVersionModalOpen}
         onClose={() => setIsVersionModalOpen(false)}
+        nodes={nodes}
+        onRefreshData={onRefreshData}
+      />
+      <ProbeVersionModal
+        isOpen={isProbeVersionModalOpen}
+        onClose={() => setIsProbeVersionModalOpen(false)}
         nodes={nodes}
         onRefreshData={onRefreshData}
       />

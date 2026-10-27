@@ -62,6 +62,23 @@ class ProbeTests(unittest.TestCase):
         self.assertIn(unittest.mock.call(['systemctl', 'stop', 'nodemaster-proxy']), command.call_args_list)
         self.assertNotIn(unittest.mock.call(['systemctl', 'restart', 'nodemaster-proxy']), command.call_args_list)
 
+    def test_probe_upgrade_invalid_version_reports_failure(self):
+        with patch.object(self.module.subprocess, 'run') as run:
+            result = self.probe.perform_probe_upgrade({'version': 'v1;bad', 'scriptUrl': '/api/probe/upgrade.sh'})
+        self.assertEqual(result['status'], 'error')
+        run.assert_not_called()
+
+    def test_probe_upgrade_success(self):
+        mock_proc = unittest.mock.MagicMock(returncode=0, stdout='upgraded', stderr='')
+        with patch.object(self.module.urllib.request, 'urlopen') as mock_urlopen, \
+             patch.object(self.module.subprocess, 'run', return_value=mock_proc):
+            mock_resp = unittest.mock.MagicMock()
+            mock_resp.read.return_value = b'echo ok'
+            mock_urlopen.return_value.__enter__.return_value = mock_resp
+            result = self.probe.perform_probe_upgrade({'version': 'v1.1.0', 'scriptUrl': '/api/probe/upgrade.sh?version=v1.1.0'})
+        self.assertEqual(result['status'], 'success')
+        self.assertEqual(result['version'], 'v1.1.0')
+
     def test_upgrade_invalid_version_reports_failure_without_execution(self):
         with patch.object(self.module.subprocess, 'run') as run:
             result = self.probe.perform_upgrade({'version': 'v1;bad', 'scriptUrl': '/api/xray/upgrade.sh'})

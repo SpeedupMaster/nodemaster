@@ -125,6 +125,16 @@ export function ingestTelemetry(nodeId: string, data: Record<string, any>, now =
     if (node.desiredXrayVersion === updates.xrayVersion) Object.assign(updates, { upgradeStatus: "succeeded", upgradeError: undefined });
   }
   if (data.upgradeReport?.status === "error" && data.upgradeReport.version === node.desiredXrayVersion) Object.assign(updates, { upgradeStatus: "failed", upgradeError: String(data.upgradeReport.error || "Upgrade failed").slice(0, 500) });
+  if (typeof data.probeVersion === "string" && data.probeVersion.trim()) {
+    const pVer = data.probeVersion.trim();
+    updates.probeVersion = pVer.startsWith("v") ? pVer : `v${pVer}`;
+    if (node.desiredProbeVersion === updates.probeVersion) {
+      Object.assign(updates, { probeUpgradeStatus: "succeeded", probeUpgradeError: undefined });
+    }
+  }
+  if (data.probeUpgradeReport?.status === "error" && data.probeUpgradeReport.version === node.desiredProbeVersion) {
+    Object.assign(updates, { probeUpgradeStatus: "failed", probeUpgradeError: String(data.probeUpgradeReport.error || "Probe upgrade failed").slice(0, 500) });
+  }
   const updated = db.updateNode(node.id, updates, true)!;
   historyStore.record(updated, tx, rx, now);
   const tasks = db.getLatencyTasksFor(node.id);
@@ -142,6 +152,7 @@ export function agentDirectives(node: NodeItem) {
     proxyAction: node.status === "circuit_broken" ? "STOP" : "RUN",
     sync: (node.configVersion || 0) > (node.appliedConfigVersion || 0) ? { action: "RELOAD_CONFIG", targetVersion: node.configVersion, configUrl: `/api/nodes/by-token/${node.token}/xray-config` } : null,
     upgrade: node.desiredXrayVersion && node.desiredXrayVersion !== node.xrayVersion && node.upgradeStatus === "pending" ? { action: "XRAY_UPGRADE", version: node.desiredXrayVersion, scriptUrl: `/api/xray/upgrade.sh?version=${encodeURIComponent(node.desiredXrayVersion)}` } : null,
+    probeUpgrade: node.desiredProbeVersion && node.desiredProbeVersion !== node.probeVersion && node.probeUpgradeStatus === "pending" ? { action: "PROBE_UPGRADE", version: node.desiredProbeVersion, scriptUrl: `/api/probe/upgrade.sh?version=${encodeURIComponent(node.desiredProbeVersion)}` } : null,
     latencyTasks: db.getLatencyTasksFor(node.id),
   };
 }

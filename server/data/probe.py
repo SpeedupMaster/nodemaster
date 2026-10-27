@@ -18,6 +18,7 @@ SERVICE = 'nodemaster-proxy'
 XRAY = '/usr/local/bin/xray'
 BOOT = pathlib.Path('/proc/sys/kernel/random/boot_id').read_text().strip() if pathlib.Path('/proc/sys/kernel/random/boot_id').exists() else 'unsupported-platform'
 SERVICE_FILE = pathlib.Path('/etc/systemd/system/nodemaster-proxy.service')
+PROBE_VERSION = 'v1.1.0'
 
 
 def command(args, timeout=15):
@@ -191,6 +192,23 @@ class Probe:
         self.last_latency = {}
         self.latency_results = []
         self.upgrade_future = None
+        self.probe_upgrade_report = None
+        self.probe_upgrade_future = None
+
+    def perform_probe_upgrade(self, upgrade):
+        version = upgrade['version']
+        try:
+            if not re.fullmatch(r'v\d+\.\d+\.\d+', version): raise ValueError('Invalid version')
+            script_path = upgrade['scriptUrl']
+            if not script_path.startswith('/api/probe/upgrade.sh?'): raise ValueError('Invalid upgrade URL')
+            req = urllib.request.Request(PANEL + script_path, headers={'User-Agent': 'NodeMaster-Probe/1.0'})
+            with urllib.request.urlopen(req, timeout=20) as source:
+                script = source.read(1024 * 1024).decode()
+            result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=120)
+            if result.returncode: raise RuntimeError('Probe upgrade failed: ' + (result.stderr or result.stdout)[-300:])
+            return {'status': 'success', 'version': version}
+        except Exception as error:
+            return {'status': 'error', 'version': version, 'error': str(error)}
 
     def perform_upgrade(self, upgrade):
         version = upgrade['version']
@@ -248,7 +266,7 @@ class Probe:
             'os': os_name, 'arch': os.uname().machine, 'tcpCongestion': tcp_cc,
             'tcpCount': connections(['tcp', 'tcp6']), 'udpCount': connections(['udp', 'udp6']),
             'xrayVersion': read_version(), 'appliedConfigVersion': self.applied,
-            'syncReport': self.sync_report, 'upgradeReport': self.upgrade_report, 'latencyResults': self.latency_results,
+            'probeVersion': PROBE_VERSION, 'syncReport': self.sync_report, 'upgradeReport': self.upgrade_report, 'probeUpgradeReport': self.probe_upgrade_report, 'latencyResults': self.latency_results,
         }
 
     def apply(self, response):
@@ -296,6 +314,9 @@ class Probe:
         upgrade = response.get('upgrade')
         if upgrade and installed and self.upgrade_future is None:
             self.upgrade_future = self.executor.submit(self.perform_upgrade, upgrade)
+        probe_upgrade = response.get('probeUpgrade')
+        if probe_upgrade and self.probe_upgrade_future is None:
+            self.probe_upgrade_future = self.executor.submit(self.perform_probe_upgrade, probe_upgrade)
         now = time.monotonic()
         for task in response.get('latencyTasks', [])[:100]:
             key = task['id']
@@ -309,6 +330,9 @@ class Probe:
                 if self.upgrade_future is not None and self.upgrade_future.done():
                     self.upgrade_report = self.upgrade_future.result()
                     self.upgrade_future = None
+                if self.probe_upgrade_future is not None and self.probe_upgrade_future.done():
+                    self.probe_upgrade_report = self.probe_upgrade_future.result()
+                    self.probe_upgrade_future = None
                 for key, future in list(self.pending.items()):
                     if future.done():
                         measurement = future.result()
@@ -322,7 +346,7 @@ class Probe:
                 response = request('/api/nodes/telemetry', self.metrics())
                 if not response.get('success'): raise RuntimeError('Telemetry rejected')
                 self.latency_results = []
-                self.sync_report = self.upgrade_report = None
+                self.sync_report = self.upgrade_report = self.probe_upgrade_report = None
                 self.apply(response)
             except Exception as error:
                 print('Probe error:', error, flush=True)
