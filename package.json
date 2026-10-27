@@ -7,9 +7,23 @@
     "dev": "pnpm --parallel --filter \"./web\" --filter \"./server\" dev",
     "build": "pnpm --filter \"./server\" build && pnpm --filter \"./web\" build",
     "start": "pnpm --filter \"./server\" start",
-    "test": "pnpm --filter \"./server\" test"
+    "test": "pnpm --filter \"./server\" test",
+    "seed:demo": "node scripts/seed-demo.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
-  "keywords": ["vps", "xray", "proxy", "clash", "mihomo", "singbox", "hallmark", "gsap"],
+  "keywords": [
+    "vps",
+    "xray",
+    "proxy",
+    "clash",
+    "mihomo",
+    "singbox",
+    "hallmark",
+    "gsap"
+  ],
   "author": "Antigravity",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer-core": "^25.16.0"
+  }
 }
