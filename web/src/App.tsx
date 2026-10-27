@@ -215,12 +215,12 @@ export function App() {
             <span className="text-[11px] font-medium">全局吞吐</span>
           </div>
           <div className="flex items-center gap-3.5 font-mono text-xs">
-            <div className="flex items-center gap-1 text-sky-400">
+            <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400">
               <ArrowUpRight className="w-3.5 h-3.5" />
               <span className="text-[10px] text-ink-muted">上行:</span>
               <span className="font-semibold">{mobileUp.val.toFixed(1)} {mobileUp.unit}</span>
             </div>
-            <div className="flex items-center gap-1 text-emerald-400">
+            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
               <ArrowDownRight className="w-3.5 h-3.5" />
               <span className="text-[10px] text-ink-muted">下行:</span>
               <span className="font-semibold">{mobileDown.val.toFixed(1)} {mobileDown.unit}</span>

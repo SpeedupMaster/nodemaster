@@ -34,7 +34,7 @@ export const Button: React.FC<ButtonProps> = ({
     lg: "text-base px-5 py-2.5 gap-2.5",
   }[size];
 
-  const shapeClass = pill ? "rounded-full" : "rounded-md";
+  const shapeClass = pill ? "rounded-full" : "rounded-lg";
 
   const variantClasses = {
     primary:

@@ -102,7 +102,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               <span className="text-xs text-ink-muted font-normal">/ {nodes.length} 在线</span>
             </div>
           </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
             <ShieldCheck weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
@@ -112,17 +112,17 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           <div className="min-w-0 flex-1">
             <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">全网出入吞吐</div>
             <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 flex flex-col xs:flex-row items-start xs:items-center gap-0.5 sm:gap-2 truncate">
-              <span className="text-emerald-400 flex items-center gap-0.5 truncate">
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 truncate">
                 <ArrowDown className="w-3 h-3 shrink-0" />
                 <RollingCounter value={aggDown.val} decimals={1} suffix={` ${aggDown.unit}`} />
               </span>
-              <span className="text-sky-400 flex items-center gap-0.5 truncate">
+              <span className="text-sky-600 dark:text-sky-400 flex items-center gap-0.5 truncate">
                 <ArrowUp className="w-3 h-3 shrink-0" />
                 <RollingCounter value={aggUp.val} decimals={1} suffix={` ${aggUp.unit}`} />
               </span>
             </div>
           </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
             <Lightning weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
@@ -148,7 +148,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               {formatBytes(totalMemUsed)} <span className="text-[10px] font-normal text-ink-muted">/ {formatBytes(totalMemTotal)}</span>
             </div>
           </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
+          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
             <Database weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
           </div>
         </div>
@@ -258,7 +258,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                     <span>•</span>
                     <span
                       className={`uppercase text-[10px] font-medium shrink-0 ${
-                        node.type === "unlock" ? "text-purple-400" : "text-accent"
+                        node.type === "unlock" ? "text-purple-600 dark:text-purple-400" : "text-accent"
                       }`}
                     >
                       {node.type === "unlock" ? "SS 解锁" : "Reality 直连"}
@@ -345,11 +345,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               <div className="bg-paper/60 p-2.5 rounded-lg border border-rule space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3 font-mono text-[11px]">
-                    <span className="text-emerald-400 font-semibold flex items-center gap-0.5">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
                       <ArrowDown className="w-3 h-3" />
                       <span>{down.val.toFixed(1)} {down.unit}</span>
                     </span>
-                    <span className="text-sky-400 font-semibold flex items-center gap-0.5">
+                    <span className="text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-0.5">
                       <ArrowUp className="w-3 h-3" />
                       <span>{up.val.toFixed(1)} {up.unit}</span>
                     </span>
@@ -386,8 +386,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-rule bg-paper/50 text-[11px] font-mono text-ink-muted uppercase select-none whitespace-nowrap">
-                  <th className="py-3 px-4 font-medium min-w-[190px] whitespace-nowrap">服务器节点</th>
+                <tr className="border-b border-rule bg-paper-3/50 dark:bg-paper/50 text-[11px] font-mono text-neutral dark:text-ink-secondary uppercase select-none whitespace-nowrap">
+                  <th className="py-3 px-4 font-semibold min-w-[190px] whitespace-nowrap">服务器节点</th>
                   <th className="py-3 px-3 font-medium min-w-[120px] whitespace-nowrap">系统 / 架构</th>
                   <th className="py-3 px-3 font-medium min-w-[100px] whitespace-nowrap">开机时长</th>
                   <th className="py-3 px-3 font-medium min-w-[110px] whitespace-nowrap">CPU 负载</th>
@@ -435,7 +435,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                           <span>•</span>
                           <span
                             className={`uppercase text-[10px] font-medium shrink-0 whitespace-nowrap ${
-                              node.type === "unlock" ? "text-purple-400" : "text-accent"
+                              node.type === "unlock" ? "text-purple-600 dark:text-purple-400" : "text-accent"
                             }`}
                           >
                             {node.type === "unlock" ? "SS 解锁" : "Reality 直连"}
@@ -457,7 +457,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                             <span
                               className={`px-1 py-0.2 rounded text-[10px] font-mono border shrink-0 ${
                                 node.tcpCongestion.toLowerCase() === "bbr"
-                                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
                                   : "text-ink-muted bg-paper-3 border-rule"
                               }`}
                               title={`TCP 算法: ${node.tcpCongestion}`}
@@ -534,11 +534,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
 
                       {/* Network Speeds */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-emerald-400 font-semibold text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs whitespace-nowrap">
                           <ArrowDown className="w-3 h-3 shrink-0" />
                           <RollingCounter value={down.val} decimals={1} suffix={` ${down.unit}`} />
                         </div>
-                        <div className="flex items-center gap-1 text-sky-400 font-semibold text-xs mt-0.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold text-xs mt-0.5 whitespace-nowrap">
                           <ArrowUp className="w-3 h-3 shrink-0" />
                           <RollingCounter value={up.val} decimals={1} suffix={` ${up.unit}`} />
                         </div>
@@ -636,7 +636,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                           <span>•</span>
                           <span className={`text-[10px] font-mono px-1 py-0.2 rounded border ${
                             node.tcpCongestion.toLowerCase() === "bbr"
-                              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
+                              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
                               : "text-ink-muted bg-paper-3 border-rule"
                           }`}>
                             {node.tcpCongestion.toUpperCase()}

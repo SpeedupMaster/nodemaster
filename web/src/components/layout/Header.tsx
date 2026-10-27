@@ -8,11 +8,16 @@ import {
   Key,
   SignOut,
   CaretDown,
+  Sun,
+  Moon,
+  Desktop,
 } from "@phosphor-icons/react";
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { ChangePasswordModal } from "../auth/ChangePasswordModal";
 import { PWAInstallButton } from "../common/PWAStatusBanner";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   currentTab: string;
@@ -34,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   isMobileMenuOpen = false,
 }) => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 border-b border-rule bg-paper/70 backdrop-blur-xl backdrop-saturate-150 px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-20 select-none">
+      <header className="h-16 border-b border-rule bg-paper-2/80 backdrop-blur-xl px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-20 select-none">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Mobile Hamburger Drawer Trigger */}
           <button
@@ -126,14 +132,21 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-status-online-bg/60 border border-status-online/20 text-xs text-ink-secondary font-mono">
-            <ShieldCheck weight="duotone" className="w-4 h-4 text-emerald-400" />
+        {/* Right Action Bar: Unified 38px height, rounded-lg, seamless proportional spacing */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Telemetry Shield Pill */}
+          <div className="hidden lg:flex items-center gap-1.5 px-3 h-[38px] rounded-lg bg-status-online-bg/80 border border-status-online/25 text-xs text-ink-secondary font-mono select-none">
+            <ShieldCheck weight="duotone" className="w-4 h-4 text-status-online shrink-0" />
             <span>熔断防护已激活</span>
           </div>
 
-          <PWAInstallButton className="hidden sm:flex" />
+          {/* Theme Toggle: Pure 38x38px icon button */}
+          <ThemeToggle />
 
+          {/* PWA Install Button */}
+          <PWAInstallButton className="hidden sm:flex h-[38px] px-3 rounded-lg" />
+
+          {/* Refresh Button */}
           <Button
             variant="secondary"
             size="sm"
@@ -141,18 +154,19 @@ export const Header: React.FC<HeaderProps> = ({
             loading={loading}
             icon={<ArrowsClockwise className="w-4 h-4 transition-transform duration-500 ease-out-expo group-hover:rotate-180" />}
             aria-label="刷新数据"
-            className="min-h-[38px] px-2.5 sm:px-3 text-xs"
+            className="h-[38px] px-3 text-xs"
           >
             <span className="hidden sm:inline">刷新</span>
           </Button>
 
+          {/* Add Node Primary Button */}
           <Button
             variant="primary"
             size="sm"
             onClick={onOpenAddModal}
             icon={<Plus weight="bold" className="w-4 h-4" />}
             aria-label="添加节点"
-            className="min-h-[38px] px-2.5 sm:px-3 text-xs"
+            className="h-[38px] px-3.5 text-xs"
           >
             <span className="hidden sm:inline">添加节点</span>
           </Button>
@@ -164,12 +178,12 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
-              className={`flex items-center gap-1.5 pl-1 pr-2 py-1 min-h-[38px] rounded-lg bg-paper-2 hover:bg-paper-3 border text-xs text-ink transition-colors cursor-pointer ${
-                isUserMenuOpen ? "border-rule-active" : "border-rule"
+              className={`flex items-center gap-2 pl-1.5 pr-2.5 h-[38px] rounded-lg bg-paper-2 hover:bg-paper-3 border text-xs text-ink transition-colors cursor-pointer ${
+                isUserMenuOpen ? "border-rule-active shadow-xs" : "border-rule"
               }`}
               title="管理员账户与安全设置"
             >
-              <div className="w-7 h-7 rounded-md bg-gradient-accent text-white flex items-center justify-center font-bold uppercase shadow-xs">
+              <div className="w-6 h-6 rounded-md bg-gradient-accent text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
                 {(user?.username || "admin").slice(0, 1)}
               </div>
               <span className="hidden sm:inline font-mono font-medium text-xs max-w-[80px] truncate">
@@ -177,7 +191,7 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
               <CaretDown
                 weight="bold"
-                className={`w-3 h-3 text-ink-muted transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""}`}
+                className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 ${isUserMenuOpen ? "rotate-180" : ""}`}
               />
             </button>
 
@@ -188,9 +202,57 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <div className="px-2.5 pt-1.5 pb-2 mb-1 border-b border-rule text-ink-muted">
                   <div className="font-semibold text-ink font-mono">{user?.username || "admin"}</div>
-                  <div className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="text-[10px] text-status-online flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-online animate-pulse" />
                     <span>管理员在线</span>
+                  </div>
+                </div>
+
+                {/* Appearance Preference selector */}
+                <div className="pt-1 pb-1.5 mb-1 border-b border-rule">
+                  <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-muted">
+                    外观偏好
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 px-1">
+                    <button
+                      type="button"
+                      onClick={() => setTheme("light")}
+                      className={`py-1 px-1 rounded-md flex items-center justify-center gap-1 text-[11px] transition-colors cursor-pointer ${
+                        theme === "light"
+                          ? "bg-accent/15 text-accent font-semibold border border-accent/30"
+                          : "text-ink-secondary hover:bg-paper-hover"
+                      }`}
+                      title="浅色模式"
+                    >
+                      <Sun weight="duotone" className="w-3.5 h-3.5 text-amber-500" />
+                      <span>浅色</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme("dark")}
+                      className={`py-1 px-1 rounded-md flex items-center justify-center gap-1 text-[11px] transition-colors cursor-pointer ${
+                        theme === "dark"
+                          ? "bg-accent/15 text-accent font-semibold border border-accent/30"
+                          : "text-ink-secondary hover:bg-paper-hover"
+                      }`}
+                      title="深色模式"
+                    >
+                      <Moon weight="duotone" className="w-3.5 h-3.5 text-sky-400" />
+                      <span>深色</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTheme("system")}
+                      className={`py-1 px-1 rounded-md flex items-center justify-center gap-1 text-[11px] transition-colors cursor-pointer ${
+                        theme === "system"
+                          ? "bg-accent/15 text-accent font-semibold border border-accent/30"
+                          : "text-ink-secondary hover:bg-paper-hover"
+                      }`}
+                      title="跟随系统"
+                    >
+                      <Desktop weight="duotone" className="w-3.5 h-3.5 text-ink-muted" />
+                      <span>系统</span>
+                    </button>
                   </div>
                 </div>
 
@@ -214,7 +276,7 @@ export const Header: React.FC<HeaderProps> = ({
                     logout();
                   }}
                   role="menuitem"
-                  className="w-full px-2.5 py-2 rounded-lg text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer transition-colors"
+                  className="w-full px-2.5 py-2 rounded-lg text-left text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer transition-colors"
                 >
                   <SignOut className="w-4 h-4" />
                   <span>退出管理员登录</span>

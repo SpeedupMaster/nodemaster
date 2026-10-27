@@ -296,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Uplink */}
           <div className="p-2 rounded-lg bg-paper/60 border border-rule">
             <div className="flex items-center gap-1 text-ink-muted text-[11px]">
-              <ArrowUpRight weight="bold" className="w-3 h-3 text-sky-400" />
+              <ArrowUpRight weight="bold" className="w-3 h-3 text-sky-600 dark:text-sky-400" />
               <span>上行速率</span>
             </div>
             <div className="text-xs font-mono font-semibold text-ink mt-0.5">
@@ -307,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Downlink */}
           <div className="p-2 rounded-lg bg-paper/60 border border-rule">
             <div className="flex items-center gap-1 text-ink-muted text-[11px]">
-              <ArrowDownRight weight="bold" className="w-3 h-3 text-emerald-400" />
+              <ArrowDownRight weight="bold" className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               <span>下行速率</span>
             </div>
             <div className="text-xs font-mono font-semibold text-ink mt-0.5">

@@ -1,13 +1,28 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('nodemaster-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (stored === 'dark' || (!stored && prefersDark) || (stored === 'system' && prefersDark)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>NodeMaster - 多 VPS 节点与智能分流控制台</title>
     <!-- PWA & Mobile Web App Manifest -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#08090E" />
+    <meta name="theme-color" content="#101522" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="NodeMaster" />
     <!-- Apple Web App & Touch Icons -->

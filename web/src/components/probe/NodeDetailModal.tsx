@@ -897,7 +897,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x2={chartWidth - latencyPadding.right}
                           y2={tick.y}
                           stroke="currentColor"
-                          className="text-white/10"
+                          className="text-rule dark:text-white/10"
                           strokeWidth="0.75"
                           strokeDasharray="3 3"
                         />
@@ -919,7 +919,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                       x2={chartWidth - latencyPadding.right}
                       y2={latencyBaseY}
                       stroke="currentColor"
-                      className="text-white/20"
+                      className="text-rule dark:text-white/20"
                       strokeWidth="0.8"
                     />
 
@@ -935,7 +935,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                             x2={xPos}
                             y2={latencyBaseY + 5}
                             stroke="currentColor"
-                            className="text-white/20"
+                            className="text-rule dark:text-white/20"
                             strokeWidth="0.8"
                           />
                           <text
@@ -1337,7 +1337,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                             x2={chartWidth - loadPadding.right}
                             y2={tick.y}
                             stroke="currentColor"
-                            className="text-white/10"
+                            className="text-rule dark:text-white/10"
                             strokeWidth="0.75"
                             strokeDasharray="3 3"
                           />
@@ -1359,7 +1359,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                         x2={chartWidth - loadPadding.right}
                         y2={loadBaseY}
                         stroke="currentColor"
-                        className="text-white/20"
+                        className="text-rule dark:text-white/20"
                         strokeWidth="0.8"
                       />
 
@@ -1375,7 +1375,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                               x2={xPos}
                               y2={loadBaseY + 5}
                               stroke="currentColor"
-                              className="text-white/20"
+                              className="text-rule dark:text-white/20"
                               strokeWidth="0.8"
                             />
                             <text
@@ -1659,7 +1659,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x2={chartWidth - netPadding.right}
                           y2={netPadding.top}
                           stroke="currentColor"
-                          className="text-white/10"
+                          className="text-rule dark:text-white/10"
                           strokeWidth="0.65"
                           strokeDasharray="2 4"
                         />
@@ -1671,7 +1671,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x2={chartWidth - netPadding.right}
                           y2={netCenterY}
                           stroke="currentColor"
-                          className="text-white/30"
+                          className="text-rule-active dark:text-white/30"
                           strokeWidth="1"
                         />
 
@@ -1682,7 +1682,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x2={chartWidth - netPadding.right}
                           y2={netPadding.top + netInnerHeight}
                           stroke="currentColor"
-                          className="text-white/10"
+                          className="text-rule dark:text-white/10"
                           strokeWidth="0.65"
                           strokeDasharray="2 4"
                         />

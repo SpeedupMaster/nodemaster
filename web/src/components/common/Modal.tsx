@@ -157,7 +157,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Full Viewport Backdrop */}
       <div
         ref={overlayRef}
-        className="fixed inset-0 bg-black/70 backdrop-blur-md"
+        className="fixed inset-0 bg-slate-900/40 dark:bg-black/70 backdrop-blur-sm"
         onClick={handleRequestClose}
       />
 
@@ -212,7 +212,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Action Sheet / Discard Confirmation Overlay (Error Prevention) */}
         {showDiscardConfirm && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-6 animate-fadeIn">
+          <div className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-6 animate-fadeIn">
             <div className="w-full max-w-sm bg-paper-2 border border-rule-active/70 rounded-2xl p-5 shadow-2xl space-y-4 animate-scaleUp">
               <div className="flex items-start gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">

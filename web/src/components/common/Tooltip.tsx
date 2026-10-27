@@ -421,7 +421,7 @@ export const GlobalTooltip: React.FC = () => {
   return createPortal(
     <div
       ref={tipRef}
-      className={`fixed pointer-events-none z-[99999] select-none text-xs font-sans text-ink bg-paper-3/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-rule-active/50 shadow-xl shadow-black/70 tooltip-animate ${
+      className={`fixed pointer-events-none z-[99999] select-none text-xs font-sans text-ink bg-paper-2/95 dark:bg-paper-3/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-rule-active/50 shadow-lg shadow-black/10 dark:shadow-black/70 tooltip-animate ${
         state.className || ""
       }`}
       style={{
