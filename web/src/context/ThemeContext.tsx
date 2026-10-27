@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 
 export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";
@@ -32,6 +33,24 @@ function getStoredTheme(): Theme {
   return "system";
 }
 
+function applyThemeToDom(resolved: ResolvedTheme) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (resolved === "dark") {
+    root.classList.add("dark");
+    root.style.colorScheme = "dark";
+  } else {
+    root.classList.remove("dark");
+    root.style.colorScheme = "light";
+  }
+
+  // Update meta theme-color for mobile chrome & Safari PWA
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute("content", resolved === "dark" ? "#101522" : "#f8fafc");
+  }
+}
+
 function triggerColorTransition() {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -58,56 +77,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const resolvedTheme: ResolvedTheme = theme === "system" ? systemTheme : theme;
 
-  // Apply to document.documentElement and meta tags
+  // Apply to document.documentElement on initial mount or when systemTheme changes
   useEffect(() => {
-    const root = document.documentElement;
-    if (resolvedTheme === "dark") {
-      root.classList.add("dark");
-      root.style.colorScheme = "dark";
-    } else {
-      root.classList.remove("dark");
-      root.style.colorScheme = "light";
-    }
-
-    // Update meta theme-color for mobile chrome & Safari PWA
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", resolvedTheme === "dark" ? "#101522" : "#f8fafc");
-    }
+    applyThemeToDom(resolvedTheme);
   }, [resolvedTheme]);
 
-  const setTheme = useCallback((newTheme: Theme) => {
-    const doc = document as any;
-    if (
-      typeof doc !== "undefined" &&
-      typeof doc.startViewTransition === "function" &&
-      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      doc.startViewTransition(() => {
-        setThemeState(newTheme);
-        try {
-          localStorage.setItem(STORAGE_KEY, newTheme);
-        } catch (e) {
-          // ignore
-        }
-      });
-      return;
-    }
-
-    triggerColorTransition();
-    setThemeState(newTheme);
+  const performThemeTransition = useCallback((newTheme: Theme, targetResolved: ResolvedTheme) => {
     try {
       localStorage.setItem(STORAGE_KEY, newTheme);
     } catch (e) {
       // ignore
     }
-  }, []);
 
-  const toggleTheme = useCallback(() => {
-    const nextResolved: ResolvedTheme = resolvedTheme === "dark" ? "light" : "dark";
-    const nextTheme: Theme = nextResolved;
-
-    // View Transitions API with quiet, ambient cross-dissolve (Apple/Linear style)
     const doc = document as any;
     if (
       typeof doc !== "undefined" &&
@@ -115,25 +96,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       doc.startViewTransition(() => {
-        setThemeState(nextTheme);
-        try {
-          localStorage.setItem(STORAGE_KEY, nextTheme);
-        } catch (e) {
-          // ignore
-        }
+        flushSync(() => {
+          applyThemeToDom(targetResolved);
+          setThemeState(newTheme);
+        });
       });
       return;
     }
 
-    // Fallback: smooth CSS color transition
     triggerColorTransition();
-    setThemeState(nextTheme);
-    try {
-      localStorage.setItem(STORAGE_KEY, nextTheme);
-    } catch (e) {
-      // ignore
-    }
-  }, [resolvedTheme]);
+    applyThemeToDom(targetResolved);
+    setThemeState(newTheme);
+  }, []);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    const targetResolved: ResolvedTheme = newTheme === "system" ? systemTheme : newTheme;
+    performThemeTransition(newTheme, targetResolved);
+  }, [systemTheme, performThemeTransition]);
+
+  const toggleTheme = useCallback(() => {
+    const nextResolved: ResolvedTheme = resolvedTheme === "dark" ? "light" : "dark";
+    const nextTheme: Theme = nextResolved;
+    performThemeTransition(nextTheme, nextResolved);
+  }, [resolvedTheme, performThemeTransition]);
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>

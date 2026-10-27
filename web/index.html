@@ -5,6 +5,11 @@
     <script>
       (function() {
         try {
+          if ((window.location.port === '5173' || window.location.hostname === 'localhost') && 'serviceWorker' in navigator && window.location.port !== '3880') {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var i = 0; i < regs.length; i++) regs[i].unregister();
+            });
+          }
           var stored = localStorage.getItem('nodemaster-theme');
           var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (stored === 'dark' || (!stored && prefersDark) || (stored === 'system' && prefersDark)) {

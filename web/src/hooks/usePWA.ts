@@ -90,11 +90,26 @@ export function usePWA(): PWAState {
 
   // Service Worker Registration and Update Tracking
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !("serviceWorker" in navigator) ||
-      (process.env.NODE_ENV === "development" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
-    ) {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+      return;
+    }
+
+    // In development mode, NEVER register Service Worker and actively purge any stale registration/caches
+    if (import.meta.env.DEV) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.unregister();
+          console.log("[PWA] Development mode: unregistered stale Service Worker:", reg.scope);
+        }
+      });
+      if (typeof caches !== "undefined") {
+        caches.keys().then((keys) => {
+          for (const key of keys) {
+            caches.delete(key);
+            console.log("[PWA] Development mode: wiped stale cache:", key);
+          }
+        });
+      }
       return;
     }
 
@@ -112,9 +127,10 @@ export function usePWA(): PWAState {
         setSwRegistration(registration);
         console.log("[PWA] Service Worker registered successfully with scope:", registration.scope);
 
-        // Check if there is already an updated SW waiting
+        // If an updated worker is already waiting, trigger it immediately
         if (registration.waiting) {
           setNeedRefresh(true);
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
         }
 
         registration.addEventListener("updatefound", () => {
@@ -123,8 +139,8 @@ export function usePWA(): PWAState {
 
           installingWorker.addEventListener("statechange", () => {
             if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
-              // New content is available once current tabs are closed or updated
               setNeedRefresh(true);
+              installingWorker.postMessage({ type: "SKIP_WAITING" });
             }
           });
         });

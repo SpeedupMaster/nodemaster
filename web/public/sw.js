@@ -3,7 +3,7 @@
  * Production-ready PWA caching, offline shell support, and asset lifecycle management
  */
 
-const CACHE_VERSION = 'nodemaster-v1.1.0';
+const CACHE_VERSION = 'nodemaster-v1.3.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 // Content-hashed Vite bundles: immutable, so cache-first; capped so files from old releases get evicted
