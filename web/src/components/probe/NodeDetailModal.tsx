@@ -813,7 +813,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           </div>
                         </div>
                         <div className="text-[10px] font-mono text-ink-muted mt-1.5 flex items-center justify-between">
-                          <span>{task.lossRate > 0 ? `${task.lossRate.toFixed(1)}%丢包` : "0%丢包"}</span>
+                          <span className={task.lossRate >= 50 ? "text-rose-400 font-semibold" : task.lossRate > 0 ? "text-amber-400 font-semibold" : ""}>{task.lossRate > 0 ? `${task.lossRate.toFixed(1)}%丢包` : "0%丢包"}</span>
                           <span>±{task.jitter.toFixed(1)}ms抖动</span>
                         </div>
                       </div>
@@ -1110,7 +1110,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                   )}
                                 </span>
                                 <span className="font-bold text-ink ml-1.5">
-                                  {pt.latencyMs} ms
+                                  {pt.lossRate >= 100 ? "超时" : `${pt.latencyMs} ms`}
                                 </span>
                               </div>
                             );

@@ -60,23 +60,90 @@ def read_version():
 
 
 def measure_latency(task):
-    started = time.monotonic()
     try:
         target = task['target']
         if task['type'] == 'tcp':
-            host, port = target.rsplit(':', 1)
-            with socket.create_connection((host.strip('[]'), int(port)), timeout=3):
-                pass
-            latency = (time.monotonic() - started) * 1000
+            host, port_str = target.rsplit(':', 1)
+            host = host.strip('[]')
+            port = int(port_str)
+            attempts = 4
+            delays = []
+            failed = 0
+            for i in range(attempts):
+                t0 = time.monotonic()
+                try:
+                    with socket.create_connection((host, port), timeout=1.5):
+                        pass
+                    delays.append((time.monotonic() - t0) * 1000)
+                except socket.gaierror:
+                    return {'taskId': task['id'], 'latencyMs': 0, 'lossRate': 100, 'jitter': 0}
+                except Exception:
+                    failed += 1
+                if i < attempts - 1 and delays:
+                    time.sleep(0.05)
+
+            if not delays:
+                return {'taskId': task['id'], 'latencyMs': 0, 'lossRate': 100, 'jitter': 0}
+
+            avg_latency = round(sum(delays) / len(delays), 2)
+            loss_rate = round((failed / attempts) * 100, 1)
+            jitter = round(sum(abs(d - avg_latency) for d in delays) / len(delays), 2) if len(delays) > 1 else 0
+            return {'taskId': task['id'], 'latencyMs': avg_latency, 'lossRate': loss_rate, 'jitter': jitter}
         else:
             if not re.fullmatch(r'[a-zA-Z0-9.:-]+', target) or target.startswith('-'):
                 raise ValueError('Invalid ICMP target')
-            output = command(['ping', '-n', '-c', '1', '-W', '3', target], timeout=5)
-            match = re.search(r'time[=<]([\d.]+)', output)
-            if not match:
-                raise RuntimeError('No ICMP measurement')
-            latency = float(match.group(1))
-        return {'taskId': task['id'], 'latencyMs': round(latency, 2), 'lossRate': 0, 'jitter': 0}
+            count = 4
+            if os.name == 'nt':
+                args = ['ping', '-n', str(count), '-w', '1500', target]
+                proc = subprocess.run(args, capture_output=True, text=True, timeout=12)
+            else:
+                env = {**os.environ, 'LC_ALL': 'C', 'LANG': 'C'}
+                args = ['ping', '-n', '-c', str(count), '-i', '0.2', '-W', '2', target]
+                proc = subprocess.run(args, capture_output=True, text=True, timeout=12, env=env)
+                if proc.returncode != 0 and any(err in (proc.stderr or '').lower() for err in ('invalid', 'illegal', 'interval', 'operation not permitted', 'permission denied')):
+                    args = ['ping', '-n', '-c', str(count), '-W', '2', target]
+                    proc = subprocess.run(args, capture_output=True, text=True, timeout=15, env=env)
+            output = (proc.stdout or '') + '\n' + (proc.stderr or '')
+
+            m_stats = re.search(r'(\d+)\s*(?:packets transmitted|transmitted|已发送|Sent).*?(\d+)\s*(?:received|packets received|已接收|Received)', output, re.IGNORECASE | re.DOTALL)
+            loss_rate = None
+            if m_stats:
+                transmitted = int(m_stats.group(1))
+                received = int(m_stats.group(2))
+                if transmitted > 0:
+                    loss_rate = round((transmitted - received) / transmitted * 100, 1)
+            if loss_rate is None:
+                m_loss = re.search(r'(\d+(?:\.\d+)?)%\s*(?:packet\s*)?(?:loss|丢失|丢包)', output, re.IGNORECASE)
+                if m_loss:
+                    loss_rate = round(float(m_loss.group(1)), 1)
+
+            if loss_rate is not None and loss_rate >= 100:
+                return {'taskId': task['id'], 'latencyMs': 0, 'lossRate': 100, 'jitter': 0}
+
+            latency = None
+            jitter = 0
+            m_rtt = re.search(r'(?:rtt|round-trip)\s+min/avg/max(?:/(?:mdev|stddev))?\s*=\s*[\d.]+/([\d.]+)/[\d.]+(?:/([\d.]+))?', output, re.IGNORECASE)
+            if m_rtt:
+                latency = round(float(m_rtt.group(1)), 2)
+                if m_rtt.group(2) is not None:
+                    jitter = round(float(m_rtt.group(2)), 2)
+
+            if latency is None:
+                m_win = re.search(r'(?:Average|平均)\s*=\s*([\d.]+)ms', output, re.IGNORECASE)
+                if m_win:
+                    latency = round(float(m_win.group(1)), 2)
+
+            if latency is None:
+                times = [float(x) for x in re.findall(r'(?:time|时间)[=<]([\d.]+)', output, re.IGNORECASE)]
+                if times:
+                    latency = round(sum(times) / len(times), 2)
+                    jitter = round(sum(abs(t - latency) for t in times) / len(times), 2) if len(times) > 1 else 0
+
+            if latency is None:
+                raise RuntimeError('No ICMP measurement found')
+
+            final_loss = loss_rate if loss_rate is not None else 0
+            return {'taskId': task['id'], 'latencyMs': latency, 'lossRate': final_loss, 'jitter': jitter}
     except Exception:
         return {'taskId': task['id'], 'latencyMs': 0, 'lossRate': 100, 'jitter': 0}
 
@@ -246,8 +313,10 @@ class Probe:
                     if future.done():
                         measurement = future.result()
                         previous = self.last_latency.get(key)
-                        if previous is not None and measurement['lossRate'] == 0: measurement['jitter'] = abs(measurement['latencyMs'] - previous)
-                        if measurement['lossRate'] == 0: self.last_latency[key] = measurement['latencyMs']
+                        if measurement['lossRate'] < 100:
+                            if measurement.get('jitter', 0) == 0 and previous is not None:
+                                measurement['jitter'] = round(abs(measurement['latencyMs'] - previous), 2)
+                            self.last_latency[key] = measurement['latencyMs']
                         self.latency_results.append(measurement)
                         del self.pending[key]
                 response = request('/api/nodes/telemetry', self.metrics())

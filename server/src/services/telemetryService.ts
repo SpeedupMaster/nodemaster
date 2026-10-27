@@ -131,7 +131,7 @@ export function ingestTelemetry(nodeId: string, data: Record<string, any>, now =
   if (Array.isArray(data.latencyResults)) {
     const valid = data.latencyResults.slice(0, 100).filter((r: any) => r && tasks.some(t => t.id === r.taskId) && finite(r.latencyMs) && finite(r.lossRate) && r.lossRate <= 100 && finite(r.jitter));
     historyStore.recordLatency(node.id, valid, now);
-    const reachable = valid.filter((p: any) => p.lossRate === 0);
+    const reachable = valid.filter((p: any) => p.lossRate < 100 && p.latencyMs > 0);
     if (reachable.length) db.updateNode(node.id, { latencyMs: Math.round(reachable.reduce((sum: number, p: any) => sum + p.latencyMs, 0) / reachable.length) }, true);
   }
   return updated;

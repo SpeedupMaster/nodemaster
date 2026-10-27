@@ -74,6 +74,44 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(value['lossRate'], 100)
         self.assertEqual(value['latencyMs'], 0)
 
+    def test_tcp_latency_partial_packet_loss(self):
+        call_count = 0
+        def fake_create_connection(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise TimeoutError('connection timeout')
+            return unittest.mock.MagicMock()
+        with patch.object(self.module.socket, 'create_connection', side_effect=fake_create_connection):
+            value = self.module.measure_latency({'id': 'test', 'target': '127.0.0.1:1', 'type': 'tcp'})
+        self.assertEqual(value['lossRate'], 25.0)
+        self.assertGreater(value['latencyMs'], 0)
+
+    def test_icmp_latency_multi_packet_stats(self):
+        fake_stdout = """
+--- 1.1.1.1 ping statistics ---
+4 packets transmitted, 3 received, 25% packet loss, time 602ms
+rtt min/avg/max/mdev = 11.812/12.000/12.300/0.216 ms
+"""
+        mock_proc = unittest.mock.MagicMock(returncode=0, stdout=fake_stdout, stderr='')
+        with patch.object(self.module.subprocess, 'run', return_value=mock_proc):
+            value = self.module.measure_latency({'id': 'test', 'target': '1.1.1.1', 'type': 'icmp'})
+        self.assertEqual(value['lossRate'], 25.0)
+        self.assertEqual(value['latencyMs'], 12.0)
+        self.assertEqual(value['jitter'], 0.22)
+
+    def test_icmp_latency_all_packet_loss(self):
+        fake_stdout = """
+--- 1.1.1.1 ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3004ms
+"""
+        mock_proc = unittest.mock.MagicMock(returncode=1, stdout=fake_stdout, stderr='')
+        with patch.object(self.module.subprocess, 'run', return_value=mock_proc):
+            value = self.module.measure_latency({'id': 'test', 'target': '1.1.1.1', 'type': 'icmp'})
+        self.assertEqual(value['lossRate'], 100)
+        self.assertEqual(value['latencyMs'], 0)
+        self.assertEqual(value['jitter'], 0)
+
 
 if __name__ == '__main__':
     unittest.main()
