@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# Stage 1: Build Frontend and Backend
-FROM node:22-alpine AS builder
+# Stage 1: Build Frontend and Backend (runs natively on build platform)
+FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -24,6 +24,9 @@ COPY web/ ./web/
 # Build backend and frontend
 RUN pnpm build
 
+# Deploy isolated server production dependencies (runs on native host, avoids QEMU emulation)
+RUN pnpm --filter ./server --prod deploy /prod/server
+
 # Stage 2: Minimal Production Runtime
 FROM node:22-alpine AS runner
 
@@ -38,19 +41,13 @@ ENV NODE_ENV=production \
     NODEMASTER_DATA_DIR=/app/server/data \
     NODEMASTER_ASSETS_DIR=/app/server/assets
 
-RUN npm install -g pnpm@11.17.0
-
-# Copy package manifests
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY server/package.json ./server/
-COPY web/package.json ./web/
-
-# Install backend production dependencies only (the frontend ships as static files)
-RUN pnpm install --frozen-lockfile --prod --filter ./server && npm uninstall -g pnpm
-
 # Node resolves TZ (daily traffic buckets start at local midnight) from its bundled ICU data;
 # tzdata keeps OS-level times (logs, shell tools) in the same zone, since alpine ships none
 RUN apk add --no-cache tzdata
+
+# Copy isolated production dependencies from builder stage
+COPY --from=builder /prod/server/node_modules ./server/node_modules
+COPY --from=builder /prod/server/package.json ./server/package.json
 
 # Copy compiled backend dist
 COPY --from=builder /app/server/dist ./server/dist
