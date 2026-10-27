@@ -23,7 +23,8 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     letter-spacing: -0.015em;
-    font-feature-settings: "cv11", "ss01", "ss03";
+    font-feature-settings: "cv11", "ss01", "ss03", "tnum";
+    font-variant-numeric: tabular-nums;
     text-rendering: optimizeLegibility;
   }
 

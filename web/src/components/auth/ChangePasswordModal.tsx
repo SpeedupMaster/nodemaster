@@ -103,7 +103,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               placeholder="请输入当前原密码"
-              className="w-full pl-9 pr-10 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent font-mono"
+              className="w-full pl-9 pr-10 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -130,7 +130,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="请输入新密码"
-              className="w-full pl-9 pr-10 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent font-mono"
+              className="w-full pl-9 pr-10 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -157,7 +157,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="请再次输入新密码"
-              className="w-full pl-9 pr-3 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent font-mono"
+              className="w-full pl-9 pr-3 py-2 bg-paper border border-rule rounded-lg text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-accent"
             />
           </div>
         </div>

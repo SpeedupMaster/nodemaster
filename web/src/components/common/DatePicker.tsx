@@ -204,7 +204,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full h-[34px] flex items-center justify-between px-3 py-2 rounded-md bg-paper border transition-all text-xs select-none cursor-pointer focus:outline-none font-mono ${
+        className={`w-full h-[34px] flex items-center justify-between px-3 py-2 rounded-md bg-paper border transition-all text-xs select-none cursor-pointer focus:outline-none ${
           isOpen
             ? "border-accent ring-1 ring-accent/30 bg-paper-hover"
             : "border-rule hover:border-rule-active hover:bg-paper-hover"
@@ -237,7 +237,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <X className="w-3.5 h-3.5" />
           </span>
         ) : (
-          <span className="text-[10px] text-ink-muted font-sans opacity-60 shrink-0 ml-1">
+          <span className="text-[10px] text-ink-muted opacity-60 shrink-0 ml-1">
             选择
           </span>
         )}
@@ -270,7 +270,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </button>
             </div>
 
-            <div className="text-xs font-semibold font-mono text-ink tracking-wide">
+            <div className="text-xs font-semibold text-ink tracking-wide">
               {viewYear}年 {viewMonth + 1}月
             </div>
 
@@ -299,7 +299,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             {WEEKDAYS.map((w, idx) => (
               <span
                 key={w}
-                className={`text-[11px] font-mono py-0.5 ${
+                className={`text-[11px] py-0.5 ${
                   idx >= 5 ? "text-amber-400/80 font-medium" : "text-ink-muted"
                 }`}
               >
@@ -316,7 +316,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   key={c.dateStr}
                   type="button"
                   onClick={() => handleSelectDate(c.dateStr)}
-                  className={`h-7 rounded-lg text-xs font-mono transition-all flex items-center justify-center cursor-pointer ${
+                  className={`h-7 rounded-lg text-xs transition-all flex items-center justify-center cursor-pointer ${
                     c.isSelected
                       ? "bg-accent text-white font-bold shadow-xs ring-1 ring-accent"
                       : c.isToday
@@ -333,7 +333,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-rule text-xs font-mono">
+          <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-rule text-xs">
             <button
               type="button"
               onClick={handleClear}

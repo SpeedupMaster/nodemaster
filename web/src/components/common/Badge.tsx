@@ -39,7 +39,7 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono font-medium rounded-full border whitespace-nowrap shrink-0 select-none ${sizeClasses} ${variantStyles} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-medium rounded-full border whitespace-nowrap shrink-0 select-none ${sizeClasses} ${variantStyles} ${className}`}
     >
       {pulse && (
         <span className="relative flex h-1.5 w-1.5 shrink-0">

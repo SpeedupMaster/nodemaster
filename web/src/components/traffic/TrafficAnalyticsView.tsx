@@ -265,10 +265,10 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
                   >
                     {isHovered && (
                       <div
-                        className={`absolute bottom-[calc(100%+8px)] z-30 px-2.5 py-1.5 rounded-lg bg-paper-3/95 backdrop-blur-sm border border-rule shadow-xl text-[11px] font-mono pointer-events-none whitespace-nowrap ${tooltipAlign}`}
+                        className={`absolute bottom-[calc(100%+8px)] z-30 px-2.5 py-1.5 rounded-lg bg-paper-3/95 backdrop-blur-sm border border-rule shadow-xl text-[11px] pointer-events-none whitespace-nowrap ${tooltipAlign}`}
                       >
-                        <span className="text-ink-muted font-sans">{bucketTitle(p.timestamp, timeRange)}</span>
-                        <span className="ml-3 text-accent font-bold">{formatBytes(p.totalBytes, 2)}</span>
+                        <span className="text-ink-muted">{bucketTitle(p.timestamp, timeRange)}</span>
+                        <span className="ml-3 text-accent font-bold font-mono">{formatBytes(p.totalBytes, 2)}</span>
                       </div>
                     )}
                     <div
@@ -302,12 +302,12 @@ export const TrafficAnalyticsView: React.FC<TrafficAnalyticsViewProps> = ({ node
           <div className="space-y-3 pt-1">
             {data?.nodeDistributions.length === 0 && <div className="text-xs text-ink-muted">所选时段暂无流量记录</div>}
             {data?.nodeDistributions.map((nd) => (
-              <div key={nd.nodeId} className="space-y-1 font-mono text-xs">
+              <div key={nd.nodeId} className="space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-ink font-sans font-medium truncate" title={nd.countryName}>
+                  <span className="text-ink font-medium truncate" title={nd.countryName}>
                     {nd.nodeName}
                   </span>
-                  <div className="flex items-center gap-2 text-ink-muted shrink-0">
+                  <div className="flex items-center gap-2 text-ink-muted shrink-0 font-mono">
                     <span className="font-semibold text-ink">{formatBytes(nd.totalBytes)}</span>
                     <span className="text-accent font-semibold">{nd.percentage}%</span>
                   </div>

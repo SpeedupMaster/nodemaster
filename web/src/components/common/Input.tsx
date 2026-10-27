@@ -32,28 +32,28 @@ export const Input: React.FC<InputProps> = ({
         )}
 
         {prefixText && (
-          <div className="pl-3 text-xs font-mono font-medium text-ink-secondary select-none flex-shrink-0">
+          <div className="pl-3 text-xs font-medium text-ink-secondary select-none flex-shrink-0">
             {prefixText}
           </div>
         )}
 
         <input
           type={type}
-          className={`w-full bg-transparent px-3 py-2 text-xs text-ink placeholder:text-ink-muted focus:outline-none font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+          className={`w-full bg-transparent px-3 py-2 text-xs text-ink placeholder:text-ink-muted focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
             type === "date" ? "[color-scheme:dark]" : ""
           } ${className}`}
           {...props}
         />
 
         {suffixText && (
-          <div className="pr-3 text-xs font-mono text-ink-muted select-none flex-shrink-0">
+          <div className="pr-3 text-xs text-ink-muted select-none flex-shrink-0">
             {suffixText}
           </div>
         )}
       </div>
 
       {error && (
-        <p className="text-[11px] text-status-danger mt-1 font-mono">{error}</p>
+        <p className="text-[11px] text-status-danger mt-1">{error}</p>
       )}
     </div>
   );

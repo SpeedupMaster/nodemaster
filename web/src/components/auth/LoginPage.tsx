@@ -245,7 +245,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 aria-required="true"
                 aria-invalid={!!usernameError}
                 aria-describedby={usernameError ? "username-error-msg" : undefined}
-                className={`w-full pl-10 pr-10 h-12 bg-paper-3/50 dark:bg-paper-3/40 border rounded-xl text-base sm:text-sm text-ink placeholder:text-ink-muted focus:outline-none transition-all font-mono ${
+                className={`w-full pl-10 pr-10 h-12 bg-paper-3/50 dark:bg-paper-3/40 border rounded-xl text-base sm:text-sm text-ink placeholder:text-ink-muted focus:outline-none transition-all ${
                   usernameError
                     ? "border-status-danger focus:border-status-danger focus:ring-2 focus:ring-status-danger/25"
                     : "border-rule hover:border-rule-active focus:border-accent focus:ring-2 focus:ring-accent/25"
@@ -282,7 +282,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 管理密码
               </label>
               {capsLockOn && (
-                <span className="text-[11px] text-amber-600 dark:text-amber-300 font-medium flex items-center gap-1 font-mono bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                <span className="text-[11px] text-amber-600 dark:text-amber-300 font-medium flex items-center gap-1 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                   <Warning weight="fill" className="w-3 h-3 text-amber-500" aria-hidden="true" />
                   大写锁定开启
                 </span>
@@ -319,7 +319,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 aria-required="true"
                 aria-invalid={!!passwordError}
                 aria-describedby={passwordError ? "password-error-msg" : undefined}
-                className={`w-full pl-10 pr-12 h-12 bg-paper-3/50 dark:bg-paper-3/40 border rounded-xl text-base sm:text-sm text-ink placeholder:text-ink-muted focus:outline-none transition-all font-mono ${
+                className={`w-full pl-10 pr-12 h-12 bg-paper-3/50 dark:bg-paper-3/40 border rounded-xl text-base sm:text-sm text-ink placeholder:text-ink-muted focus:outline-none transition-all ${
                   passwordError
                     ? "border-status-danger focus:border-status-danger focus:ring-2 focus:ring-status-danger/25"
                     : "border-rule hover:border-rule-active focus:border-accent focus:ring-2 focus:ring-accent/25"
@@ -472,7 +472,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     <span className="w-1.5 h-1.5 rounded-full bg-status-online" />
                     方法一：查看首次部署凭证
                   </span>
-                  <span className="text-[10px] font-mono text-status-online bg-status-online-bg border border-status-online/25 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-status-online bg-status-online-bg border border-status-online/25 px-1.5 py-0.5 rounded">
                     免重启服务
                   </span>
                 </div>
@@ -484,17 +484,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     type="button"
                     onClick={() => handleCopyText("cat /opt/nodemaster/data/bootstrap-admin.txt", 1)}
                     aria-label="复制查看凭据命令"
-                    className="shrink-0 px-2 py-1 rounded bg-paper-hover border border-rule text-ink text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
+                    className="shrink-0 px-2 py-1 rounded bg-paper-hover border border-rule text-ink text-[10px] transition-colors flex items-center gap-1 cursor-pointer font-sans"
                   >
                     {copiedIndex === 1 ? (
                       <>
                         <CheckCircle weight="fill" className="w-3.5 h-3.5 text-status-online" />
-                        <span className="text-status-online font-sans">已复制</span>
+                        <span className="text-status-online">已复制</span>
                       </>
                     ) : (
                       <>
                         <Copy weight="bold" className="w-3.5 h-3.5" />
-                        <span className="font-sans">复制</span>
+                        <span>复制</span>
                       </>
                     )}
                   </button>
@@ -508,7 +508,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                     方法二：在服务端环境变量指定新密码
                   </span>
-                  <span className="text-[10px] font-mono text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded">
                     覆盖重设
                   </span>
                 </div>
@@ -522,17 +522,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     type="button"
                     onClick={() => handleCopyText('export NODEMASTER_ADMIN_PASSWORD="新密码" && pnpm start', 2)}
                     aria-label="复制重设密码命令"
-                    className="shrink-0 self-start px-2 py-1 rounded bg-paper-hover border border-rule text-ink text-[10px] transition-colors flex items-center gap-1 cursor-pointer"
+                    className="shrink-0 self-start px-2 py-1 rounded bg-paper-hover border border-rule text-ink text-[10px] transition-colors flex items-center gap-1 cursor-pointer font-sans"
                   >
                     {copiedIndex === 2 ? (
                       <>
                         <CheckCircle weight="fill" className="w-3.5 h-3.5 text-status-online" />
-                        <span className="text-status-online font-sans">已复制</span>
+                        <span className="text-status-online">已复制</span>
                       </>
                     ) : (
                       <>
                         <Copy weight="bold" className="w-3.5 h-3.5" />
-                        <span className="font-sans">复制</span>
+                        <span>复制</span>
                       </>
                     )}
                   </button>
