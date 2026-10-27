@@ -163,21 +163,21 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
   const getLogTypeBadge = (type: TelegramAlertLog["type"]) => {
     switch (type) {
       case "offline":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-500/15 text-red-400 border border-red-500/30">离线故障</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/30">离线故障</span>;
       case "recovery":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">恢复上线</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">恢复上线</span>;
       case "traffic":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/15 text-amber-400 border border-amber-500/30">流量预警</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30">流量预警</span>;
       case "renewal":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-500/15 text-purple-400 border border-purple-500/30">续费提醒</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">续费提醒</span>;
       case "cpu":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-orange-500/15 text-orange-400 border border-orange-500/30">CPU负载</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/15 text-orange-400 border border-orange-500/30">CPU负载</span>;
       case "mem":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/15 text-sky-400 border border-sky-500/30">内存耗尽</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/15 text-sky-400 border border-sky-500/30">内存耗尽</span>;
       case "test":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-accent/15 text-accent border border-accent/30">连通测试</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent/15 text-accent border border-accent/30">连通测试</span>;
       default:
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-paper-3 text-ink-muted border border-rule">系统通知</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-paper-3 text-ink-muted border border-rule">系统通知</span>;
     }
   };
 
@@ -264,7 +264,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
             }`}
           >
-            <span className="text-xs font-mono font-medium">
+            <span className="text-xs font-medium">
               {config.enabled ? "全局推送: 已开启" : "全局推送: 已关闭"}
             </span>
             <div
@@ -472,7 +472,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("offline")}
                 disabled={simulatingType === "offline"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-accent/15 text-accent text-xs font-mono font-medium border border-rule hover:border-accent/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-accent/15 text-accent text-xs font-medium border border-rule hover:border-accent/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "offline" ? "模拟中..." : "模拟离线告警"}</span>
@@ -553,7 +553,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("traffic")}
                 disabled={simulatingType === "traffic"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-amber-500/15 text-amber-400 text-xs font-mono font-medium border border-rule hover:border-amber-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-amber-500/15 text-amber-400 text-xs font-medium border border-rule hover:border-amber-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "traffic" ? "模拟中..." : "模拟流量预警"}</span>
@@ -638,7 +638,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("renewal")}
                 disabled={simulatingType === "renewal"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-purple-500/15 text-purple-400 text-xs font-mono font-medium border border-rule hover:border-purple-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-purple-500/15 text-purple-400 text-xs font-medium border border-rule hover:border-purple-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "renewal" ? "模拟中..." : "模拟续费提醒"}</span>
@@ -719,7 +719,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("cpu")}
                 disabled={simulatingType === "cpu"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-orange-500/15 text-orange-400 text-xs font-mono font-medium border border-rule hover:border-orange-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-orange-500/15 text-orange-400 text-xs font-medium border border-rule hover:border-orange-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "cpu" ? "模拟中..." : "模拟 CPU 预警"}</span>
@@ -800,7 +800,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("mem")}
                 disabled={simulatingType === "mem"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-sky-500/15 text-sky-400 text-xs font-mono font-medium border border-rule hover:border-sky-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-sky-500/15 text-sky-400 text-xs font-medium border border-rule hover:border-sky-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "mem" ? "模拟中..." : "模拟内存预警"}</span>
@@ -923,11 +923,11 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                     </div>
                     <div className="shrink-0">
                       {log.success ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                           ✓ 已送达
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-status-danger/10 text-status-danger border border-status-danger/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-status-danger/10 text-status-danger border border-status-danger/30">
                           ✕ 失败
                         </span>
                       )}

@@ -260,7 +260,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
               <Cpu className="w-3.5 h-3.5 text-accent" />
               纳管节点内核矩阵
             </span>
-            <div className="flex items-center gap-2 text-[11px] font-mono text-ink-muted">
+            <div className="flex items-center gap-2 text-[11px] text-ink-muted">
               <span>目标内核版本:</span>
               <span className="font-semibold text-accent">
                 {versionInfo?.latestVersion || "--"}
@@ -401,7 +401,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
           </div>
 
           {/* 终端底部功能提示 */}
-          <div className="px-4 py-2.5 bg-paper-2 border-t border-rule-subtle text-[11px] text-ink-muted flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 font-mono">
+          <div className="px-4 py-2.5 bg-paper-2 border-t border-rule-subtle text-[11px] text-ink-muted flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-emerald-400">✓ 架构自适应 (x86_64 / arm64)</span>
               <span>•</span>

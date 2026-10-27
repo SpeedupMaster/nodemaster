@@ -1138,7 +1138,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                       </div>
 
                       {/* Selected Proxy Row */}
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-ink-secondary font-mono truncate">
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-ink-secondary truncate">
                         <span className="text-accent text-[12px] shrink-0">⊙</span>
                         <span className="text-ink-muted shrink-0">当前选择:</span>
                         <span className="text-accent font-medium truncate">{currentSelected}</span>
@@ -1200,7 +1200,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
         ) : (
           /* 2. RAW CONFIGURATION SOURCE PREVIEW (YAML / JSON) */
           <div className="relative rounded-md bg-paper border border-rule overflow-hidden">
-            <div className="px-3.5 py-2 bg-paper-3/40 border-b border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] font-mono text-ink-muted">
+            <div className="px-3.5 py-2 bg-paper-3/40 border-b border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-ink-muted">
               <span>实时渲染结果 ({format.toUpperCase()})</span>
               <span className="hidden sm:inline">自适应规则分流 • TUN/Fake-IP 预设</span>
             </div>

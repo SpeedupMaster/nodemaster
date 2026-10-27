@@ -86,9 +86,9 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-between text-[11px] font-mono text-ink-muted mb-1">
+          <div className="flex justify-between text-[11px] text-ink-muted mb-1">
             <span className="truncate">配额占比</span>
-            <span className={trafficPct > 85 ? "text-status-danger font-semibold" : "text-ink"}>
+            <span className={`font-mono ${trafficPct > 85 ? "text-status-danger font-semibold" : "text-ink"}`}>
               {trafficPct.toFixed(1)}%
             </span>
           </div>
@@ -138,11 +138,11 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
           </div>
         </div>
 
-        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono text-ink-muted">
+        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] text-ink-muted">
           <span className="truncate">采样率</span>
           <span className="text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-soft" />
-            3s 动态
+            <span className="font-mono">3s</span> 动态
           </span>
         </div>
       </div>
@@ -158,11 +158,11 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
             <span className="text-xl sm:text-2xl font-bold text-ink font-mono tabular-nums">{onlineCount}</span>
-            <span className="text-xs text-ink-muted font-mono truncate">/ {totalCount} 在线</span>
+            <span className="text-xs text-ink-muted truncate">/ <span className="font-mono">{totalCount}</span> 在线</span>
           </div>
         </div>
 
-        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono">
+        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px]">
           <span className="text-ink-muted truncate">协议模式</span>
           <span className="text-accent font-semibold whitespace-nowrap">Reality</span>
         </div>
@@ -179,11 +179,11 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({
           </div>
           <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
             <span className="text-xl sm:text-2xl font-bold text-ink font-mono tabular-nums">{relaysCount}</span>
-            <span className="text-xs text-ink-muted font-mono truncate">条链式链路</span>
+            <span className="text-xs text-ink-muted truncate">条链式链路</span>
           </div>
         </div>
 
-        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px] font-mono">
+        <div className="mt-3 pt-2 border-t border-rule-subtle flex items-center justify-between text-[11px]">
           <span className="text-ink-muted truncate">分流引擎</span>
           <span className="text-purple-600 dark:text-purple-400 font-semibold truncate ml-1">Xray 智能路由</span>
         </div>

@@ -175,7 +175,7 @@ export const ScriptView: React.FC = () => {
 
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
-            <span className="text-xs font-mono text-ink-secondary leading-relaxed">
+            <span className="text-xs text-ink-secondary leading-relaxed font-medium">
               通用纳管部署指令模板 (请将 &lt;NODE_TOKEN&gt; 替换为节点专属 Token):
             </span>
             <Button

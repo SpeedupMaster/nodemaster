@@ -279,12 +279,12 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
         </div>
 
         {/* Desktop Meta Info */}
-        <div className="hidden sm:flex items-center gap-2 text-xs text-ink-muted font-mono pb-2.5">
+        <div className="hidden sm:flex items-center gap-2 text-xs text-ink-muted pb-2.5">
           <span>共 {tasks.length} 个监测任务</span>
           <span>·</span>
           <span>采样周期 60s</span>
           <span>·</span>
-          <span className="text-accent/90 font-sans flex items-center gap-0.5">
+          <span className="text-accent/90 flex items-center gap-0.5">
             <DotsSixVertical className="w-3.5 h-3.5 inline" />
             支持拖拽排序
           </span>
@@ -292,7 +292,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
       </div>
 
       {/* Mobile Sub Meta (Shown only on small screens) */}
-      <div className="sm:hidden -mt-3 flex items-center justify-between text-[11px] text-ink-muted font-mono px-0.5">
+      <div className="sm:hidden -mt-3 flex items-center justify-between text-[11px] text-ink-muted px-0.5">
         <span>共 {tasks.length} 个任务 · 采样周期 60s</span>
         <span className="text-ink-secondary">点击卡片快捷操作</span>
       </div>
@@ -305,7 +305,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-rule bg-paper/60 text-[11px] font-mono text-ink-muted uppercase select-none">
+                  <tr className="border-b border-rule bg-paper/60 text-[11px] text-ink-muted select-none">
                     <th className="py-3 px-3 w-10 text-center" title="拖拽排序">#</th>
                     <th className="py-3 px-4 font-medium min-w-[130px]">名称</th>
                     <th className="py-3 px-4 font-medium min-w-[200px]">服务器</th>
@@ -315,7 +315,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                     <th className="py-3 px-4 font-medium text-right min-w-[100px]">操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rule font-mono">
+                <tbody className="divide-y divide-rule">
                   {tasks.map((task, idx) => {
                     const isDragging = draggedIdx === idx;
                     const isDragOver = dragOverIdx === idx;

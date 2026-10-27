@@ -268,9 +268,9 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
               )}
             </div>
 
-            <div className="pt-2 border-t border-rule text-xs text-ink-muted flex items-center justify-between font-mono">
+            <div className="pt-2 border-t border-rule text-xs text-ink-muted flex items-center justify-between">
               <span>专属安全 Token:</span>
-              <span className="text-ink-secondary">{node.token}</span>
+              <span className="text-ink-secondary font-mono">{node.token}</span>
             </div>
 
             {/* 已有节点一键激活全自动热同步 */}
@@ -283,7 +283,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                 <button
                   type="button"
                   onClick={handleCopyUpdateProbe}
-                  className="text-[11px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer font-medium"
                 >
                   {copiedUpdateProbe ? (
                     <Check className="w-3 h-3 text-emerald-400" />

@@ -96,10 +96,10 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
         {/* Card 1: 在管探针总数 */}
         <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">在管探针总数</div>
-            <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5 flex items-baseline gap-1 truncate">
-              <span>{onlineCount}</span>
-              <span className="text-xs text-ink-muted font-normal">/ {nodes.length} 在线</span>
+            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">在管探针总数</div>
+            <div className="text-base sm:text-lg font-bold text-ink mt-0.5 flex items-baseline gap-1 truncate">
+              <span className="font-mono">{onlineCount}</span>
+              <span className="text-xs text-ink-muted font-normal">/ <span className="font-mono">{nodes.length}</span> 在线</span>
             </div>
           </div>
           <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
@@ -110,7 +110,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
         {/* Card 2: 全网出入吞吐 */}
         <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">全网出入吞吐</div>
+            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">全网出入吞吐</div>
             <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 flex flex-col xs:flex-row items-start xs:items-center gap-0.5 sm:gap-2 truncate">
               <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 truncate">
                 <ArrowDown className="w-3 h-3 shrink-0" />
@@ -130,7 +130,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
         {/* Card 3: 全网平均 CPU 负载 */}
         <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">平均 CPU 负载</div>
+            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">平均 CPU 负载</div>
             <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5">
               {avgCpu}%
             </div>
@@ -143,7 +143,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
         {/* Card 4: 物理内存总占用 */}
         <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-mono text-ink-muted truncate">物理内存总占用</div>
+            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">物理内存总占用</div>
             <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 truncate">
               {formatBytes(totalMemUsed)} <span className="text-[10px] font-normal text-ink-muted">/ {formatBytes(totalMemTotal)}</span>
             </div>
@@ -249,7 +249,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                     <span className="font-semibold text-ink text-sm tracking-tight truncate">
                       {node.name}
                     </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule shrink-0">
                       {node.countryName.split(" ")[0]}
                     </span>
                   </div>
@@ -386,7 +386,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-rule bg-paper-3/50 dark:bg-paper/50 text-[11px] font-mono text-neutral dark:text-ink-secondary uppercase select-none whitespace-nowrap">
+                <tr className="border-b border-rule bg-paper-3/50 dark:bg-paper/50 text-[11px] text-neutral dark:text-ink-secondary select-none whitespace-nowrap">
                   <th className="py-3 px-4 font-semibold min-w-[190px] whitespace-nowrap">服务器节点</th>
                   <th className="py-3 px-3 font-medium min-w-[120px] whitespace-nowrap">系统 / 架构</th>
                   <th className="py-3 px-3 font-medium min-w-[100px] whitespace-nowrap">开机时长</th>
@@ -398,7 +398,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   <th className="py-3 px-4 font-medium min-w-[80px] text-right whitespace-nowrap">状态</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-rule font-mono">
+              <tbody className="divide-y divide-rule">
                 {filteredNodes.map((node) => {
                   const up = formatSpeed(node.uplinkSpeedBytes);
                   const down = formatSpeed(node.downlinkSpeedBytes);
@@ -426,7 +426,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                           >
                             {node.name}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0 whitespace-nowrap">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule shrink-0 whitespace-nowrap">
                             {node.countryName.split(" ")[0]}
                           </span>
                         </div>

@@ -395,15 +395,15 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0" />
-            <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
+            <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
               流媒体 / AI 专属落地网关池 (Unlock Gateways)
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0 font-medium">
               {unlockNodes.length} 台落地网关
             </span>
           </div>
 
-          <span className="text-[11px] font-mono text-ink-muted flex items-center gap-1 shrink-0">
+          <span className="text-[11px] text-ink-muted flex items-center gap-1 shrink-0">
             <Sparkle className="w-3.5 h-3.5 text-accent shrink-0" />
             <span>原生纯净双ISP • 共享出站出口</span>
           </span>
@@ -498,10 +498,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
-            <h3 className="text-xs font-bold text-ink uppercase tracking-wider font-mono">
+            <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
               主力直连节点集群 (Direct Inbound Fleet)
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 shrink-0">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 shrink-0 font-medium">
               共 {mainNodes.length} 台
             </span>
           </div>
@@ -820,7 +820,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           })}
 
           {uniqueRelays.length === 0 && (
-            <div className="text-center py-8 text-xs font-mono text-ink-muted border border-dashed border-rule rounded-xl bg-paper/30">
+            <div className="text-center py-8 text-xs text-ink-muted border border-dashed border-rule rounded-xl bg-paper/30 leading-relaxed">
               暂无配置的链式解锁代理。点击上方“创建链式解锁代理”即可将主力 VPS 与专属解锁机绑定。
             </div>
           )}

@@ -615,7 +615,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                   TCP: {(node.tcpCongestion || "bbr").toUpperCase()}
                 </span>
               </div>
-              <div className="text-[11px] font-mono text-ink-muted flex items-center gap-2 mt-1 flex-wrap">
+              <div className="text-[11px] text-ink-muted flex items-center gap-2 mt-1 flex-wrap">
                 <span className="flex items-center gap-1 shrink-0">
                   <Clock className="w-3.5 h-3.5 text-ink-muted" />
                   <span>在线时长: {formatUptime(node.uptime)}</span>
@@ -835,7 +835,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 </div>
 
                 {/* 2. 副标题 (sub: 说明 · 图例 · 时间范围) */}
-                <div className="text-[11px] font-mono text-ink-muted mb-3 flex items-center gap-2 flex-wrap">
+                <div className="text-[11px] text-ink-muted mb-3 flex items-center gap-2 flex-wrap">
                   <span>ICMP 往返时延 (RTT)</span>
                   <span>·</span>
                   <span>纵轴 0–{maxLatency} ms 刻度</span>
@@ -844,7 +844,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                   {hoveredTarget && (
                     <>
                       <span>·</span>
-                      <span className="text-accent font-semibold font-sans">
+                      <span className="text-accent font-semibold">
                         正在聚焦: {hoveredTarget}
                       </span>
                     </>
@@ -853,7 +853,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                 {/* Loading State Overlay */}
                 {loading && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-paper/70 backdrop-blur-xs text-xs font-mono text-ink-muted">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-paper/70 backdrop-blur-xs text-xs text-ink-muted">
                     <span>采样数据同步中...</span>
                   </div>
                 )}
@@ -1183,27 +1183,27 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
               {/* Real-time Metric KPI Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
-                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-mono">
+                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
                     <Cpu className="w-3.5 h-3.5 text-accent" />
                     <span>实时 CPU 占用</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
                     {formatPct(node.cpuUsage)}%
                   </div>
-                  <div className="text-[10px] font-mono text-ink-muted mt-0.5">
+                  <div className="text-[10px] text-ink-muted mt-0.5">
                     Load: {node.loadAvg ? node.loadAvg.map(formatPct).join(", ") : "0.15, 0.22, 0.18"}
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
-                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-mono">
+                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
                     <Database className="w-3.5 h-3.5 text-indigo-400" />
                     <span>物理内存负载</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
                     {formatPct(node.memUsage)}%
                   </div>
-                  <div className="text-[10px] font-mono text-ink-muted mt-0.5">
+                  <div className="text-[10px] text-ink-muted mt-0.5">
                     {node.memTotalBytes
                       ? `${(node.memTotalBytes / 1073741824).toFixed(1)} GB 总量`
                       : "2.0 GB"}
@@ -1211,14 +1211,14 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
-                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-mono">
+                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
                     <HardDrive className="w-3.5 h-3.5 text-purple-400" />
                     <span>硬盘存储占用</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
                     {formatPct(node.diskUsage)}%
                   </div>
-                  <div className="text-[10px] font-mono text-ink-muted mt-0.5">
+                  <div className="text-[10px] text-ink-muted mt-0.5">
                     {node.diskTotalBytes
                       ? `${(node.diskTotalBytes / 1073741824).toFixed(0)} GB 空间`
                       : "40 GB"}
@@ -1226,7 +1226,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
-                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-mono">
+                  <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
                     <Lightning className="w-3.5 h-3.5 text-emerald-400" />
                     <span>实时网速吞吐</span>
                   </div>

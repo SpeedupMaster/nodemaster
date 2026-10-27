@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right Action Bar: Unified 38px height, rounded-lg, seamless proportional spacing */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Telemetry Shield Pill */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 h-[38px] rounded-lg bg-status-online-bg/80 border border-status-online/25 text-xs text-ink-secondary font-mono select-none">
+          <div className="hidden lg:flex items-center gap-1.5 px-3 h-[38px] rounded-lg bg-status-online-bg/80 border border-status-online/25 text-xs text-ink-secondary select-none font-medium">
             <ShieldCheck weight="duotone" className="w-4 h-4 text-status-online shrink-0" />
             <span>熔断防护已激活</span>
           </div>
@@ -210,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {/* Appearance Preference selector */}
                 <div className="pt-1 pb-1.5 mb-1 border-b border-rule">
-                  <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-muted">
+                  <div className="px-2.5 py-1 text-[10px] font-medium tracking-wider text-ink-muted">
                     外观偏好
                   </div>
                   <div className="grid grid-cols-3 gap-1 px-1">

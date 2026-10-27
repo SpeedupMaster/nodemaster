@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   />
                 </span>
-                <span className="text-[11px] text-ink-muted font-mono">
+                <span className="text-[11px] text-ink-muted">
                   {wsConnected ? "遥测在线 (WS)" : "正在连接..."}
                 </span>
               </div>
@@ -317,7 +317,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className="pt-1">
-          <div className="text-[11px] text-ink-muted font-mono flex justify-between mb-1.5">
+          <div className="text-[11px] text-ink-muted flex justify-between mb-1.5">
             <span>节点就绪率</span>
             <span className="text-ink tabular-nums">{readyPct}%</span>
           </div>
