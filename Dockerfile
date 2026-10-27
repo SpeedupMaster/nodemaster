@@ -25,7 +25,7 @@ COPY web/ ./web/
 RUN pnpm build
 
 # Deploy isolated server production dependencies (runs on native host, avoids QEMU emulation)
-RUN pnpm --filter ./server --prod deploy /prod/server
+RUN pnpm --filter ./server --prod deploy --legacy /prod/server
 
 # Stage 2: Minimal Production Runtime
 FROM node:22-alpine AS runner
