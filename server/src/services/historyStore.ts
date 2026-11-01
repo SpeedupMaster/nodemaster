@@ -65,9 +65,13 @@ function mergeSamples(group: Sample[], timestamp: number): Sample {
 
 function mergeLatency(group: LatencySample[], timestamp: number): LatencySample {
   if (group.length === 1 && group[0].timestamp === timestamp) return group[0];
-  let n = 0, latencyMs = 0, lossRate = 0, jitter = 0;
-  for (const p of group) { const w = p.n || 1; n += w; latencyMs += p.latencyMs * w; lossRate += p.lossRate * w; jitter += p.jitter * w; }
-  return { nodeId: group[0].nodeId, taskId: group[0].taskId, timestamp, latencyMs: round(latencyMs / n), lossRate: round(lossRate / n), jitter: round(jitter / n), n };
+  // Fully lost samples carry latencyMs 0, so latency/jitter average only over samples that got replies.
+  let n = 0, ok = 0, latencyMs = 0, lossRate = 0, jitter = 0;
+  for (const p of group) {
+    const w = p.n || 1; n += w; lossRate += p.lossRate * w;
+    if (p.lossRate < 100) { ok += w; latencyMs += p.latencyMs * w; jitter += p.jitter * w; }
+  }
+  return { nodeId: group[0].nodeId, taskId: group[0].taskId, timestamp, latencyMs: ok ? round(latencyMs / ok) : 0, lossRate: round(lossRate / n), jitter: ok ? round(jitter / ok) : 0, n };
 }
 
 /** Downsamples rows older than each tier boundary into buckets; rows must be sorted ascending. */
@@ -190,7 +194,10 @@ export class HistoryStore {
       const points = recent.filter(p => p.taskId === task.id);
       if (!points.length) return [];
       const latest = points[points.length - 1];
-      return [{ nodeId, taskId: task.id, taskName: task.name, currentLatency: latest.latencyMs, lossRate: latest.lossRate, jitter: latest.jitter, history: thin(points, points[0].timestamp, Date.now()) }];
+      // Loss is a rate over the selected window; the latest single burst alone is almost always 0%.
+      const weight = points.reduce((sum, p) => sum + (p.n || 1), 0);
+      const lossRate = round(points.reduce((sum, p) => sum + p.lossRate * (p.n || 1), 0) / weight);
+      return [{ nodeId, taskId: task.id, taskName: task.name, currentLatency: latest.latencyMs, lossRate, jitter: latest.jitter, history: thin(points, points[0].timestamp, Date.now()) }];
     });
   }
 }
