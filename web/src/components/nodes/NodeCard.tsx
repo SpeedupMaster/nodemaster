@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Cpu,
   HardDrive,
@@ -16,6 +16,7 @@ import {
   ArrowsClockwise,
   CheckCircle,
   WarningCircle,
+  DotsThreeVertical,
 } from "@phosphor-icons/react";
 import { NodeItem } from "../../types";
 import { Badge } from "../common/Badge";
@@ -62,7 +63,22 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   onViewProbeVersion,
   onSyncConfig,
 }) => {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleCopy = () => {
     onCopyUrl(node);
@@ -180,15 +196,39 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           )}
 
           {!isProbe && node.xrayVersion && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/10 border border-purple-500/25">
-              Xray {node.xrayVersion}
-            </span>
+            <Tooltip content={onViewVersion ? `Xray 内核: ${node.xrayVersion} (点击管理版本)` : `Xray 内核: ${node.xrayVersion}`}>
+              {onViewVersion ? (
+                <button
+                  type="button"
+                  onClick={onViewVersion}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/10 border border-purple-500/25 hover:bg-purple-500/20 hover:border-purple-500/40 transition-colors cursor-pointer"
+                >
+                  Xray {node.xrayVersion}
+                </button>
+              ) : (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-purple-300 bg-purple-500/10 border border-purple-500/25">
+                  Xray {node.xrayVersion}
+                </span>
+              )}
+            </Tooltip>
           )}
 
           {node.probeVersion && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
-              探针 {node.probeVersion}
-            </span>
+            <Tooltip content={onViewProbeVersion ? `系统探针: ${node.probeVersion} (点击管理版本)` : `系统探针: ${node.probeVersion}`}>
+              {onViewProbeVersion ? (
+                <button
+                  type="button"
+                  onClick={onViewProbeVersion}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                >
+                  探针 {node.probeVersion}
+                </button>
+              ) : (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+                  探针 {node.probeVersion}
+                </span>
+              )}
+            </Tooltip>
           )}
 
           {node.costAmount != null && node.costAmount > 0 && (
@@ -342,8 +382,8 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       </div>
 
       {/* Card Actions */}
-      <div className="mt-5 pt-3 border-t border-rule flex items-center justify-between text-xs gap-1.5">
-        <div className="flex items-center gap-1 shrink-0">
+      <div className="mt-5 pt-3 border-t border-rule flex flex-wrap items-center justify-between text-xs gap-y-2 gap-x-1.5">
+        <div className="flex items-center gap-1 min-w-0">
           {!isProbe && (
             <Tooltip content={node.protocol === "shadowsocks" ? "复制 Shadowsocks 链接" : "复制客户端 VLESS 链接"}>
               <button
@@ -381,70 +421,122 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               <span className="text-[11px] font-medium">命令</span>
             </button>
           </Tooltip>
-
-          {onViewVersion && !isProbe && (
-            <Tooltip content={`检测与更新 Xray 内核 (当前: ${node.xrayVersion || "尚未上报"})`}>
-              <button
-                onClick={onViewVersion}
-                className="px-2 py-1.5 rounded text-ink-secondary hover:text-purple-400 hover:bg-purple-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                <span className="text-[11px] font-medium">内核</span>
-              </button>
-            </Tooltip>
-          )}
-
-          {onViewProbeVersion && (
-            <Tooltip content={`检测与升级系统探针 (当前: ${node.probeVersion || "旧版本/未上报"})`}>
-              <button
-                onClick={onViewProbeVersion}
-                className="px-2 py-1.5 rounded text-ink-secondary hover:text-emerald-400 hover:bg-emerald-500/10 border border-rule transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Cpu className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-[11px] font-medium">探针</span>
-              </button>
-            </Tooltip>
-          )}
         </div>
 
-        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-          <Tooltip content="编辑节点配置">
-            <button
-              onClick={() => onEdit(node)}
-              className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer shrink-0"
-            >
-              <PencilSimple className="w-3.5 h-3.5" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="重置当月流量统计">
-            <button
-              onClick={() => onResetTraffic(node.id)}
-              className="p-1.5 rounded text-ink-muted hover:text-ink-secondary hover:bg-paper-hover transition-colors cursor-pointer shrink-0"
-            >
-              <ArrowClockwise className="w-3.5 h-3.5" />
-            </button>
-          </Tooltip>
-
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 relative" ref={menuRef}>
           {onSyncConfig && !isProbe && (
             <Tooltip content="一键热重载：立即同步最新配置至 VPS (无需登录 SSH)">
               <button
                 onClick={() => onSyncConfig(node)}
                 className="p-1.5 rounded text-ink-muted hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer shrink-0"
+                aria-label="一键热重载配置"
               >
                 <ArrowsClockwise className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           )}
 
-          <Tooltip content="删除节点">
+          <Tooltip content="编辑节点配置">
             <button
-              onClick={() => onDelete(node.id)}
-              className="p-1.5 rounded text-ink-muted hover:text-status-danger hover:bg-status-danger-bg transition-colors cursor-pointer shrink-0"
+              onClick={() => onEdit(node)}
+              className="p-1.5 rounded text-ink-muted hover:text-accent hover:bg-accent/10 transition-colors cursor-pointer shrink-0"
+              aria-label="编辑节点配置"
             >
-              <Trash className="w-3.5 h-3.5" />
+              <PencilSimple className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
+
+          <Tooltip content="更多操作" disabled={isMenuOpen}>
+            <button
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className={`p-1.5 rounded transition-colors cursor-pointer shrink-0 ${
+                isMenuOpen
+                  ? "text-ink bg-paper-hover border border-rule"
+                  : "text-ink-muted hover:text-ink hover:bg-paper-hover"
+              }`}
+              aria-label="更多操作"
+              aria-expanded={isMenuOpen}
+            >
+              <DotsThreeVertical className="w-3.5 h-3.5" weight="bold" />
+            </button>
+          </Tooltip>
+
+          {isMenuOpen && (
+            <div
+              className="absolute right-0 bottom-full mb-1.5 w-48 rounded-lg bg-paper-2 border border-rule shadow-2xl py-1 text-xs z-30 select-none"
+              role="menu"
+            >
+              {onViewVersion && !isProbe && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onViewVersion();
+                  }}
+                  className="w-full px-3 py-2 flex items-center justify-between text-ink-secondary hover:text-purple-300 hover:bg-purple-500/10 transition-colors text-left cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                    <span>Xray 内核管理</span>
+                  </span>
+                  {node.xrayVersion && (
+                    <span className="text-[10px] font-mono text-purple-400/80 shrink-0">
+                      {node.xrayVersion}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {onViewProbeVersion && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onViewProbeVersion();
+                  }}
+                  className="w-full px-3 py-2 flex items-center justify-between text-ink-secondary hover:text-emerald-300 hover:bg-emerald-500/10 transition-colors text-left cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Cpu className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>系统探针管理</span>
+                  </span>
+                  {node.probeVersion && (
+                    <span className="text-[10px] font-mono text-emerald-400/80 shrink-0">
+                      {node.probeVersion}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onResetTraffic(node.id);
+                }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-ink-secondary hover:text-ink hover:bg-paper-hover transition-colors text-left cursor-pointer"
+              >
+                <ArrowClockwise className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+                <span>重置当月流量</span>
+              </button>
+
+              <div className="my-1 border-t border-rule" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  if (window.confirm(`确定要删除节点 "${node.name}" 吗？此操作不可撤销。`)) {
+                    onDelete(node.id);
+                  }
+                }}
+                className="w-full px-3 py-2 flex items-center gap-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+              >
+                <Trash className="w-3.5 h-3.5 shrink-0" />
+                <span>删除节点</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
