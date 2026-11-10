@@ -49,7 +49,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ node, onClose }) => {
             variant="secondary"
             size="sm"
             onClick={handleCopy}
-            icon={copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            icon={copied ? <Check className="w-3.5 h-3.5 text-status-online" /> : <Copy className="w-3.5 h-3.5" />}
           >
             {copied ? "已复制到剪贴板" : "复制完整配置"}
           </Button>

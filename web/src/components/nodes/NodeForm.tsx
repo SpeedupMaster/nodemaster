@@ -284,7 +284,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
     >
       <form id="node-form" onSubmit={handleSubmit} className="space-y-4 text-sm">
         {submitError && (
-          <p role="alert" className="text-sm text-red-400">
+          <p role="alert" className="text-sm text-status-danger">
             {submitError}
           </p>
         )}
@@ -306,14 +306,14 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
                         ? tone === "purple"
                           ? "bg-purple-950/20 border-purple-500 ring-1 ring-purple-500/40 shadow-sm"
                           : tone === "sky"
-                          ? "bg-sky-950/20 border-sky-500 ring-1 ring-sky-500/40 shadow-sm"
+                          ? "bg-accent/20 border-accent ring-1 ring-accent/40 shadow-sm"
                           : "bg-accent/10 border-accent ring-1 ring-accent/40 shadow-sm"
                         : "bg-paper border-rule hover:border-rule-active hover:bg-paper-hover"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 w-full">
                       <span className={`flex items-center gap-2 text-xs font-semibold ${active ? "text-ink" : "text-ink-secondary"}`}>
-                        <span className={active ? (tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-sky-400" : "text-accent") : "text-ink-muted"}>{c.icon}</span>
+                        <span className={active ? (tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-accent" : "text-accent") : "text-ink-muted"}>{c.icon}</span>
                         {c.title}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-mono whitespace-nowrap shrink-0">
@@ -322,7 +322,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
                     </div>
                     <p className="text-[11px] text-ink-muted mt-2 leading-relaxed">{c.desc}</p>
                     <div className="mt-3 pt-2 border-t border-rule/50 flex items-center justify-between text-[10px] font-mono w-full">
-                      <span className={tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-sky-400" : "text-accent"}>协议: {c.protocol}</span>
+                      <span className={tone === "purple" ? "text-purple-400" : tone === "sky" ? "text-accent" : "text-accent"}>协议: {c.protocol}</span>
                       <span className="text-ink-muted">{c.kind === "probe" ? "无需代理端口" : `端口: ${KIND_DEFAULTS[c.kind].port}`}</span>
                     </div>
                   </button>
@@ -339,7 +339,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
             <span
               className={`px-2 py-0.5 rounded font-medium text-[10px] border ${
                 isProbe
-                  ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                  ? "bg-accent/10 text-accent border-accent/30"
                   : isUnlock
                   ? "bg-purple-500/10 text-purple-300 border-purple-500/30"
                   : "bg-accent/10 text-accent border-accent/30"
@@ -494,7 +494,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
               onClick={() => set("autoRenew", !form.autoRenew)}
               className={`w-full h-[34px] px-3 rounded-md border flex items-center justify-between transition-all cursor-pointer select-none touch-manipulation ${
                 form.autoRenew
-                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/15"
+                  ? "bg-status-online/10 border-status-online/40 text-status-online hover:bg-status-online/15"
                   : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
               }`}
             >
@@ -503,7 +503,7 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
               </span>
               <span
                 className={`w-8 h-4.5 flex items-center rounded-full p-0.5 transition-colors shrink-0 ${
-                  form.autoRenew ? "bg-emerald-500" : "bg-paper-3 border border-rule"
+                  form.autoRenew ? "bg-status-online" : "bg-paper-3 border border-rule"
                 }`}
               >
                 <span
@@ -517,11 +517,11 @@ export const NodeForm: React.FC<NodeFormProps> = ({ node, isOpen, onClose, onSub
         </div>
 
         {isProbe ? (
-          <div className="p-3.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-xs text-sky-200 flex items-start gap-2.5">
-            <Pulse className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-lg bg-accent/10 border border-accent/30 text-xs text-accent flex items-start gap-2.5">
+            <Pulse className="w-4 h-4 text-accent shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <div className="font-semibold text-sky-300">纯探针监控与网络调优模式</div>
-              <div className="text-[11px] text-sky-300/80 leading-relaxed">
+              <div className="font-semibold text-accent">纯探针监控与网络调优模式</div>
+              <div className="text-[11px] text-accent/80 leading-relaxed">
                 该节点为通用云主机/独立探针，不开启代理监听端口，亦无需配置伪装域名或加密密钥。一键纳管时仅部署指标采集探针守护进程与跨境网络内核调优。
               </div>
             </div>

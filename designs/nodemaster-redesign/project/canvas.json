@@ -1,0 +1,41 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-10T09:00:00Z" },
+  "title": "NodeMaster UI 重构",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1620, "title": "概览 Dashboard", "expand": "fill", "is_interactive": true },
+    "NodeDetail.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1620, "title": "节点详情（独立页面）", "expand": "fill", "is_interactive": true },
+    "Traffic.dc.html": { "x": 3040, "y": 0, "w": 1440, "h": 1400, "title": "流量统计", "expand": "fill", "is_interactive": true },
+    "Latency.dc.html": { "x": 4560, "y": 0, "w": 1440, "h": 1400, "title": "延迟监测", "expand": "fill", "is_interactive": true },
+    "Nodes.dc.html": { "x": 0, "y": 2020, "w": 1440, "h": 1400, "title": "节点管理", "expand": "fill", "is_interactive": true },
+    "Topology.dc.html": { "x": 1520, "y": 2020, "w": 1440, "h": 1400, "title": "链式代理拓扑", "expand": "fill", "is_interactive": true },
+    "Subscription.dc.html": { "x": 3040, "y": 2020, "w": 1440, "h": 1400, "title": "订阅分发", "expand": "fill", "is_interactive": true },
+    "Deploy.dc.html": { "x": 0, "y": 3820, "w": 1440, "h": 1400, "title": "接入新节点（部署向导）", "expand": "fill", "is_interactive": true },
+    "Alerts.dc.html": { "x": 1520, "y": 3820, "w": 1440, "h": 1400, "title": "告警中心", "expand": "fill", "is_interactive": true },
+    "Login.dc.html": { "x": 3040, "y": 3820, "w": 1440, "h": 900, "title": "登录", "expand": "fill", "is_interactive": true },
+    "Mobile.dc.html": { "x": 4560, "y": 3820, "w": 390, "h": 844, "title": "移动端 · 概览" },
+    "Sidebar.dc.html": { "x": 5030, "y": 3820, "w": 232, "h": 900, "title": "组件 · 侧边导航" }
+  },
+  "order": [
+    "Main.dc.html",
+    "NodeDetail.dc.html",
+    "Traffic.dc.html",
+    "Latency.dc.html",
+    "Nodes.dc.html",
+    "Topology.dc.html",
+    "Subscription.dc.html",
+    "Deploy.dc.html",
+    "Alerts.dc.html",
+    "Login.dc.html",
+    "Mobile.dc.html",
+    "Sidebar.dc.html"
+  ],
+  "notes": {
+    "row1": { "x": 0, "y": -280, "text": "监控 · 概览 / 节点详情 / 流量 / 延迟", "kind": "title1", "maxW": 6000 },
+    "row2": { "x": 0, "y": 1740, "text": "管理 · 节点 / 拓扑 / 订阅", "kind": "title1", "maxW": 4480 },
+    "row3": { "x": 0, "y": 3540, "text": "运维与入口 · 部署 / 告警 / 登录 / 移动端 / 组件", "kind": "title1", "maxW": 5262 }
+  },
+  "designSystems": []
+}

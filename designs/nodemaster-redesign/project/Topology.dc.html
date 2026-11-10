@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 链式拓扑</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+.th{font-size:12px;font-weight:500;color:#848D9A;text-align:left;padding:10px 12px;border-bottom:1px solid #232831;white-space:nowrap}
+.td{padding:10px 12px;border-bottom:1px solid #1C2027;font-size:13px;vertical-align:middle;white-space:nowrap}
+.sel{height:32px;min-width:180px;padding:0 10px;border-radius:7px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:12.5px}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="topology" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 420px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">链式拓扑</h1>
+        <p style="margin: 0; font-size: 14px; color: #A3ABB7; max-width: 760px">客户端直连主力节点获得最低延迟；访问 OpenAI、Claude、Netflix 等风控服务时，由主力节点的 Xray 路由自动转发到原生住宅落地出站。</p>
+      </div>
+      <button class="btn">分流规则集</button>
+      <button class="btn btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>添加落地出口</button>
+    </div>
+
+    <!-- Flow lanes -->
+    <section class="card" style="padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; align-items: stretch">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding-right: 20px">
+        <span class="mono" style="font-size: 11px; color: #848D9A">01 · 客户端</span>
+        <div style="padding: 12px; border-radius: 8px; background: #161A20; font-size: 13px; line-height: 1.6">Clash Meta / Sing-box / Shadowrocket<br><span style="color: #848D9A">按订阅连接入口</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 20px; border-left: 1px dashed #2E343E">
+        <span class="mono" style="font-size: 11px; color: #848D9A">02 · 主力入口（6）</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">HK 18ms</span>
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">JP 36ms</span>
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">SG 52ms</span>
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">KR 42ms</span>
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">US 132ms</span>
+          <span class="chip mono" style="background: #1A2232; color: #9CC3FF">DE 168ms</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 20px; border-left: 1px dashed #2E343E">
+        <span class="mono" style="font-size: 11px; color: #848D9A">03 · Xray 路由分流</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+          <span><span style="color: #C9B8FF">流媒体</span> · Netflix / Disney+ / YouTube</span>
+          <span><span style="color: #C9B8FF">AI 服务</span> · OpenAI / Claude / Gemini</span>
+          <span style="color: #A3ABB7">其余流量 · 本机直连</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; padding-left: 20px; border-left: 1px dashed #2E343E">
+        <span class="mono" style="font-size: 11px; color: #848D9A">04 · 落地出口（2）</span>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span class="chip" style="background: #1D1A2B; color: #C9B8FF; height: 28px">SG 狮城原生 · 58 ms</span>
+          <span class="chip" style="background: #1D1A2B; color: #C9B8FF; height: 28px">US 硅谷原生 · 142 ms</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Binding matrix -->
+    <section class="card" style="display: flex; flex-direction: column">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 20px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">出口绑定</h2>
+        <span style="font-size: 12px; color: #848D9A">为每个入口节点选择各类流量的出口，修改后热同步到节点，无需重启</span>
+        <span class="chip" style="margin-left: auto; background: #2A2113; color: #F0B341">2 项未保存</span>
+        <button class="btn btn-primary" style="height: 32px">同步到节点</button>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; min-width: 900px">
+          <thead><tr>
+            <th class="th" style="padding-left: 20px">入口节点</th><th class="th">流媒体</th><th class="th">AI 服务</th><th class="th">其余流量</th><th class="th">状态</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+              <tr style="background: {{r.rowBg}}">
+                <td class="td" style="padding-left: 20px"><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500"><span class="mono" style="color: #848D9A; font-size: 11px; margin-right: 8px">{{r.cc}}</span>{{r.name}}</span><span class="mono" style="font-size: 11.5px; color: #848D9A">{{r.ip}}</span></div></td>
+                <td class="td"><select class="sel" aria-label="{{r.name}} 流媒体出口"><option>{{r.media}}</option><option>SG 狮城原生</option><option>US 硅谷原生</option><option>本机直连</option></select></td>
+                <td class="td"><select class="sel" aria-label="{{r.name}} AI 服务出口"><option>{{r.ai}}</option><option>US 硅谷原生</option><option>SG 狮城原生</option><option>本机直连</option></select></td>
+                <td class="td" style="color: #A3ABB7">本机直连</td>
+                <td class="td"><span style="font-size: 12.5px; color: {{r.stColor}}">{{r.st}}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Landing gateways -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px">
+      <article class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="mono" style="font-size: 11px; color: #848D9A">SG</span>
+          <span style="font-size: 15px; font-weight: 600">狮城原生 · 4K 流媒体解锁</span>
+          <span class="chip mono" style="margin-left: auto; background: #11241C; color: #3ECF8E">58 ms</span>
+        </div>
+        <span class="mono" style="font-size: 12px; color: #848D9A">165.22.98.140:8388 · Shadowsocks 2022 · 新加坡原生住宅</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="chip" style="background: #11241C; color: #3ECF8E">Netflix ✓</span><span class="chip" style="background: #11241C; color: #3ECF8E">Disney+ ✓</span><span class="chip" style="background: #11241C; color: #3ECF8E">YouTube Premium ✓</span></div>
+        <span style="font-size: 12.5px; color: #A3ABB7">服务 4 个入口 · 不直接暴露于订阅（防主动探测）</span>
+      </article>
+      <article class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span class="mono" style="font-size: 11px; color: #848D9A">US</span>
+          <span style="font-size: 15px; font-weight: 600">硅谷原生 · AI 服务住宅</span>
+          <span class="chip mono" style="margin-left: auto; background: #2A2113; color: #F0B341">142 ms</span>
+        </div>
+        <span class="mono" style="font-size: 12px; color: #848D9A">142.250.72.68:8388 · Shadowsocks 2022 · 美国原生住宅</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="chip" style="background: #11241C; color: #3ECF8E">OpenAI ✓</span><span class="chip" style="background: #11241C; color: #3ECF8E">Claude ✓</span><span class="chip" style="background: #11241C; color: #3ECF8E">Gemini ✓</span></div>
+        <span style="font-size: 12.5px; color: #A3ABB7">服务 6 个入口 · 不直接暴露于订阅（防主动探测）</span>
+      </article>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const synced = { st: '已同步', stColor: '#3ECF8E', rowBg: 'transparent' };
+    const dirty = { st: '● 待同步', stColor: '#F0B341', rowBg: '#16140F' };
+    return {
+      rows: [
+        Object.assign({ cc: 'HK', name: '香港 CN2 GIA', ip: '45.154.12.88', media: 'SG 狮城原生', ai: 'US 硅谷原生' }, synced),
+        Object.assign({ cc: 'JP', name: '东京 BGP', ip: '103.214.88.25', media: 'SG 狮城原生', ai: 'US 硅谷原生' }, synced),
+        Object.assign({ cc: 'SG', name: '新加坡骨干', ip: '139.180.201.76', media: 'SG 狮城原生', ai: 'US 硅谷原生' }, dirty),
+        Object.assign({ cc: 'US', name: '洛杉矶 AS9929', ip: '23.94.108.19', media: '本机直连', ai: 'US 硅谷原生' }, synced),
+        Object.assign({ cc: 'DE', name: '法兰克福', ip: '185.242.115.42', media: '本机直连', ai: 'US 硅谷原生' }, dirty),
+        Object.assign({ cc: 'KR', name: '首尔游戏专线', ip: '211.234.118.50', media: 'SG 狮城原生', ai: 'US 硅谷原生' }, { st: '节点熔断中', stColor: '#848D9A', rowBg: 'transparent' })
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

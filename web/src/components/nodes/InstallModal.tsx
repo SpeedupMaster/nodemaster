@@ -116,13 +116,13 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
             onClick={() => setActiveTab("tune")}
             className={`py-2 px-3 text-xs font-medium border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === "tune"
-                ? "border-emerald-500 text-emerald-400"
+                ? "border-status-online text-status-online"
                 : "border-transparent text-ink-secondary hover:text-ink hover:border-rule"
             }`}
           >
-            <Lightning className="w-3.5 h-3.5 text-emerald-400" />
+            <Lightning className="w-3.5 h-3.5 text-status-online" />
             <span>独立 BBR / TCP 调优</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-status-online/15 text-status-online border border-status-online/30">
               tcp-dashboard
             </span>
           </button>
@@ -185,7 +185,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                   网络与内核优化选项 (基于 tcp-dashboard)
                 </span>
                 <span className="text-[10px] text-ink-muted flex items-center gap-1">
-                  <Sparkle className="w-3 h-3 text-amber-400" />
+                  <Sparkle className="w-3 h-3 text-status-warning" />
                   生产级跨境链路增强
                 </span>
               </div>
@@ -201,7 +201,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                 <div className="text-xs">
                   <div className="font-medium text-ink flex items-center gap-1.5">
                     <span>开启 TCP / BBR 跨境深度网络调优</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-normal">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-status-online/15 text-status-online font-normal">
                       推荐开启
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                   onClick={handleCopyInstall}
                   icon={
                     copiedInstall ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-status-online" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )
@@ -262,7 +262,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                 {installCmd}
               </div>
               {insecurePanel && (
-                <p className="mt-2 text-xs text-amber-400">
+                <p className="mt-2 text-xs text-status-warning">
                   当前面板通过明文 HTTP 访问：节点 Token、代理配置与升级脚本都会明文传输，可被链路劫持并以 root 执行。建议为面板配置 HTTPS 反向代理。
                 </p>
               )}
@@ -274,19 +274,19 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
             </div>
 
             {/* 已有节点一键激活全自动热同步 */}
-            <div className="p-3.5 rounded-lg bg-paper-3/40 border border-emerald-500/20 text-xs space-y-2">
+            <div className="p-3.5 rounded-lg bg-paper-3/40 border border-status-online/20 text-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink flex items-center gap-1.5">
-                  <Lightning className="w-3.5 h-3.5 text-emerald-400" />
+                  <Lightning className="w-3.5 h-3.5 text-status-online" />
                   <span>已有节点一键升级探针 (激活全自动配置热同步)</span>
                 </span>
                 <button
                   type="button"
                   onClick={handleCopyUpdateProbe}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer font-medium"
+                  className="text-[11px] text-status-online hover:text-status-online flex items-center gap-1 cursor-pointer font-medium"
                 >
                   {copiedUpdateProbe ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
+                    <Check className="w-3 h-3 text-status-online" />
                   ) : (
                     <Copy className="w-3 h-3" />
                   )}
@@ -306,17 +306,17 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
         {activeTab === "tune" && (
           <div className="space-y-4">
             {/* 项目来源与介绍 */}
-            <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+            <div className="p-3.5 rounded-lg bg-status-online/10 border border-status-online/20 text-xs">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-medium text-emerald-400">
-                  <Lightning weight="fill" className="w-4 h-4 text-emerald-400" />
+                <div className="flex items-center gap-2 font-medium text-status-online">
+                  <Lightning weight="fill" className="w-4 h-4 text-status-online" />
                   <span>开源 TCP-Dashboard 网络性能调优体系</span>
                 </div>
                 <a
                   href="https://github.com/666shen/tcp-dashboard"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[11px] text-emerald-400/80 hover:text-emerald-300 flex items-center gap-1 hover:underline"
+                  className="text-[11px] text-status-online/80 hover:text-status-online flex items-center gap-1 hover:underline"
                 >
                   <span>GitHub 仓库</span>
                   <ArrowSquareOut className="w-3 h-3" />
@@ -324,7 +324,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
               </div>
               <p className="text-ink-secondary mt-1.5 leading-relaxed">
                 无需重新纳管节点！针对已在运行的任意 Linux VPS，您只需在终端运行一次调优命令。部署完成后，随时在 SSH 终端敲{" "}
-                <code className="text-emerald-400 font-mono bg-paper-3 px-1 py-0.5 rounded font-bold">t</code>{" "}
+                <code className="text-status-online font-mono bg-paper-3 px-1 py-0.5 rounded font-bold">t</code>{" "}
                 即可唤起可视化交互看板。
               </p>
             </div>
@@ -333,7 +333,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>BBR + FQ 拥塞控制</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
@@ -343,7 +343,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
 
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>5% 物理内存动态缓冲区</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
@@ -353,7 +353,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
 
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>1,048,576 句柄与连接池</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
@@ -363,7 +363,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
 
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>Reality / HY2 专项补丁</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
@@ -373,7 +373,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
 
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>网卡 RPS/RSS 多队列均衡</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
@@ -383,11 +383,11 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
 
               <div className="p-2.5 rounded-md bg-paper border border-rule">
                 <div className="font-medium text-ink flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle className="w-3.5 h-3.5 text-status-online flex-shrink-0" />
                   <span>终端交互看板快捷键 (t)</span>
                 </div>
                 <div className="text-[11px] text-ink-muted mt-0.5">
-                  生成系统级软链接，SSH 敲 <code className="text-emerald-400 font-mono font-bold">t</code> 随时进入多功能控制台。
+                  生成系统级软链接，SSH 敲 <code className="text-status-online font-mono font-bold">t</code> 随时进入多功能控制台。
                 </div>
               </div>
             </div>
@@ -397,7 +397,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                    <Globe className="w-3.5 h-3.5 text-status-online" />
                     <span>方式 A: 官方开源一键命令 (推荐)</span>
                   </span>
                   <Button
@@ -406,7 +406,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                     onClick={handleCopyTuneOfficial}
                     icon={
                       copiedTuneOfficial ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-status-online" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )
@@ -415,7 +415,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                     {copiedTuneOfficial ? "已复制" : "复制命令"}
                   </Button>
                 </div>
-                <div className="p-3 rounded-md bg-paper border border-rule font-mono text-xs text-emerald-400 select-all break-all">
+                <div className="p-3 rounded-md bg-paper border border-rule font-mono text-xs text-status-online select-all break-all">
                   {tuneOfficialCmd}
                 </div>
               </div>
@@ -432,7 +432,7 @@ export const InstallModal: React.FC<InstallModalProps> = ({ node, onClose }) => 
                     onClick={handleCopyTunePanel}
                     icon={
                       copiedTunePanel ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-status-online" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )

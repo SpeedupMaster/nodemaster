@@ -29,12 +29,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = "" }) => {
     {
       value: "light",
       label: "浅色模式",
-      icon: <Sun weight="duotone" className="w-4 h-4 text-amber-500" />,
+      icon: <Sun weight="duotone" className="w-4 h-4 text-status-warning" />,
     },
     {
       value: "dark",
       label: "深色模式",
-      icon: <Moon weight="duotone" className="w-4 h-4 text-sky-400" />,
+      icon: <Moon weight="duotone" className="w-4 h-4 text-accent" />,
     },
     {
       value: "system",
@@ -57,13 +57,13 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = "" }) => {
         onContextMenu={handleContextMenu}
         title={`切换主题（当前：${resolvedTheme === "dark" ? "深色" : "浅色"}${theme === "system" ? " · 跟随系统" : ""}，右键更多选项）`}
         aria-label="切换浅色或深色主题"
-        className="w-[38px] h-[38px] rounded-lg bg-paper-2 hover:bg-paper-hover active:bg-paper-active border border-rule hover:border-rule-active transition-all duration-150 active:scale-[0.97] shadow-xs flex items-center justify-center text-ink cursor-pointer shrink-0 touch-manipulation overflow-hidden"
+        className="w-9 h-9 rounded-lg bg-paper-2 hover:bg-paper-hover active:bg-paper-active border border-rule hover:border-rule-active transition-all duration-150 active:scale-[0.97] shadow-xs flex items-center justify-center text-ink cursor-pointer shrink-0 touch-manipulation overflow-hidden"
       >
         <div className="relative w-4 h-4 flex items-center justify-center pointer-events-none select-none">
           {/* Sun icon: calm, quiet fade with subtle scale */}
           <Sun
             weight="duotone"
-            className={`w-4.5 h-4.5 text-amber-500 absolute inset-0 m-auto transition-all duration-300 ease-out ${
+            className={`w-4.5 h-4.5 text-status-warning absolute inset-0 m-auto transition-all duration-300 ease-out ${
               resolvedTheme === "dark"
                 ? "opacity-0 scale-75 translate-y-0.5"
                 : "opacity-100 scale-100 translate-y-0"
@@ -72,7 +72,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = "" }) => {
           {/* Moon icon: calm, quiet fade with subtle scale */}
           <Moon
             weight="duotone"
-            className={`w-4.5 h-4.5 text-sky-400 absolute inset-0 m-auto transition-all duration-300 ease-out ${
+            className={`w-4.5 h-4.5 text-accent absolute inset-0 m-auto transition-all duration-300 ease-out ${
               resolvedTheme === "dark"
                 ? "opacity-100 scale-100 translate-y-0"
                 : "opacity-0 scale-75 -translate-y-0.5"

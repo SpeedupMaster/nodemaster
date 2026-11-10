@@ -21,9 +21,10 @@
   --color-muted: oklch(60% 0.015 250);
 
   /* 4. Signal Accents */
-  --color-accent: oklch(55% 0.22 255);
-  --color-accent-subtle: oklch(94% 0.03 255);
-  --color-accent-hover: oklch(48% 0.22 255);
+  --color-accent: #2563EB;
+  --color-accent-fill: #2563EB;
+  --color-accent-subtle: #E8F0FE;
+  --color-accent-hover: #1D4FD8;
   --color-focus: oklch(58% 0.21 255);
 
   /* 5. Telemetry State Tokens */
@@ -41,7 +42,7 @@
   /* 7. Spacing & Radii (Strict 4pt scale & 6-8px tight engineered radii) */
   --radius-sm: 4px;
   --radius-md: 6px;
-  --radius-lg: 10px;
+  --radius-lg: 12px;
   --radius-full: 9999px;
 
   /* 8. Elevation (Subtle clean shadows for light mode) */
@@ -50,11 +51,11 @@
   --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
   --shadow-lift: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
   --shadow-pop: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
-  --shadow-glow: 0 0 0 1px rgba(37, 99, 235, 0.2), 0 4px 14px 0 rgba(37, 99, 235, 0.18);
+  --shadow-glow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 
   /* 9. Brand gradient */
-  --gradient-brand: linear-gradient(135deg, oklch(62% 0.18 240) 0%, oklch(50% 0.22 262) 100%);
-  --gradient-accent: linear-gradient(135deg, oklch(58% 0.20 240) 0%, oklch(50% 0.22 262) 100%);
+  --gradient-brand: linear-gradient(var(--color-accent-fill), var(--color-accent-fill));
+  --gradient-accent: linear-gradient(var(--color-accent-fill), var(--color-accent-fill));
 
   /* 10. Motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -65,47 +66,49 @@
 }
 
 html.dark {
-  /* 1. Base Paper Surfaces (Calibrated Eye-Friendly Dark Slate - Linear / GitHub Dark) */
-  --color-paper: oklch(18.5% 0.016 250);
-  --color-paper-2: oklch(22.5% 0.018 250);
-  --color-paper-3: oklch(27.5% 0.02 250);
-  --color-paper-hover: oklch(25.5% 0.02 250);
-  --color-paper-active: oklch(30% 0.022 250);
+  /* Graphite console (see designs/nodemaster-redesign) */
+  /* 1. Surfaces */
+  --color-paper: #0B0D10;
+  --color-paper-2: #12151A;
+  --color-paper-3: #181C22;
+  --color-paper-hover: #161A20;
+  --color-paper-active: #1C2129;
 
-  /* 2. Hairlines and Structural Rules */
-  --color-rule: oklch(30% 0.018 250);
-  --color-rule-subtle: oklch(24% 0.014 250);
-  --color-rule-active: oklch(45% 0.025 250);
+  /* 2. Hairlines */
+  --color-rule: #232831;
+  --color-rule-subtle: #1C2027;
+  --color-rule-active: #3A414C;
 
-  /* 3. Ink and Typography (Softened Pure White + High-Visibility Secondary) */
-  --color-ink: oklch(96% 0.008 250);
-  --color-ink-secondary: oklch(82% 0.014 250);
-  --color-neutral: oklch(70% 0.015 250);
-  --color-muted: oklch(58% 0.015 250);
+  /* 3. Ink (all pass 4.5:1 on paper-2) */
+  --color-ink: #E6E9EE;
+  --color-ink-secondary: #B4BBC6;
+  --color-neutral: #9AA2AE;
+  --color-muted: #848D9A;
 
-  /* 4. Signal Accents */
-  --color-accent: oklch(68% 0.19 240);
-  --color-accent-subtle: oklch(26% 0.08 240);
-  --color-accent-hover: oklch(74% 0.20 240);
-  --color-focus: oklch(70% 0.20 240);
+  /* 4. Accent: text/icon tint + a deeper solid fill that carries white text */
+  --color-accent: #6EA8FE;
+  --color-accent-fill: #2F6BD8;
+  --color-accent-subtle: #1A2232;
+  --color-accent-hover: #9CC3FF;
+  --color-focus: #6EA8FE;
 
-  /* 5. Telemetry State Tokens */
-  --color-status-online: oklch(74% 0.18 150);
-  --color-status-online-bg: oklch(24% 0.07 150);
-  --color-status-warning: oklch(80% 0.17 75);
-  --color-status-warning-bg: oklch(26% 0.07 75);
-  --color-status-danger: oklch(68% 0.22 25);
-  --color-status-danger-bg: oklch(25% 0.08 25);
+  /* 5. Telemetry states */
+  --color-status-online: #3ECF8E;
+  --color-status-online-bg: #11241C;
+  --color-status-warning: #F0B341;
+  --color-status-warning-bg: #2A2113;
+  --color-status-danger: #F26D6D;
+  --color-status-danger-bg: #2A1618;
 
-  /* 8. Elevation */
-  --highlight-top: inset 0 1px 0 0 oklch(100% 0 0 / 0.05);
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
-  --shadow-card: var(--highlight-top), 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 4px 12px -4px rgba(0, 0, 0, 0.4);
-  --shadow-lift: var(--highlight-top), 0 4px 8px 0 rgba(0, 0, 0, 0.35), 0 12px 24px -6px rgba(0, 0, 0, 0.5);
-  --shadow-pop: 0 0 0 1px oklch(100% 0 0 / 0.06), 0 16px 36px -8px rgba(0, 0, 0, 0.65);
-  --shadow-glow: 0 0 0 1px oklch(68% 0.19 240 / 0.35), 0 6px 20px -4px oklch(68% 0.19 240 / 0.45);
+  /* 8. Elevation: flat, hairline-driven */
+  --highlight-top: inset 0 0 0 0 transparent;
+  --shadow-xs: none;
+  --shadow-card: none;
+  --shadow-lift: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 0 0 1px #2E343E, 0 16px 36px -8px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 0 0 3px rgba(110, 168, 254, 0.22);
 
-  /* 9. Brand gradient */
-  --gradient-brand: linear-gradient(135deg, oklch(76% 0.14 230) 0%, oklch(55% 0.21 262) 55%, oklch(51% 0.22 276) 100%);
-  --gradient-accent: linear-gradient(135deg, oklch(70% 0.19 240) 0%, oklch(60% 0.21 262) 100%);
+  /* 9. No gradients: solid accent fill */
+  --gradient-brand: linear-gradient(var(--color-accent-fill), var(--color-accent-fill));
+  --gradient-accent: linear-gradient(var(--color-accent-fill), var(--color-accent-fill));
 }

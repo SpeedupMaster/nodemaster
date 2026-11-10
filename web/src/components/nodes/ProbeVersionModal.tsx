@@ -123,7 +123,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
         <div className="p-4 rounded-xl bg-paper-2 border border-rule relative overflow-hidden space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-status-online/15 border border-status-online/25 flex items-center justify-center text-status-online shrink-0 shadow-sm">
                 <Cpu className="w-5 h-5" />
               </div>
               <div>
@@ -131,11 +131,11 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                   <span className="text-xs font-semibold uppercase text-ink tracking-wider font-mono">
                     System Telemetry Probe Agent
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-status-online/15 text-status-online border border-status-online/30 shadow-sm">
                     <Sparkle className="w-3 h-3" />
                     {versionInfo?.latestVersion || "检测中..."}
                   </span>
-                  <span className="text-[10px] text-emerald-400/80 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-status-online/80 font-mono bg-status-online/10 px-1.5 py-0.5 rounded">
                     4 包高精度采样
                   </span>
                 </div>
@@ -153,7 +153,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                 disabled={loading || batchUpgrading}
                 icon={
                   <ArrowClockwise
-                    className={`w-3.5 h-3.5 ${loading ? "animate-spin text-emerald-400" : ""}`}
+                    className={`w-3.5 h-3.5 ${loading ? "animate-spin text-status-online" : ""}`}
                   />
                 }
               >
@@ -170,7 +170,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                     className={`w-3.5 h-3.5 ${batchUpgrading ? "animate-spin" : ""}`}
                   />
                 }
-                className="bg-emerald-600 hover:bg-emerald-500 text-white border-transparent"
+                className="bg-status-online hover:brightness-110 text-white dark:text-paper border-transparent"
               >
                 {batchUpgrading ? "批量更新中..." : `一键升级全部待更新探针 (${outdatedCount})`}
               </Button>
@@ -189,12 +189,12 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
               </span>
             </div>
 
-            <div className="px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-              <span className="text-xs text-emerald-400 flex items-center gap-1.5 whitespace-nowrap">
+            <div className="px-3 py-2 rounded-lg bg-status-online/10 border border-status-online/20 flex items-center justify-between">
+              <span className="text-xs text-status-online flex items-center gap-1.5 whitespace-nowrap">
                 <CheckCircle className="w-3.5 h-3.5 shrink-0" />
                 已是最新探针
               </span>
-              <span className="text-xs font-mono font-bold text-emerald-400 whitespace-nowrap">
+              <span className="text-xs font-mono font-bold text-status-online whitespace-nowrap">
                 {upToDateCount} 个
               </span>
             </div>
@@ -202,13 +202,13 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
             <div
               className={`px-3 py-2 rounded-lg border flex items-center justify-between ${
                 outdatedCount > 0
-                  ? "bg-amber-500/10 border-amber-500/25"
+                  ? "bg-status-warning/10 border-status-warning/25"
                   : "bg-paper-3/60 border-rule-subtle"
               }`}
             >
               <span
                 className={`text-xs flex items-center gap-1.5 whitespace-nowrap ${
-                  outdatedCount > 0 ? "text-amber-400" : "text-ink-secondary"
+                  outdatedCount > 0 ? "text-status-warning" : "text-ink-secondary"
                 }`}
               >
                 <WarningCircle className="w-3.5 h-3.5 shrink-0" />
@@ -216,7 +216,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
               </span>
               <span
                 className={`text-xs font-mono font-bold whitespace-nowrap ${
-                  outdatedCount > 0 ? "text-amber-400" : "text-ink-muted"
+                  outdatedCount > 0 ? "text-status-warning" : "text-ink-muted"
                 }`}
               >
                 {outdatedCount} 个
@@ -230,14 +230,14 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
           <div
             className={`p-3 rounded-lg text-xs flex items-center gap-2 animate-fade-in ${
               feedbackMsg.type === "success"
-                ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
-                : "bg-rose-500/10 text-rose-300 border border-rose-500/20"
+                ? "bg-status-online/10 text-status-online border border-status-online/20"
+                : "bg-status-danger/10 text-status-danger border border-status-danger/20"
             }`}
           >
             {feedbackMsg.type === "success" ? (
-              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+              <CheckCircle className="w-4 h-4 shrink-0 text-status-online" />
             ) : (
-              <WarningCircle className="w-4 h-4 shrink-0 text-rose-400" />
+              <WarningCircle className="w-4 h-4 shrink-0 text-status-danger" />
             )}
             <span>{feedbackMsg.text}</span>
           </div>
@@ -255,7 +255,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
           <div className="divide-y divide-rule max-h-[320px] overflow-y-auto">
             {loading && !versionInfo ? (
               <div className="p-8 text-center text-xs text-ink-muted flex flex-col items-center gap-2">
-                <ArrowClockwise className="w-5 h-5 animate-spin text-emerald-400" />
+                <ArrowClockwise className="w-5 h-5 animate-spin text-status-online" />
                 <span>正在获取各节点探针版本...</span>
               </div>
             ) : versionInfo?.nodes.length === 0 ? (
@@ -275,7 +275,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-paper-3 border border-rule flex items-center justify-center shrink-0">
-                        <Cpu className="w-4 h-4 text-emerald-400" />
+                        <Cpu className="w-4 h-4 text-status-online" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -293,9 +293,9 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                           <span
                             className={`font-semibold ${
                               isUpToDate
-                                ? "text-emerald-400"
+                                ? "text-status-online"
                                 : nodeStatus.currentVersion
-                                ? "text-amber-400"
+                                ? "text-status-warning"
                                 : "text-ink-muted"
                             }`}
                           >
@@ -312,12 +312,12 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
 
                     <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                       {isPending ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium text-sky-400 bg-sky-500/10 border border-sky-500/20">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium text-accent bg-accent/10 border border-accent/20">
                           <ArrowClockwise className="w-3.5 h-3.5 animate-spin" />
                           <span>升级排队中...</span>
                         </span>
                       ) : isUpToDate ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono font-medium text-status-online bg-status-online/10 border border-status-online/20">
                           <CheckCircle className="w-3.5 h-3.5" />
                           <span>已是最新</span>
                         </span>
@@ -327,7 +327,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
                           size="sm"
                           onClick={() => handleUpgradeSingle(nodeStatus.nodeId)}
                           disabled={batchUpgrading || isPending}
-                          className="hover:border-emerald-500/40 hover:text-emerald-400 text-xs py-1"
+                          className="hover:border-status-online/40 hover:text-status-online text-xs py-1"
                         >
                           升级探针
                         </Button>
@@ -353,7 +353,7 @@ export const ProbeVersionModal: React.FC<ProbeVersionModalProps> = ({
               className="text-[11px] text-accent hover:text-accent-hover flex items-center gap-1 cursor-pointer font-medium"
             >
               {copiedCmd ? (
-                <Check className="w-3 h-3 text-emerald-400" />
+                <Check className="w-3 h-3 text-status-online" />
               ) : (
                 <Copy className="w-3 h-3" />
               )}

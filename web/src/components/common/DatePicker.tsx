@@ -300,7 +300,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <span
                 key={w}
                 className={`text-[11px] py-0.5 ${
-                  idx >= 5 ? "text-amber-400/80 font-medium" : "text-ink-muted"
+                  idx >= 5 ? "text-status-warning/80 font-medium" : "text-ink-muted"
                 }`}
               >
                 {w}
@@ -318,7 +318,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                   onClick={() => handleSelectDate(c.dateStr)}
                   className={`h-7 rounded-lg text-xs transition-all flex items-center justify-center cursor-pointer ${
                     c.isSelected
-                      ? "bg-accent text-white font-bold shadow-xs ring-1 ring-accent"
+                      ? "bg-accent-fill text-white font-bold shadow-xs ring-1 ring-accent-fill"
                       : c.isToday
                       ? "ring-1 ring-accent/60 text-accent font-semibold hover:bg-accent/15"
                       : c.isCurrentMonth

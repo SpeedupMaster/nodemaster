@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 订阅与导出</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="subscription" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700">订阅与导出</h1>
+      <p style="margin: 0; font-size: 14px; color: #A3ABB7">一条链接适配所有客户端：服务端根据 User-Agent 自动下发 Clash Meta、Sing-box、Egern 或 Base64 格式。</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <!-- Subscription list -->
+      <nav aria-label="订阅列表" class="card" style="flex: 1 1 280px; max-width: 320px; padding: 8px; display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{subs}}" as="s" hint-placeholder-count="3">
+          <button onClick="{{s.pick}}" style="{{s.style}}">
+            <span style="font-size: 13.5px; font-weight: 600">{{s.name}}</span>
+            <span style="font-size: 12px; color: #848D9A">{{s.meta}}</span>
+          </button>
+        </sc-for>
+        <button style="margin-top: 4px; height: 40px; border: 1px dashed #2E343E; border-radius: 8px; background: transparent; color: #A3ABB7; font-family: inherit; font-size: 13px; cursor: pointer">+ 新建订阅</button>
+      </nav>
+
+      <!-- Detail -->
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <section class="card" style="padding: 20px; display: flex; flex-wrap: wrap; gap: 20px">
+          <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <h2 style="margin: 0; font-size: 17px; font-weight: 600">{{cur.name}}</h2>
+              <span class="chip" style="background: #11241C; color: #3ECF8E">启用中</span>
+              <button class="btn" style="margin-left: auto; height: 30px; font-size: 12.5px">重命名</button>
+              <button class="btn" style="height: 30px; font-size: 12.5px; color: #F59A9A">删除</button>
+            </div>
+            <label style="display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 12.5px; color: #A3ABB7">订阅链接</span>
+              <span style="display: flex; gap: 8px">
+                <input class="mono" readonly value="{{cur.url}}" style="flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid #2E343E; background: #0F1216; color: #E6E9EE; font-size: 13px">
+                <button class="btn btn-primary" style="height: 40px">复制</button>
+              </span>
+            </label>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <button class="btn">一键导入 Clash</button>
+              <button class="btn">一键导入 Sing-box</button>
+              <button class="btn">一键导入 Egern</button>
+              <button class="btn">自定义域名</button>
+              <button class="btn">重置令牌</button>
+            </div>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; font-size: 12.5px; color: #848D9A">
+              <span>最近拉取 <span class="mono" style="color: #A3ABB7">{{cur.pulled}}</span></span>
+              <span>近 7 天拉取 <span class="mono" style="color: #A3ABB7">{{cur.pulls}} 次</span></span>
+              <span>包含 <span class="mono" style="color: #A3ABB7">{{cur.count}}</span> 个节点</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+            <div role="img" aria-label="订阅二维码" style="width: 148px; height: 148px; border-radius: 10px; background: #E6E9EE; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; padding: 12px; box-sizing: border-box">
+              <sc-for list="{{qr}}" as="q" hint-placeholder-count="49"><span style="background: {{q}}; border-radius: 2px"></span></sc-for>
+            </div>
+            <span style="font-size: 12px; color: #848D9A">手机客户端扫码导入</span>
+          </div>
+        </section>
+
+        <div style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 10px; background: #0F1D17; border: 1px solid #1C3A2C; font-size: 13px; color: #B9EBD2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3ECF8E" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+          防封锁保护：Shadowsocks 落地节点不会出现在订阅中，只经 VLESS-Reality 链式隧道访问。
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+          <section class="card" style="flex: 1 1 320px; padding: 20px; display: flex; flex-direction: column; gap: 4px">
+            <div style="display: flex; align-items: center; margin-bottom: 8px">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 600">包含的节点</h3>
+              <span style="margin-left: auto; font-size: 12px; color: #848D9A">取消勾选即从此订阅移除</span>
+            </div>
+            <sc-for list="{{nodes}}" as="n" hint-placeholder-count="7">
+              <label style="display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #1C2027; font-size: 13px; cursor: pointer">
+                <input type="checkbox" checked="{{n.on}}" style="width: 16px; height: 16px; accent-color: #6EA8FE">
+                <span class="mono" style="font-size: 11px; color: #848D9A; width: 22px">{{n.cc}}</span>
+                <span style="flex: 1">{{n.name}}</span>
+                <span class="mono" style="font-size: 11.5px; color: #848D9A">{{n.kind}}</span>
+              </label>
+            </sc-for>
+          </section>
+
+          <section class="card" style="flex: 1.4 1 420px; min-width: 0; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+              <h3 style="margin: 0; font-size: 15px; font-weight: 600">配置预览</h3>
+              <div role="tablist" style="display: flex; gap: 2px; padding: 3px; border: 1px solid #232831; border-radius: 8px">
+                <sc-for list="{{fmts}}" as="f" hint-placeholder-count="4">
+                  <button role="tab" aria-selected="{{f.sel}}" onClick="{{f.pick}}" style="{{f.style}}">{{f.label}}</button>
+                </sc-for>
+              </div>
+              <button class="btn" style="margin-left: auto; height: 30px; font-size: 12.5px">下载文件</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; background: #161A20">
+                  <span style="font-size: 13.5px; font-weight: 500; width: 92px">{{g.name}}</span>
+                  <span class="mono" style="font-size: 11.5px; color: #848D9A; width: 92px">{{g.type}}</span>
+                  <span style="font-size: 12.5px; color: #A3ABB7; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{g.members}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <span style="font-size: 12px; color: #848D9A">共 25 个策略组 · 显示核心 5 个 · <a href="#">查看源码</a></span>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sub: 0, fmt: 'Clash Meta' }; }
+  renderVals() {
+    const list = [
+      { name: '全球 VIP · 全协议自适应', meta: '7 个节点 · 25 个策略组', url: 'sub.nodemaster.io/api/sub/sub_99a8b7c6d5e4f3a2', pulled: '3 分钟前', pulls: 214, count: 7 },
+      { name: 'AI 大模型 & 流媒体', meta: '4 个节点 · 链式出口', url: 'sub.nodemaster.io/api/sub/sub_51c0de7a99be1f02', pulled: '1 小时前', pulls: 58, count: 4 },
+      { name: '亚太低延迟（港/日/新/韩）', meta: '4 个节点 · 自动测速', url: 'sub.nodemaster.io/api/sub/sub_7f3e21aa0c4d8b16', pulled: '昨天', pulls: 19, count: 4 }
+    ];
+    const itemStyle = (on) => 'text-align:left;display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:8px;border:0;cursor:pointer;font-family:inherit;color:#E6E9EE;' + (on ? 'background:#1A2232;box-shadow:inset 2px 0 0 #6EA8FE;' : 'background:transparent;');
+    const seg = (on) => 'height:26px;padding:0 10px;border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;' + (on ? 'background:#232A35;color:#E6E9EE;' : 'background:transparent;color:#A3ABB7;');
+    const pattern = '1110111100010110101011100111010001101011011010111';
+    return {
+      subs: list.map((s, i) => Object.assign({}, s, { style: itemStyle(this.state.sub === i), pick: () => this.setState({ sub: i }) })),
+      cur: list[this.state.sub],
+      qr: pattern.split('').map((c) => c === '1' ? '#0B0D10' : '#E6E9EE'),
+      fmts: ['Clash Meta', 'Sing-box', 'Egern', 'Base64'].map((label) => ({ label, sel: String(this.state.fmt === label), style: seg(this.state.fmt === label), pick: () => this.setState({ fmt: label }) })),
+      nodes: [
+        { cc: 'HK', name: '香港 CN2 GIA · 极速专线', kind: 'VLESS', on: true },
+        { cc: 'JP', name: '东京 BGP · 软银金融专线', kind: 'VLESS', on: true },
+        { cc: 'SG', name: '新加坡 · 亚太骨干枢纽', kind: 'VLESS', on: true },
+        { cc: 'US', name: '洛杉矶 AS9929 · 美西优化', kind: 'VLESS', on: true },
+        { cc: 'DE', name: '法兰克福 · 欧洲核心互联', kind: 'VLESS', on: true },
+        { cc: 'KR', name: '首尔 · 低延迟游戏专线', kind: 'VLESS', on: true },
+        { cc: 'HK', name: '香港入口 → 狮城原生', kind: '链式', on: true },
+        { cc: 'SG', name: '狮城原生（落地，不暴露）', kind: 'SS', on: false }
+      ],
+      groups: [
+        { name: '节点选择', type: 'Selector', members: '自动选择 · 美国节点 · 亚太节点 · 欧洲节点 · 手动选择 · DIRECT' },
+        { name: '自动选择', type: 'URLTest', members: '香港 CN2 GIA · 东京 BGP · 新加坡骨干 · 洛杉矶 · 法兰克福 …' },
+        { name: 'AI 服务', type: 'Selector', members: '香港入口 → 硅谷原生 · 洛杉矶 → 硅谷原生' },
+        { name: '流媒体', type: 'Selector', members: '香港入口 → 狮城原生 · 东京入口 → 狮城原生' },
+        { name: '亚太节点', type: 'URLTest', members: '香港 CN2 GIA · 东京 BGP · 新加坡骨干 · 首尔' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

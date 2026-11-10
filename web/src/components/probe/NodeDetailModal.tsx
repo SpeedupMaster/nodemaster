@@ -32,6 +32,8 @@ interface NodeDetailModalProps {
   node: NodeItem | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Render only the chart toolbar + body inline (node detail page) */
+  embedded?: boolean;
 }
 
 const getExpiryInfo = (expiresAt?: string) => {
@@ -52,6 +54,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   node,
   isOpen,
   onClose,
+  embedded = false,
 }) => {
   const [activeTab, setActiveTab] = useState<"latency" | "load">("latency");
   const [timeRange, setTimeRange] = useState<"1h" | "6h" | "12h" | "1d" | "3d" | "7d">("1h");
@@ -101,7 +104,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
         onClose();
       }
     };
-    if (isOpen) {
+    if (isOpen && !embedded) {
       document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
     }
@@ -109,7 +112,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, embedded]);
 
   useGSAP(() => {
     if (isOpen) {
@@ -551,144 +554,9 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
   };
 
   if (!isOpen || !node) return null;
-  if (typeof document === "undefined") return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden sm:overflow-y-auto">
-      {/* Full Viewport Backdrop */}
-      <div
-        ref={overlayRef}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Dialog Body (Mobile Bottom Sheet / Desktop Dialog) */}
-      <div
-        ref={modalRef}
-        style={{
-          transform: touchDeltaY > 0 ? `translateY(${touchDeltaY}px)` : undefined,
-          transition: touchDeltaY === 0 ? "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
-        }}
-        className="relative w-full max-w-5xl bg-paper-2 border-t sm:border border-rule rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh] sm:max-h-[calc(100vh-3rem)] my-0 sm:my-auto"
-      >
-        {/* Mobile Drag Indicator Handle (iOS/Material Bottom Sheet Pill) */}
-        <div
-          className="sm:hidden pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none bg-paper-2 shrink-0"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          aria-hidden="true"
-        >
-          <div className="w-10 h-1.5 bg-rule-active/80 hover:bg-rule-active rounded-full transition-colors" />
-        </div>
-
-        {/* Modal Header */}
-        <div
-          className="flex items-start sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-rule bg-paper-2/95 backdrop-blur flex-shrink-0 gap-3"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-            <span className="text-2xl shrink-0 mt-0.5 sm:mt-0">
-              {node.country === "HK" ? "🇭🇰" : node.country === "JP" ? "🇯🇵" : "🇺🇸"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <h3 className="text-base sm:text-lg font-bold text-ink tracking-tight font-sans truncate">
-                  {node.name}
-                </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0">
-                  {node.ip}:{node.port}
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
-                  {node.os || "Debian 12"}
-                </span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded border font-mono font-medium shrink-0 ${
-                    (node.tcpCongestion || "bbr").toLowerCase() === "bbr"
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
-                      : "bg-paper-3 text-ink-muted border-rule"
-                  }`}
-                  title="TCP 拥塞算法与内核调优状态"
-                >
-                  TCP: {(node.tcpCongestion || "bbr").toUpperCase()}
-                </span>
-              </div>
-              <div className="text-[11px] text-ink-muted flex items-center gap-2 mt-1 flex-wrap">
-                <span className="flex items-center gap-1 shrink-0">
-                  <Clock className="w-3.5 h-3.5 text-ink-muted" />
-                  <span>在线时长: {formatUptime(node.uptime)}</span>
-                </span>
-                <span>•</span>
-                <span>架构: {node.arch || "x86_64"}</span>
-                <span>•</span>
-                <span>峰值带宽: {node.bandwidthMbps ? `${node.bandwidthMbps} Mbps` : "1 Gbps"}</span>
-                {node.costAmount != null && node.costAmount > 0 && (
-                  <>
-                    <span>•</span>
-                    <span className="text-amber-400 font-medium">
-                      费用: {node.costCurrency === "USD" ? "$" : node.costCurrency === "EUR" ? "€" : "¥"}{node.costAmount}{node.costPeriod === "annually" ? "/年" : node.costPeriod === "quarterly" ? "/季" : "/月"}
-                    </span>
-                  </>
-                )}
-                {node.expiresAt && (
-                  <>
-                    <span>•</span>
-                    {(() => {
-                      const exp = getExpiryInfo(node.expiresAt);
-                      return (
-                        <span
-                          className={`flex items-center gap-1 font-medium ${
-                            exp?.isExpired
-                              ? "text-status-danger"
-                              : exp?.isExpiringSoon
-                              ? "text-amber-400"
-                              : "text-ink-secondary"
-                          }`}
-                        >
-                          <CalendarBlank className="w-3.5 h-3.5" />
-                          <span>到期: {node.expiresAt}</span>
-                          <span className="text-[10px] opacity-80">
-                            ({exp?.isExpired ? "已到期" : `剩 ${exp?.diffDays} 天`})
-                          </span>
-                          <span
-                            className={`text-[9px] px-1 py-0.2 rounded border font-mono ${
-                              node.autoRenew
-                                ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                                : "bg-paper-3 text-ink-muted border-rule"
-                            }`}
-                          >
-                            {node.autoRenew ? "自动续费" : "手动续费"}
-                          </span>
-                        </span>
-                      );
-                    })()}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <Badge
-              variant={node.status === "online" ? "online" : "danger"}
-              size="sm"
-              pulse={node.status === "online"}
-            >
-              {node.status === "online" ? "在线" : "离线"}
-            </Badge>
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-10 h-10 -mr-2 rounded-xl flex items-center justify-center text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors shrink-0 touch-manipulation cursor-pointer"
-              aria-label="关闭弹窗"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
+  const content = (
+    <>
         {/* View Controls Toolbar */}
         <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-rule flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-paper/30 shrink-0">
           {/* Segmented Mode Switch: 负载 | 延迟 */}
@@ -743,7 +611,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
         </div>
 
         {/* Modal Body Content */}
-        <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6 flex-1 min-h-0 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]">
+        <div className={`p-3.5 sm:p-6 space-y-4 sm:space-y-6 ${embedded ? "" : "flex-1 min-h-0 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]"}`}>
           {/* ═══════════════════════════════════════════════════════════
               TAB 1: LATENCY VIEW (Lieflat Hairline Line & Hairarea)
               ═══════════════════════════════════════════════════════════ */}
@@ -813,7 +681,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           </div>
                         </div>
                         <div className="text-[10px] font-mono text-ink-muted mt-1.5 flex items-center justify-between">
-                          <span className={task.lossRate >= 50 ? "text-rose-400 font-semibold" : task.lossRate > 0 ? "text-amber-400 font-semibold" : ""}>{task.lossRate > 0 ? `${task.lossRate.toFixed(1)}%丢包` : "0%丢包"}</span>
+                          <span className={task.lossRate >= 50 ? "text-status-danger font-semibold" : task.lossRate > 0 ? "text-status-warning font-semibold" : ""}>{task.lossRate > 0 ? `${task.lossRate.toFixed(1)}%丢包` : "0%丢包"}</span>
                           <span>±{task.jitter.toFixed(1)}ms抖动</span>
                         </div>
                       </div>
@@ -1090,7 +958,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                   isHovered
                                     ? "bg-paper-3 font-bold ring-1 ring-accent/30"
                                     : isWorst
-                                    ? "bg-red-500/10 border border-red-500/20"
+                                    ? "bg-status-danger/10 border border-status-danger/20"
                                     : "hover:bg-paper-3/50"
                                 }`}
                               >
@@ -1104,7 +972,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                   />
                                   <span className="truncate">{series.taskName}</span>
                                   {isWorst && (
-                                    <span className="text-[9px] px-1 py-0.2 rounded bg-red-500/20 text-red-400 font-bold shrink-0">
+                                    <span className="text-[9px] px-1 py-0.2 rounded bg-status-danger/20 text-status-danger font-bold shrink-0">
                                       最高
                                     </span>
                                   )}
@@ -1197,7 +1065,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
                   <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
-                    <Database className="w-3.5 h-3.5 text-indigo-400" />
+                    <Database className="w-3.5 h-3.5 text-accent" />
                     <span>物理内存负载</span>
                   </div>
                   <div className="text-xl font-bold text-ink font-mono mt-1">
@@ -1227,14 +1095,14 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
 
                 <div className="p-3.5 rounded-xl bg-paper border border-rule shadow-xs">
                   <div className="text-[11px] text-ink-muted flex items-center gap-1.5 font-medium">
-                    <Lightning className="w-3.5 h-3.5 text-emerald-400" />
+                    <Lightning className="w-3.5 h-3.5 text-status-online" />
                     <span>实时网速吞吐</span>
                   </div>
-                  <div className="text-sm font-bold text-emerald-400 mt-1 flex items-center gap-1 font-mono">
+                  <div className="text-sm font-bold text-status-online mt-1 flex items-center gap-1 font-mono">
                     <ArrowDown className="w-3 h-3" />
                     <span>{((node.downlinkSpeedBytes || 0) / 1024).toFixed(0)} KB/s</span>
                   </div>
-                  <div className="text-[11px] font-bold text-sky-400 mt-0.5 flex items-center gap-1 font-mono">
+                  <div className="text-[11px] font-bold text-accent mt-0.5 flex items-center gap-1 font-mono">
                     <ArrowUp className="w-3 h-3" />
                     <span>{((node.uplinkSpeedBytes || 0) / 1024).toFixed(0)} KB/s</span>
                   </div>
@@ -1248,7 +1116,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                   <h2 className="text-[15px] font-bold text-ink tracking-tight font-sans flex items-center gap-2">
                     <span>综合算力与硬件资源时序消耗</span>
                     {peakMetric === "cpu" && peakCpuVal > 0 && (
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-sky-500/40 bg-sky-500/10 text-sky-400">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border border-accent/40 bg-accent/10 text-accent">
                         CPU 峰值 {formatPct(peakCpuVal)}%
                       </span>
                     )}
@@ -1273,7 +1141,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                       onClick={() => setPeakMetric("cpu")}
                       className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
                         peakMetric === "cpu"
-                          ? "bg-sky-500/15 text-sky-400 border border-sky-500/35 font-semibold shadow-xs"
+                          ? "bg-accent/15 text-accent border border-accent/35 font-semibold shadow-xs"
                           : "bg-paper border border-rule text-ink-muted hover:text-ink hover:bg-paper-2"
                       }`}
                       title="点击聚焦 CPU 并切换峰值展示"
@@ -1566,7 +1434,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                         </div>
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="flex items-center gap-1.5 text-sky-400">
+                            <span className="flex items-center gap-1.5 text-accent">
                               <span className="w-2 h-2 rounded-full bg-[#00a2ff] shrink-0" />
                               <span>CPU 占用</span>
                             </span>
@@ -1615,11 +1483,11 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-[10px] font-mono text-ink-muted">
-                        <span className="flex items-center gap-1 text-sky-400">
+                        <span className="flex items-center gap-1 text-accent">
                           <span className="w-2 h-1 rounded-xs bg-[#06b6d4]" />
                           <span>▲ 上行 (Tx, 出站)</span>
                         </span>
-                        <span className="flex items-center gap-1 text-emerald-400">
+                        <span className="flex items-center gap-1 text-status-online">
                           <span className="w-2 h-1 rounded-xs bg-[#10b981]" />
                           <span>▼ 下行 (Rx, 入站)</span>
                         </span>
@@ -1740,7 +1608,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x={netPadding.left - 12}
                           y={netPadding.top + 8}
                           textAnchor="end"
-                          className="fill-sky-400 text-[10px] font-mono font-bold"
+                          className="fill-accent text-[10px] font-mono font-bold"
                         >
                           ▲ Tx
                         </text>
@@ -1756,7 +1624,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                           x={netPadding.left - 12}
                           y={netPadding.top + netInnerHeight - 4}
                           textAnchor="end"
-                          className="fill-emerald-400 text-[10px] font-mono font-bold"
+                          className="fill-status-online text-[10px] font-mono font-bold"
                         >
                           ▼ Rx
                         </text>
@@ -1823,7 +1691,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                             </div>
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-[11px]">
-                                <span className="flex items-center gap-1.5 text-sky-400">
+                                <span className="flex items-center gap-1.5 text-accent">
                                   <span className="w-2 h-2 rounded-full bg-[#06b6d4] shrink-0" />
                                   <span>▲ 上行 (Tx)</span>
                                 </span>
@@ -1832,7 +1700,7 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                 </span>
                               </div>
                               <div className="flex items-center justify-between text-[11px]">
-                                <span className="flex items-center gap-1.5 text-emerald-400">
+                                <span className="flex items-center gap-1.5 text-status-online">
                                   <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" />
                                   <span>▼ 下行 (Rx)</span>
                                 </span>
@@ -1845,9 +1713,9 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
                                 <span
                                   className={`font-semibold ${
                                     isTxDominant
-                                      ? "text-sky-400"
+                                      ? "text-accent"
                                       : isRxDominant
-                                      ? "text-emerald-400"
+                                      ? "text-status-online"
                                       : "text-ink-secondary"
                                   }`}
                                 >
@@ -1906,6 +1774,152 @@ export const NodeDetailModal: React.FC<NodeDetailModalProps> = ({
             </div>
           )}
         </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="rounded-xl border border-rule bg-paper-2 overflow-hidden flex flex-col">{content}</div>;
+  }
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 overflow-hidden sm:overflow-y-auto">
+      {/* Full Viewport Backdrop */}
+      <div
+        ref={overlayRef}
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Dialog Body (Mobile Bottom Sheet / Desktop Dialog) */}
+      <div
+        ref={modalRef}
+        style={{
+          transform: touchDeltaY > 0 ? `translateY(${touchDeltaY}px)` : undefined,
+          transition: touchDeltaY === 0 ? "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+        }}
+        className="relative w-full max-w-5xl bg-paper-2 border-t sm:border border-rule rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh] sm:max-h-[calc(100vh-3rem)] my-0 sm:my-auto"
+      >
+        {/* Mobile Drag Indicator Handle (iOS/Material Bottom Sheet Pill) */}
+        <div
+          className="sm:hidden pt-3 pb-1 flex justify-center cursor-grab active:cursor-grabbing touch-none select-none bg-paper-2 shrink-0"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          aria-hidden="true"
+        >
+          <div className="w-10 h-1.5 bg-rule-active/80 hover:bg-rule-active rounded-full transition-colors" />
+        </div>
+
+        {/* Modal Header */}
+        <div
+          className="flex items-start sm:items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-rule bg-paper-2/95 backdrop-blur flex-shrink-0 gap-3"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+            <span className="text-2xl shrink-0 mt-0.5 sm:mt-0">
+              {node.country === "HK" ? "🇭🇰" : node.country === "JP" ? "🇯🇵" : "🇺🇸"}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-ink tracking-tight font-sans truncate">
+                  {node.name}
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-muted border border-rule font-mono shrink-0">
+                  {node.ip}:{node.port}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-paper-3 text-ink-secondary border border-rule font-sans shrink-0">
+                  {node.os || "Debian 12"}
+                </span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded border font-mono font-medium shrink-0 ${
+                    (node.tcpCongestion || "bbr").toLowerCase() === "bbr"
+                      ? "bg-status-online/10 text-status-online border-status-online/25"
+                      : "bg-paper-3 text-ink-muted border-rule"
+                  }`}
+                  title="TCP 拥塞算法与内核调优状态"
+                >
+                  TCP: {(node.tcpCongestion || "bbr").toUpperCase()}
+                </span>
+              </div>
+              <div className="text-[11px] text-ink-muted flex items-center gap-2 mt-1 flex-wrap">
+                <span className="flex items-center gap-1 shrink-0">
+                  <Clock className="w-3.5 h-3.5 text-ink-muted" />
+                  <span>在线时长: {formatUptime(node.uptime)}</span>
+                </span>
+                <span>•</span>
+                <span>架构: {node.arch || "x86_64"}</span>
+                <span>•</span>
+                <span>峰值带宽: {node.bandwidthMbps ? `${node.bandwidthMbps} Mbps` : "1 Gbps"}</span>
+                {node.costAmount != null && node.costAmount > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-status-warning font-medium">
+                      费用: {node.costCurrency === "USD" ? "$" : node.costCurrency === "EUR" ? "€" : "¥"}{node.costAmount}{node.costPeriod === "annually" ? "/年" : node.costPeriod === "quarterly" ? "/季" : "/月"}
+                    </span>
+                  </>
+                )}
+                {node.expiresAt && (
+                  <>
+                    <span>•</span>
+                    {(() => {
+                      const exp = getExpiryInfo(node.expiresAt);
+                      return (
+                        <span
+                          className={`flex items-center gap-1 font-medium ${
+                            exp?.isExpired
+                              ? "text-status-danger"
+                              : exp?.isExpiringSoon
+                              ? "text-status-warning"
+                              : "text-ink-secondary"
+                          }`}
+                        >
+                          <CalendarBlank className="w-3.5 h-3.5" />
+                          <span>到期: {node.expiresAt}</span>
+                          <span className="text-[10px] opacity-80">
+                            ({exp?.isExpired ? "已到期" : `剩 ${exp?.diffDays} 天`})
+                          </span>
+                          <span
+                            className={`text-[9px] px-1 py-0.2 rounded border font-mono ${
+                              node.autoRenew
+                                ? "bg-status-online/15 text-status-online border-status-online/30"
+                                : "bg-paper-3 text-ink-muted border-rule"
+                            }`}
+                          >
+                            {node.autoRenew ? "自动续费" : "手动续费"}
+                          </span>
+                        </span>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Badge
+              variant={node.status === "online" ? "online" : "danger"}
+              size="sm"
+              pulse={node.status === "online"}
+            >
+              {node.status === "online" ? "在线" : "离线"}
+            </Badge>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-10 h-10 -mr-2 rounded-xl flex items-center justify-center text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors shrink-0 touch-manipulation cursor-pointer"
+              aria-label="关闭弹窗"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {content}
       </div>
     </div>,
     document.body

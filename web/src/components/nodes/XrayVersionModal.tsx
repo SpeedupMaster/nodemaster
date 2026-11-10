@@ -199,12 +199,12 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
               </span>
             </div>
 
-            <div className="px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
-              <span className="text-xs text-emerald-400 flex items-center gap-1.5 whitespace-nowrap">
+            <div className="px-3 py-2 rounded-lg bg-status-online/10 border border-status-online/20 flex items-center justify-between">
+              <span className="text-xs text-status-online flex items-center gap-1.5 whitespace-nowrap">
                 <CheckCircle className="w-3.5 h-3.5 shrink-0" />
                 已是最新内核
               </span>
-              <span className="text-xs font-mono font-bold text-emerald-400 whitespace-nowrap">
+              <span className="text-xs font-mono font-bold text-status-online whitespace-nowrap">
                 {upToDateCount} 个
               </span>
             </div>
@@ -212,13 +212,13 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
             <div
               className={`px-3 py-2 rounded-lg border flex items-center justify-between ${
                 outdatedCount > 0
-                  ? "bg-amber-500/10 border-amber-500/25"
+                  ? "bg-status-warning/10 border-status-warning/25"
                   : "bg-paper-3/60 border-rule-subtle"
               }`}
             >
               <span
                 className={`text-xs flex items-center gap-1.5 whitespace-nowrap ${
-                  outdatedCount > 0 ? "text-amber-400" : "text-ink-muted"
+                  outdatedCount > 0 ? "text-status-warning" : "text-ink-muted"
                 }`}
               >
                 <WarningCircle className="w-3.5 h-3.5 shrink-0" />
@@ -226,7 +226,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
               </span>
               <span
                 className={`text-xs font-mono font-bold whitespace-nowrap ${
-                  outdatedCount > 0 ? "text-amber-400" : "text-ink-muted"
+                  outdatedCount > 0 ? "text-status-warning" : "text-ink-muted"
                 }`}
               >
                 {outdatedCount} 个
@@ -240,7 +240,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
           <div
             className={`p-3 rounded-lg text-xs flex items-center gap-2 border font-medium ${
               feedbackMsg.type === "success"
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                ? "bg-status-online/10 text-status-online border-status-online/25"
                 : "bg-status-danger-bg text-status-danger border-status-danger/30"
             }`}
           >
@@ -298,8 +298,8 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
                       </div>
 
                       {/* 节点运行环境 */}
-                      {node.upgradeStatus === "pending" && <p className="text-xs text-amber-400 mt-1">等待探针执行并确认 {node.desiredXrayVersion}</p>}
-                      {node.upgradeStatus === "failed" && <p role="alert" className="text-xs text-red-400 mt-1">升级失败：{node.upgradeError || "请重试"}</p>}
+                      {node.upgradeStatus === "pending" && <p className="text-xs text-status-warning mt-1">等待探针执行并确认 {node.desiredXrayVersion}</p>}
+                      {node.upgradeStatus === "failed" && <p role="alert" className="text-xs text-status-danger mt-1">升级失败：{node.upgradeError || "请重试"}</p>}
                       <div className="text-xs text-ink-muted mt-1.5 flex items-center gap-2 font-mono flex-wrap">
                         <span>系统: {node.os || "Linux"}</span>
                         <span>•</span>
@@ -312,13 +312,13 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
                       {/* 版本指示器 */}
                       <div className="text-right flex items-center gap-1.5 font-mono">
                         {isLatest ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-status-online/10 text-status-online border border-status-online/25">
                             <CheckCircle className="w-3.5 h-3.5" />
                             {currentVer}
                           </span>
                         ) : (
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-paper-2 border border-rule">
-                            <span className="font-semibold text-amber-400">{currentVer}</span>
+                            <span className="font-semibold text-status-warning">{currentVer}</span>
                             <ArrowRight className="w-3 h-3 text-ink-muted" />
                             <span className="font-semibold text-accent">
                               {versionInfo?.latestVersion}
@@ -330,7 +330,7 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
                       {/* 操作按钮 */}
                       <div className="shrink-0">
                         {isLatest ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-mono font-medium text-emerald-400 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-xs font-mono font-medium text-status-online px-3 py-1.5 rounded-lg bg-status-online/10 border border-status-online/20 whitespace-nowrap">
                             <Check className="w-3.5 h-3.5" />
                             已是最新
                           </span>
@@ -366,9 +366,9 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
           <div className="px-4 py-2 bg-paper-3/80 border-b border-rule flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-status-danger/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-status-warning/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-status-online/80 inline-block" />
               </div>
               <span className="text-xs font-mono text-ink-secondary ml-1.5 flex items-center gap-1.5 font-medium">
                 <Terminal className="w-3.5 h-3.5 text-accent" />
@@ -382,8 +382,8 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
             >
               {copiedCmd ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400 font-semibold">已复制命令</span>
+                  <Check className="w-3.5 h-3.5 text-status-online" />
+                  <span className="text-status-online font-semibold">已复制命令</span>
                 </>
               ) : (
                 <>
@@ -403,9 +403,9 @@ export const XrayVersionModal: React.FC<XrayVersionModalProps> = ({
           {/* 终端底部功能提示 */}
           <div className="px-4 py-2.5 bg-paper-2 border-t border-rule-subtle text-[11px] text-ink-muted flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-emerald-400">✓ 架构自适应 (x86_64 / arm64)</span>
+              <span className="text-status-online">✓ 架构自适应 (x86_64 / arm64)</span>
               <span>•</span>
-              <span className="text-emerald-400">✓ 配置预检与失败回滚</span>
+              <span className="text-status-online">✓ 配置预检与失败回滚</span>
               <span>•</span>
               <span>重启 nodemaster-proxy，连接会短暂中断</span>
             </div>

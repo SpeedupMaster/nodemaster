@@ -710,7 +710,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteSubscription(s)}
-                    className="pr-2 pl-0.5 py-1 text-ink-muted hover:text-rose-400 cursor-pointer"
+                    className="pr-2 pl-0.5 py-1 text-ink-muted hover:text-status-danger cursor-pointer"
                     title="删除此订阅"
                   >
                     <Trash className="w-3.5 h-3.5" />
@@ -727,7 +727,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
             <Plus className="w-3.5 h-3.5" />
             新建订阅
           </button>
-          {subActionError && <span className="text-xs text-rose-400">{subActionError}</span>}
+          {subActionError && <span className="text-xs text-status-danger">{subActionError}</span>}
         </div>
 
         {/* URL Box & Custom Editor */}
@@ -763,7 +763,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 size="sm"
                 className="flex-1 sm:flex-initial justify-center min-h-[36px] sm:min-h-0 touch-manipulation"
                 onClick={handleCopyLink}
-                icon={copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+                icon={copiedLink ? <Check className="w-3.5 h-3.5 text-status-online shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               >
                 {copiedLink ? "已复制链接" : "复制订阅链接"}
               </Button>
@@ -854,7 +854,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 </span>
               </div>
               {urlError && (
-                <span className="text-xs text-rose-500 font-medium flex-shrink-0">
+                <span className="text-xs text-status-danger font-medium flex-shrink-0">
                   {urlError}
                 </span>
               )}
@@ -919,10 +919,10 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
           </div>
 
           {/* Anti-GFW Exit Node Protection Banner */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-xs text-ink-secondary">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-status-online/10 border border-status-online/25 text-xs text-ink-secondary">
+            <ShieldCheck className="w-4 h-4 text-status-online shrink-0" />
             <span>
-              <strong className="text-emerald-300">防封锁落地保护已生效：</strong>
+              <strong className="text-status-online">防封锁落地保护已生效：</strong>
               Shadowsocks / 住宅解锁落地节点裸连极易被主动探测封锁，已在订阅中自动隐藏，仅通过 VLESS-Reality 链式隧道安全提供。
             </span>
           </div>
@@ -987,7 +987,7 @@ export const SubscriptionView: React.FC<SubscriptionViewProps> = ({
                 size="sm"
                 onClick={handleCopyContent}
                 className="flex-1 sm:flex-initial justify-center whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
-                icon={copiedContent ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+                icon={copiedContent ? <Check className="w-3.5 h-3.5 text-status-online shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
               >
                 {copiedContent ? "已复制" : "复制内容"}
               </Button>

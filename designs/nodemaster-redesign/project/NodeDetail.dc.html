@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 节点详情</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+.bar{height:4px;border-radius:2px;background:#232831;overflow:hidden}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #1C2027;font-size:13px}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="nodes" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <!-- Page header -->
+    <header style="padding: 20px 32px 0; display: flex; flex-direction: column; gap: 16px; border-bottom: 1px solid #232831">
+      <nav aria-label="面包屑" style="display: flex; gap: 8px; font-size: 13px; color: #848D9A">
+        <a href="Nodes.dc.html">节点</a><span>/</span><span style="color: #A3ABB7">香港 CN2 GIA · 极速专线</span>
+      </nav>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+        <div style="display: flex; gap: 14px; align-items: flex-start; flex: 1 1 520px; min-width: 0">
+          <span class="mono" style="width: 44px; height: 44px; border-radius: 10px; background: #1C2129; color: #A3ABB7; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex: none">HK</span>
+          <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 700">香港 CN2 GIA · 极速专线</h1>
+              <span class="chip" style="background: #11241C; color: #3ECF8E"><span style="width: 6px; height: 6px; border-radius: 50%; background: #3ECF8E"></span>在线</span>
+              <span class="chip" style="background: #1A2232; color: #6EA8FE">主力直连</span>
+            </div>
+            <div class="mono" style="display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: #A3ABB7">
+              <span>45.154.12.88:443</span><span>Debian 12 · x86_64</span><span>VLESS-Reality</span><span>Xray v1.8.24</span><span>BBR</span><span>1 Gbps</span><span>运行 148 天 12 小时</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V4H4v12h4"></path></svg>复制节点链接</button>
+          <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16v14H4zM8 10l3 2-3 2M13 15h4"></path></svg>远程命令</button>
+          <button class="btn">编辑</button>
+          <button class="btn" aria-label="更多操作" style="width: 36px; padding: 0; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg></button>
+        </div>
+      </div>
+      <div role="tablist" style="display: flex; gap: 24px; font-size: 14px; overflow-x: auto">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+          <button role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+    </header>
+
+    <div style="padding: 24px 32px 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; max-width: 1400px; width: 100%; box-sizing: border-box; align-items: start">
+      <!-- Left: wide column -->
+      <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <!-- Resources -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+          <sc-for list="{{res}}" as="r" hint-placeholder-count="4">
+            <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 12.5px; color: #A3ABB7">{{r.label}}</span>
+              <span class="mono" style="font-size: 22px">{{r.value}}</span>
+              <div class="bar"><div style="height: 100%; width: {{r.pct}}; background: {{r.color}}"></div></div>
+              <span class="mono" style="font-size: 11.5px; color: #848D9A">{{r.sub}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- Quality matrix -->
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">三网回程质量</h2>
+            <span style="font-size: 12px; color: #848D9A">TCP 探测 · 4 包并发 · 过去 1 小时均值</span>
+            <div role="group" aria-label="时间范围" style="margin-left: auto; display: flex; gap: 2px; padding: 3px; border: 1px solid #232831; border-radius: 8px">
+              <sc-for list="{{ranges}}" as="g" hint-placeholder-count="6">
+                <button onClick="{{g.pick}}" style="{{g.style}}">{{g.label}}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="overflow-x: auto">
+            <table style="width: 100%; border-collapse: collapse; min-width: 560px">
+              <thead><tr>
+                <th style="text-align: left; font-size: 12px; font-weight: 500; color: #848D9A; padding: 0 0 10px">测速点</th>
+                <th style="text-align: left; font-size: 12px; font-weight: 500; color: #848D9A; padding: 0 0 10px">中国移动</th>
+                <th style="text-align: left; font-size: 12px; font-weight: 500; color: #848D9A; padding: 0 0 10px">中国联通</th>
+                <th style="text-align: left; font-size: 12px; font-weight: 500; color: #848D9A; padding: 0 0 10px">中国电信</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{matrix}}" as="row" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding: 6px 12px 6px 0; font-size: 13.5px; font-weight: 500; white-space: nowrap">{{row.prov}}</td>
+                    <sc-for list="{{row.cells}}" as="c" hint-placeholder-count="3">
+                      <td style="padding: 6px 8px 6px 0">
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: #161A20; border: 1px solid #1F242C">
+                          <span style="width: 8px; height: 8px; border-radius: 50%; background: {{c.color}}"></span>
+                          <span class="mono" style="font-size: 16px">{{c.ms}}<span style="font-size: 11px; color: #848D9A"> ms</span></span>
+                          <span class="mono" style="margin-left: auto; font-size: 11px; color: #848D9A">{{c.loss}} · ±{{c.jit}}</span>
+                        </div>
+                      </td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 4px">
+            <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: #A3ABB7">
+              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 2px; background: #6EA8FE"></span>移动（均值）</span>
+              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 2px; background: #F0B341"></span>联通（均值）</span>
+              <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 2px; background: #A58BFA"></span>电信（均值）</span>
+              <label style="margin-left: auto; display: flex; align-items: center; gap: 6px"><input type="checkbox" checked>平滑曲线</label>
+            </div>
+            <svg viewBox="0 0 720 180" preserveAspectRatio="none" style="width: 100%; height: 180px" role="img" aria-label="三网回程延迟走势">
+              <line x1="0" y1="45" x2="720" y2="45" stroke="#1C2027"></line>
+              <line x1="0" y1="90" x2="720" y2="90" stroke="#1C2027"></line>
+              <line x1="0" y1="135" x2="720" y2="135" stroke="#1C2027"></line>
+              <polyline points="{{l1}}" fill="none" stroke="#6EA8FE" stroke-width="1.8"></polyline>
+              <polyline points="{{l2}}" fill="none" stroke="#F0B341" stroke-width="1.8"></polyline>
+              <polyline points="{{l3}}" fill="none" stroke="#A58BFA" stroke-width="1.8"></polyline>
+            </svg>
+            <div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; color: #848D9A"><span>09:41</span><span>09:56</span><span>10:11</span><span>10:26</span><span>10:41</span></div>
+          </div>
+        </section>
+
+        <!-- Traffic -->
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">本月流量</h2>
+            <span class="mono" style="font-size: 13px; color: #A3ABB7">4935.7 / 10240 GB · 48.2%</span>
+            <span style="margin-left: auto; font-size: 12px; color: #848D9A">每月 1 日重置 · 超额自动熔断</span>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 4px; height: 120px">
+            <sc-for list="{{days}}" as="d" hint-placeholder-count="30">
+              <div title="{{d.label}}" style="flex: 1; border-radius: 2px 2px 0 0; height: {{d.h}}; background: {{d.color}}"></div>
+            </sc-for>
+          </div>
+          <div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; color: #848D9A"><span>11-01</span><span>11-10（今天）</span><span>11-30</span></div>
+        </section>
+      </div>
+
+      <!-- Right column -->
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <section class="card" style="padding: 20px">
+          <h2 style="margin: 0 0 8px; font-size: 15px; font-weight: 600">账单与到期</h2>
+          <div class="kv"><span style="color: #A3ABB7">费用</span><span class="mono">¥168 / 月</span></div>
+          <div class="kv"><span style="color: #A3ABB7">到期日</span><span class="mono">2026-12-31（剩 66 天）</span></div>
+          <div class="kv"><span style="color: #A3ABB7">自动续费</span><span style="color: #3ECF8E">已开启</span></div>
+          <div class="kv"><span style="color: #A3ABB7">峰值带宽</span><span class="mono">1000 Mbps</span></div>
+        </section>
+
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">链式出口</h2>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: #161A20"><span class="mono" style="color: #848D9A">HK</span>本节点（入口）</div>
+            <div style="padding-left: 18px; font-size: 12px; color: #848D9A">↓ 匹配 Netflix / Disney+ / YouTube</div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: #1D1A2B; color: #C9B8FF"><span class="mono">SG</span>狮城原生 · 4K 流媒体解锁</div>
+            <div style="padding-left: 18px; font-size: 12px; color: #848D9A">其余流量 → 本机直连出站</div>
+          </div>
+          <a href="Topology.dc.html" style="font-size: 13px">在拓扑中编辑 →</a>
+        </section>
+
+        <section class="card" style="padding: 20px">
+          <h2 style="margin: 0 0 8px; font-size: 15px; font-weight: 600">组件版本</h2>
+          <div class="kv"><span style="color: #A3ABB7">Xray 内核</span><span><span class="mono">v1.8.24</span> <a href="#" style="margin-left: 6px">升级到 v26.1</a></span></div>
+          <div class="kv"><span style="color: #A3ABB7">系统探针</span><span class="mono">v1.4.0 · 最新</span></div>
+          <div class="kv"><span style="color: #A3ABB7">TCP 调优</span><span>BBR + FQ</span></div>
+        </section>
+
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0 0 8px; font-size: 15px; font-weight: 600">最近事件</h2>
+          <sc-for list="{{events}}" as="e" hint-placeholder-count="4">
+            <div style="display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid #1C2027; font-size: 13px">
+              <span class="mono" style="color: #848D9A; font-size: 12px; width: 76px; flex: none">{{e.t}}</span>
+              <span style="color: #C5CBD3">{{e.text}}</span>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1620}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: '概览', range: '1 小时' }; }
+  renderVals() {
+    const tabStyle = (on) => 'background:none;border:0;padding:0 0 12px;cursor:pointer;font-family:inherit;font-size:14px;white-space:nowrap;' + (on ? 'color:#E6E9EE;font-weight:600;box-shadow:inset 0 -2px 0 #6EA8FE;' : 'color:#A3ABB7;font-weight:500;');
+    const segStyle = (on) => 'height:26px;padding:0 10px;border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;' + (on ? 'background:#232A35;color:#E6E9EE;' : 'background:transparent;color:#A3ABB7;');
+    const col = (ms) => ms < 20 ? '#3ECF8E' : ms < 30 ? '#6EA8FE' : '#F0B341';
+    const cell = (ms, loss, jit) => ({ ms, loss, jit, color: col(ms) });
+    const wave = (base, amp, seed) => Array.from({ length: 40 }, (_, i) => {
+      const v = base + Math.sin(i / 3 + seed) * amp + Math.cos(i / 1.7 + seed) * amp * 0.5;
+      return (i * 720 / 39).toFixed(1) + ',' + (180 - v / 40 * 170).toFixed(1);
+    }).join(' ');
+    const dayVals = [168, 172, 181, 159, 166, 190, 214, 175, 170, 96];
+    return {
+      tabs: ['概览', '网络质量', '流量', '配置文件', '操作日志'].map((label) => ({ label, sel: String(this.state.tab === label), style: tabStyle(this.state.tab === label), pick: () => this.setState({ tab: label }) })),
+      ranges: ['1 小时', '6 小时', '12 小时', '1 天', '3 天', '7 天'].map((label) => ({ label, style: segStyle(this.state.range === label), pick: () => this.setState({ range: label }) })),
+      res: [
+        { label: 'CPU', value: '23.4%', pct: '23.4%', color: '#6EA8FE', sub: 'Load 0.35 · 2 vCPU' },
+        { label: '内存', value: '41.2%', pct: '41.2%', color: '#A58BFA', sub: '1.6 / 4.0 GB' },
+        { label: '磁盘', value: '32.5%', pct: '32.5%', color: '#6EA8FE', sub: '26 / 80 GB' },
+        { label: 'TCP 连接', value: '342', pct: '34%', color: '#3ECF8E', sub: '↓ 21.6 · ↑ 4.8 MB/s' }
+      ],
+      matrix: [
+        { prov: '广东', cells: [cell(26.0, '0%', '0.8'), cell(19.7, '0%', '1.9'), cell(17.5, '0%', '1.2')] },
+        { prov: '湖北', cells: [cell(24.0, '0%', '0.7'), cell(21.3, '0%', '1.3'), cell(18.9, '0%', '2.2')] },
+        { prov: '四川', cells: [cell(27.2, '0%', '1.0'), cell(22.5, '0%', '1.8'), cell(16.4, '0%', '0.9')] }
+      ],
+      l1: wave(25.7, 2.2, 0), l2: wave(21.2, 2.6, 2), l3: wave(17.6, 1.8, 4),
+      days: Array.from({ length: 30 }, (_, i) => {
+        const v = dayVals[i];
+        return v ? { h: (v / 230 * 100).toFixed(0) + '%', color: i === 9 ? '#9CC3FF' : '#6EA8FE', label: '11-' + String(i + 1).padStart(2, '0') + ' · ' + v * 2.9 + ' GB' }
+                 : { h: '3%', color: '#232831', label: '未来' };
+      }),
+      events: [
+        { t: '11-10 08:02', text: '内核配置已热同步（3 条路由规则）' },
+        { t: '11-08 21:14', text: '回程延迟恢复正常（广东移动 26 ms）' },
+        { t: '11-08 20:51', text: '广东移动丢包 12%，持续 6 分钟' },
+        { t: '11-01 00:00', text: '月度流量已重置' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

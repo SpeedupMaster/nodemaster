@@ -1,50 +1,48 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  Gauge,
+  SquaresFour,
   HardDrives,
   Graph,
   LinkSimple,
   TerminalWindow,
-  ArrowUpRight,
-  ArrowDownRight,
-  Broadcast,
   Pulse,
-  PaperPlaneTilt,
+  BellSimple,
   ChartBar,
   X,
   SignOut,
 } from "@phosphor-icons/react";
-import { RollingCounter } from "../common/RollingCounter";
 import { useAuth } from "../../context/AuthContext";
-
 import { Logo } from "../common/Logo";
-import { formatSpeed } from "../../utils/format";
 
 type NavItem = { id: string; label: string; icon: React.ElementType };
 
-const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+/** Information architecture: 概览 / 节点 → 网络 → 分发 → 运维 */
+export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
-    label: "监控",
+    label: "",
     items: [
-      { id: "dashboard", label: "实时仪表盘", icon: Gauge },
-      { id: "traffic", label: "流量统计", icon: ChartBar },
-      { id: "ping", label: "延迟监测", icon: Pulse },
+      { id: "dashboard", label: "概览", icon: SquaresFour },
+      { id: "nodes", label: "节点", icon: HardDrives },
     ],
   },
   {
-    label: "管理",
+    label: "网络",
     items: [
-      { id: "nodes", label: "多节点管理", icon: HardDrives },
-      { id: "topology", label: "链式代理拓扑", icon: Graph },
-      { id: "subscription", label: "订阅分享与导出", icon: LinkSimple },
+      { id: "traffic", label: "流量统计", icon: ChartBar },
+      { id: "ping", label: "延迟监测", icon: Pulse },
+      { id: "topology", label: "链式拓扑", icon: Graph },
     ],
+  },
+  {
+    label: "分发",
+    items: [{ id: "subscription", label: "订阅与导出", icon: LinkSimple }],
   },
   {
     label: "运维",
     items: [
-      { id: "script", label: "一键部署与脚本", icon: TerminalWindow },
-      { id: "notifications", label: "Telegram 告警通知", icon: PaperPlaneTilt },
+      { id: "script", label: "接入节点", icon: TerminalWindow },
+      { id: "notifications", label: "告警中心", icon: BellSimple },
     ],
   },
 ];
@@ -56,108 +54,59 @@ interface NavListProps {
   totalCount: number;
 }
 
-/** Grouped navigation with an indicator pill that glides to the active entry */
-const NavList: React.FC<NavListProps> = ({ currentTab, onNavigate, onlineCount, totalCount }) => {
-  const navRef = useRef<HTMLElement>(null);
-  const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
-  const [indicator, setIndicator] = useState({ top: 0, height: 0 });
-  // Only glide between tabs — the very first placement should snap into position
-  const [canGlide, setCanGlide] = useState(false);
-
-  useLayoutEffect(() => {
-    const measure = () => {
-      const el = itemRefs.current[currentTab];
-      if (!el || el.offsetHeight === 0) return;
-      setIndicator({ top: el.offsetTop, height: el.offsetHeight });
-      requestAnimationFrame(() => setCanGlide(true));
-    };
-    measure();
-    // Drawer/desktop nav may be hidden (0 height) on first paint; re-measure once it lays out
-    const ro = new ResizeObserver(measure);
-    if (navRef.current) ro.observe(navRef.current);
-    return () => ro.disconnect();
-  }, [currentTab]);
-
-  return (
-    <nav ref={navRef} className="relative p-3 overflow-y-auto max-h-[calc(100vh-15rem)]">
-      {/* Gliding active indicator */}
-      <div
-        aria-hidden="true"
-        className={`absolute left-3 right-3 rounded-lg bg-accent/10 border border-accent/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] pointer-events-none ${canGlide ? "transition-[top,height] duration-300 ease-out-expo" : ""} ${
-          indicator.height > 0 ? "opacity-100" : "opacity-0"
-        }`}
-        style={{ top: indicator.top, height: indicator.height }}
-      >
-        <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-accent shadow-[0_0_10px_1px] shadow-accent/60" />
-      </div>
-
-      {NAV_GROUPS.map((group, gi) => (
-        <div key={group.label} className={gi > 0 ? "mt-4" : ""}>
-          <div className="px-3 pb-1.5 text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em]">
+const NavList: React.FC<NavListProps> = ({ currentTab, onNavigate, onlineCount, totalCount }) => (
+  <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-5">
+    {NAV_GROUPS.map((group) => (
+      <div key={group.label || "root"} className="space-y-0.5">
+        {group.label && (
+          <div className="px-2.5 pb-1.5 text-[11px] font-semibold text-ink-muted tracking-[0.06em]">
             {group.label}
           </div>
-          <div className="space-y-0.5">
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              const active = currentTab === item.id;
-              const href = item.id === "dashboard" ? "/" : `/${item.id}`;
-              return (
-                <a
-                  key={item.id}
-                  ref={(el) => {
-                    itemRefs.current[item.id] = el;
-                  }}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
-                      return; // Allow native browser new-tab click (Ctrl+Click / Cmd+Click)
-                    }
-                    e.preventDefault();
-                    onNavigate(item.id);
-                  }}
-                  className={`group relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 cursor-pointer select-none touch-manipulation ${
-                    active ? "text-ink" : "text-ink-secondary hover:text-ink hover:bg-paper-hover/70"
+        )}
+        {group.items.map((item) => {
+          const Icon = item.icon;
+          const active = currentTab === item.id;
+          const href = item.id === "dashboard" ? "/" : `/${item.id}`;
+          const unhealthy = totalCount > 0 && onlineCount < totalCount;
+          return (
+            <a
+              key={item.id}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                e.preventDefault();
+                onNavigate(item.id);
+              }}
+              className={`flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13.5px] transition-colors duration-150 select-none touch-manipulation ${
+                active
+                  ? "bg-accent-subtle text-ink font-semibold shadow-[inset_2px_0_0_0_var(--color-accent)]"
+                  : "text-ink-secondary font-medium hover:text-ink hover:bg-paper-hover"
+              }`}
+            >
+              <Icon weight={active ? "fill" : "regular"} className={`w-[17px] h-[17px] shrink-0 ${active ? "text-accent" : ""}`} />
+              <span className="flex-1 truncate">{item.label}</span>
+              {item.id === "nodes" && totalCount > 0 && (
+                <span
+                  className={`font-mono text-[11px] px-1.5 rounded-[5px] tabular-nums ${
+                    unhealthy ? "bg-status-warning-bg text-status-warning" : "bg-paper-3 text-ink-muted"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Icon
-                      weight={active ? "duotone" : "regular"}
-                      className={`w-[18px] h-[18px] shrink-0 transition-[color,transform] duration-300 ease-spring ${
-                        active
-                          ? "text-accent scale-110"
-                          : "text-ink-muted group-hover:text-ink-secondary group-hover:scale-110"
-                      }`}
-                    />
-                    <span className="truncate">{item.label}</span>
-                  </div>
-                  {item.id === "nodes" && totalCount > 0 && (
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md border tabular-nums ${
-                        onlineCount === totalCount
-                          ? "bg-status-online-bg text-status-online border-status-online/25"
-                          : "bg-status-warning-bg text-status-warning border-status-warning/25"
-                      }`}
-                    >
-                      {onlineCount}/{totalCount}
-                    </span>
-                  )}
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </nav>
-  );
-};
+                  {onlineCount}/{totalCount}
+                </span>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    ))}
+  </nav>
+);
 
 interface SidebarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
   wsConnected: boolean;
-  totalUpSpeed: number;
-  totalDownSpeed: number;
   onlineCount: number;
   totalCount: number;
   isMobileOpen?: boolean;
@@ -168,8 +117,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
   wsConnected,
-  totalUpSpeed,
-  totalDownSpeed,
   onlineCount,
   totalCount,
   isMobileOpen = false,
@@ -179,29 +126,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const openTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    if (isMobileOpen) {
-      openTimeRef.current = Date.now();
-    }
+    if (isMobileOpen) openTimeRef.current = Date.now();
   }, [isMobileOpen]);
 
-  // ESC key to close mobile drawer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isMobileOpen) {
-        onCloseMobile?.();
-      }
+      if (e.key === "Escape" && isMobileOpen) onCloseMobile?.();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isMobileOpen, onCloseMobile]);
 
-  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    if (isMobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = isMobileOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
@@ -209,151 +146,70 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Prevent synthetic ghost click on mobile from immediately dismissing the drawer
-    if (Date.now() - openTimeRef.current < 300) {
-      return;
-    }
+    // Ignore the synthetic ghost click that follows the tap which opened the drawer
+    if (Date.now() - openTimeRef.current < 300) return;
     onCloseMobile?.();
   };
 
-  const up = formatSpeed(totalUpSpeed);
-  const down = formatSpeed(totalDownSpeed);
-  const readyPct = totalCount > 0 ? Math.round((onlineCount / totalCount) * 100) : 0;
   const username = user?.username || "admin";
 
   const renderNavContent = (isMobile: boolean) => (
     <>
-      {/* Brand & Status */}
-      <div>
-        <div className="h-16 flex items-center justify-between px-5 border-b border-rule">
-          <div className="flex items-center gap-3">
-            <Logo size={34} />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm text-ink tracking-tight">
-                  NodeMaster
-                </span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-paper-3 text-ink-secondary border border-rule font-mono">
-                  v1.0
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="relative flex w-1.5 h-1.5">
-                  {wsConnected && (
-                    <span className="absolute inset-0 rounded-full bg-status-online animate-ping opacity-60" />
-                  )}
-                  <span
-                    className={`relative w-1.5 h-1.5 rounded-full ${
-                      wsConnected ? "bg-status-online" : "bg-status-warning animate-pulse"
-                    }`}
-                  />
-                </span>
-                <span className="text-[11px] text-ink-muted">
-                  {wsConnected ? "遥测在线 (WS)" : "正在连接..."}
-                </span>
-              </div>
-            </div>
+      <div className="h-16 flex items-center justify-between px-5 shrink-0">
+        <div className="flex items-center gap-2.5">
+          <Logo size={30} />
+          <div className="leading-tight">
+            <div className="font-bold text-[15px] text-ink tracking-tight">NodeMaster</div>
+            <div className="text-[11px] text-ink-muted font-mono">v1.0 · 控制面板</div>
           </div>
-
-          {/* Close Button on Mobile Drawer */}
-          {isMobile && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCloseMobile?.();
-              }}
-              className="p-2 -mr-1.5 rounded-lg text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors cursor-pointer touch-manipulation"
-              aria-label="关闭导航抽屉"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
         </div>
-
-        {/* Navigation Items */}
-        <NavList
-          currentTab={currentTab}
-          onlineCount={onlineCount}
-          totalCount={totalCount}
-          onNavigate={(tab) => {
-            onSelectTab(tab);
-            if (isMobile) {
+        {isMobile && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
               onCloseMobile?.();
-            }
-          }}
-        />
+            }}
+            className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-ink-muted hover:text-ink hover:bg-paper-3 transition-colors cursor-pointer touch-manipulation"
+            aria-label="关闭导航"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* Live Bandwidth & Bottom Stats */}
-      <div className="p-4 border-t border-rule space-y-3 bg-gradient-to-b from-transparent to-paper/60">
-        <div className="text-[10px] font-semibold text-ink-muted uppercase tracking-[0.14em] flex items-center justify-between">
-          <span>总带宽实时吞吐</span>
-          <Broadcast weight="duotone" className="w-3.5 h-3.5 text-accent animate-pulse-soft" />
+      <NavList
+        currentTab={currentTab}
+        onlineCount={onlineCount}
+        totalCount={totalCount}
+        onNavigate={(tab) => {
+          onSelectTab(tab);
+          if (isMobile) onCloseMobile?.();
+        }}
+      />
+
+      <div className="m-3 p-3 rounded-[10px] border border-rule bg-paper-2 space-y-2.5 shrink-0">
+        <div className="flex items-center gap-2 text-xs text-ink-secondary">
+          <span
+            className={`w-[7px] h-[7px] rounded-full ${wsConnected ? "bg-status-online" : "bg-status-warning animate-pulse"}`}
+          />
+          <span>{wsConnected ? "实时通道已连接" : "正在连接实时通道…"}</span>
+          <span className="ml-auto font-mono text-ink-muted">WS</span>
         </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {/* Uplink */}
-          <div className="p-2 rounded-lg bg-paper/60 border border-rule">
-            <div className="flex items-center gap-1 text-ink-muted text-[11px]">
-              <ArrowUpRight weight="bold" className="w-3 h-3 text-sky-600 dark:text-sky-400" />
-              <span>上行速率</span>
-            </div>
-            <div className="text-xs font-mono font-semibold text-ink mt-0.5">
-              <RollingCounter value={up.val} decimals={1} suffix={` ${up.unit}`} />
-            </div>
-          </div>
-
-          {/* Downlink */}
-          <div className="p-2 rounded-lg bg-paper/60 border border-rule">
-            <div className="flex items-center gap-1 text-ink-muted text-[11px]">
-              <ArrowDownRight weight="bold" className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              <span>下行速率</span>
-            </div>
-            <div className="text-xs font-mono font-semibold text-ink mt-0.5">
-              <RollingCounter value={down.val} decimals={1} suffix={` ${down.unit}`} />
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-1">
-          <div className="text-[11px] text-ink-muted flex justify-between mb-1.5">
-            <span>节点就绪率</span>
-            <span className="text-ink tabular-nums">{readyPct}%</span>
-          </div>
-          <div className="h-1 rounded-full bg-paper-3 overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-[width] duration-700 ease-out-expo ${
-                readyPct >= 90 ? "bg-status-online" : readyPct >= 50 ? "bg-status-warning" : "bg-status-danger"
-              }`}
-              style={{ width: `${readyPct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* PWA Install Entry (Desktop & Mobile Drawer) */}
-
-
-        {/* Admin Account Status */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-rule-subtle">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="w-7 h-7 rounded-lg bg-gradient-accent text-white text-xs font-bold flex items-center justify-center uppercase shrink-0 shadow-xs">
-              {username.slice(0, 1)}
-            </span>
-            <div className="min-w-0 leading-tight">
-              <div className="text-xs font-mono font-medium text-ink truncate">{username}</div>
-              <div className="text-[10px] text-status-online flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-status-online" />
-                管理员
-              </div>
-            </div>
+        <div className="flex items-center gap-2.5">
+          <span className="w-[30px] h-[30px] rounded-full bg-accent-subtle text-accent text-[13px] font-semibold flex items-center justify-center uppercase shrink-0">
+            {username.slice(0, 1)}
+          </span>
+          <div className="flex-1 min-w-0 leading-tight">
+            <div className="text-[13px] font-semibold text-ink truncate">{username}</div>
+            <div className="text-[11px] text-ink-muted">管理员</div>
           </div>
           <button
             type="button"
             onClick={() => logout()}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer transition-colors -mr-1"
-            title="退出登录"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-secondary hover:text-status-danger hover:bg-status-danger-bg cursor-pointer transition-colors"
             aria-label="退出登录"
+            title="退出登录"
           >
             <SignOut className="w-4 h-4" />
           </button>
@@ -364,40 +220,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Desktop Sidebar (Only visible on md: screen and above) */}
       <aside
-        className="hidden md:flex md:w-64 flex-shrink-0 bg-paper-2/80 backdrop-blur-xl border-r border-rule flex-col justify-between h-screen select-none sticky top-0"
-        aria-label="主要导航"
+        className="hidden md:flex md:w-[232px] flex-shrink-0 bg-paper border-r border-rule flex-col h-screen select-none sticky top-0"
+        aria-label="主导航"
       >
         {renderNavContent(false)}
       </aside>
 
-      {/* Mobile Drawer (Portal into document.body to avoid parent layout/z-index containment) */}
       {typeof document !== "undefined" &&
         createPortal(
           <div
             className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
-              isMobileOpen
-                ? "visible opacity-100 pointer-events-auto"
-                : "invisible opacity-0 pointer-events-none"
+              isMobileOpen ? "visible opacity-100 pointer-events-auto" : "invisible opacity-0 pointer-events-none"
             }`}
             aria-hidden={!isMobileOpen}
           >
-            {/* Backdrop Overlay */}
             <div
-              className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-                isMobileOpen ? "opacity-100" : "opacity-0"
-              }`}
+              className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${isMobileOpen ? "opacity-100" : "opacity-0"}`}
               onClick={handleBackdropClick}
               aria-hidden="true"
             />
-
-            {/* Slide-over Drawer Panel */}
             <aside
-              className={`fixed inset-y-0 left-0 z-10 w-72 max-w-[85vw] bg-paper-2 border-r border-rule flex flex-col justify-between h-full shadow-pop transition-transform duration-[400ms] ease-out-expo select-none ${
+              className={`fixed inset-y-0 left-0 z-10 w-72 max-w-[85vw] bg-paper border-r border-rule flex flex-col h-full shadow-pop transition-transform duration-[400ms] ease-out-expo select-none ${
                 isMobileOpen ? "translate-x-0" : "-translate-x-full"
               }`}
-              aria-label="移动端导航菜单"
+              aria-label="移动端导航"
               onClick={(e) => e.stopPropagation()}
             >
               {renderNavContent(true)}

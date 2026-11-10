@@ -86,14 +86,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
   const renderCountryBadge = (country?: string, size: "sm" | "md" = "md") => {
     const code = (country || "UN").toUpperCase();
     const colors: Record<string, { bg: string; text: string; border: string }> = {
-      HK: { bg: "bg-red-500/15", text: "text-red-400", border: "border-red-500/30" },
-      JP: { bg: "bg-rose-500/15", text: "text-rose-400", border: "border-rose-500/30" },
-      US: { bg: "bg-blue-500/15", text: "text-blue-400", border: "border-blue-500/30" },
-      UK: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30" },
-      GB: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30" },
-      SG: { bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/30" },
-      TW: { bg: "bg-sky-500/15", text: "text-sky-400", border: "border-sky-500/30" },
-      DE: { bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/30" },
+      HK: { bg: "bg-status-danger/15", text: "text-status-danger", border: "border-status-danger/30" },
+      JP: { bg: "bg-status-danger/15", text: "text-status-danger", border: "border-status-danger/30" },
+      US: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" },
+      UK: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" },
+      GB: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" },
+      SG: { bg: "bg-status-online/15", text: "text-status-online", border: "border-status-online/30" },
+      TW: { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" },
+      DE: { bg: "bg-status-warning/15", text: "text-status-warning", border: "border-status-warning/30" },
     };
     const theme = colors[code] || { bg: "bg-accent/15", text: "text-accent", border: "border-accent/30" };
     const displayCode = code === "GB" ? "UK" : code;
@@ -122,13 +122,13 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
       case "ai":
         return <Robot className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
       case "streaming":
-        return <FilmStrip className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
+        return <FilmStrip className="w-3.5 h-3.5 text-status-danger shrink-0" />;
       case "social":
-        return <ChatCircleDots className="w-3.5 h-3.5 text-sky-400 shrink-0" />;
+        return <ChatCircleDots className="w-3.5 h-3.5 text-accent shrink-0" />;
       case "finance":
-        return <CreditCard className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+        return <CreditCard className="w-3.5 h-3.5 text-status-online shrink-0" />;
       case "gaming":
-        return <GameController className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+        return <GameController className="w-3.5 h-3.5 text-status-warning shrink-0" />;
       default:
         return <Globe className="w-3.5 h-3.5 text-ink-muted shrink-0" />;
     }
@@ -365,7 +365,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           </div>
 
           <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <Broadcast className="w-4 h-4 text-sky-400 shrink-0" />
+            <Broadcast className="w-4 h-4 text-accent shrink-0" />
             <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">2. 主力入口机</div>
               <div className="text-[9px] text-ink-muted truncate">香港 / 日本 / 新加坡 BGP</div>
@@ -381,7 +381,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
           </div>
 
           <div className="p-2 sm:p-2.5 rounded-xl bg-paper border border-rule flex items-center gap-2.5 min-w-0">
-            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle className="w-4 h-4 text-status-online shrink-0" />
             <div className="min-w-0 flex-1 truncate">
               <div className="text-[10px] font-semibold text-ink truncate">4. 原生家宽落地</div>
               <div className="text-[9px] text-ink-muted truncate">双ISP 住宅级流量出口</div>
@@ -437,8 +437,8 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-emerald-400 border border-rule flex items-center gap-1 shrink-0 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-status-online border border-rule flex items-center gap-1 shrink-0 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-online" />
                     <span>{un.latencyMs} ms</span>
                   </span>
                 </div>
@@ -454,7 +454,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
 
                 <div className="pt-2 border-t border-rule/60 flex items-center justify-between text-[11px] font-mono gap-2">
                   <span className="text-ink-muted flex items-center gap-1.5 text-[10px] truncate min-w-0 flex-1">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 text-status-online shrink-0" />
                     <span className="truncate">已为 {servingRelays.length} 台主力机提供解锁</span>
                   </span>
 
@@ -578,8 +578,8 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-emerald-400 border border-rule flex items-center gap-1 shrink-0 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-paper-3 text-status-online border border-rule flex items-center gap-1 shrink-0 font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-status-online" />
                     <span>{mn.latencyMs} ms</span>
                   </span>
                 </div>
@@ -691,10 +691,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                       <span
                         className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-medium flex items-center gap-1 ${
                           isCustomMode
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                            ? "bg-status-warning/10 text-status-warning border-status-warning/30"
                             : isAiMediaMode
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : "bg-sky-500/10 text-sky-400 border-sky-500/30"
+                            ? "bg-status-online/10 text-status-online border-status-online/30"
+                            : "bg-accent/10 text-accent border-accent/30"
                         }`}
                       >
                         {isCustomMode ? (
@@ -730,7 +730,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                         <span>分流规则:</span>
                       </span>
                       {isAllMode ? (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
                           全量出站 (所有请求无条件经由落地节点)
                         </span>
                       ) : isCustomMode ? (
@@ -765,22 +765,22 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                         )
                       ) : (
                         <>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20">
                             OpenAI
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20">
                             Claude
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20">
                             Netflix
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20">
                             Disney+
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20">
                             YouTube
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-status-online/10 text-status-online border border-status-online/20 font-medium">
                             等 15 个主流 AI & 流媒体
                           </span>
                         </>
@@ -792,8 +792,8 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                 <div className="flex items-center gap-4 text-xs font-mono justify-between sm:justify-end shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-rule/50 w-full sm:w-auto">
                   <div className="text-left sm:text-right">
                     <span className="text-[11px] text-ink-muted block">链路状态</span>
-                    <span className={`font-bold text-xs flex items-center gap-1 ${r.status === "active" ? "text-emerald-400" : "text-ink-muted"}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${r.status === "active" ? "bg-emerald-400" : "bg-ink-muted"}`} />
+                    <span className={`font-bold text-xs flex items-center gap-1 ${r.status === "active" ? "text-status-online" : "text-ink-muted"}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${r.status === "active" ? "bg-status-online" : "bg-ink-muted"}`} />
                       {r.status === "active" ? "启用" : "停用"}
                     </span>
                   </div>
@@ -808,7 +808,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                     </button>
                     <button
                       onClick={() => setDeletingRelay(r)}
-                      className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-ink-muted hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer touch-manipulation"
+                      className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-ink-muted hover:text-status-danger hover:bg-status-danger/10 border border-transparent hover:border-status-danger/20 transition-all cursor-pointer touch-manipulation"
                       title="解除该链式代理"
                     >
                       <Trash className="w-4 h-4" />
@@ -910,10 +910,10 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-1.5 font-semibold text-xs text-ink">
-                      <Lightning weight="fill" className="w-4 h-4 text-amber-400 shrink-0" />
+                      <Lightning weight="fill" className="w-4 h-4 text-status-warning shrink-0" />
                       <span>智能分流</span>
                     </div>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-status-online/15 text-status-online border border-status-online/30 font-semibold">
                       推荐
                     </span>
                   </div>
@@ -1046,7 +1046,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                   <button
                     type="button"
                     onClick={handleDeselectAllServices}
-                    className="text-[11px] px-2.5 py-1 rounded-md bg-paper border border-rule hover:border-rose-500/40 text-rose-400 hover:text-rose-300 transition-all cursor-pointer font-medium"
+                    className="text-[11px] px-2.5 py-1 rounded-md bg-paper border border-rule hover:border-status-danger/40 text-status-danger hover:text-status-danger transition-all cursor-pointer font-medium"
                   >
                     清空
                   </button>
@@ -1207,7 +1207,7 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveCustomDomain(dom)}
-                          className="hover:text-rose-400 cursor-pointer text-ink-muted transition-colors"
+                          className="hover:text-status-danger cursor-pointer text-ink-muted transition-colors"
                           title="删除"
                         >
                           <X className="w-3 h-3" />
@@ -1233,8 +1233,8 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
 
           {/* Inline Error Message */}
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-center gap-2">
-              <Warning weight="bold" className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="p-3 rounded-xl bg-status-danger/10 border border-status-danger/25 text-status-danger text-xs flex items-center gap-2">
+              <Warning weight="bold" className="w-4 h-4 shrink-0 text-status-danger" />
               <span>{errorMessage}</span>
             </div>
           )}
@@ -1278,14 +1278,14 @@ export const TopologyCanvas: React.FC<TopologyCanvasProps> = ({
         maxWidth="md"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300">
-            <Warning weight="bold" className="w-5 h-5 shrink-0 mt-0.5 text-rose-400" />
+          <div className="flex items-start gap-3 p-3.5 rounded-xl bg-status-danger/10 border border-status-danger/20 text-status-danger">
+            <Warning weight="bold" className="w-5 h-5 shrink-0 mt-0.5 text-status-danger" />
             <div className="text-xs space-y-1">
-              <p className="font-semibold text-rose-200">
+              <p className="font-semibold text-status-danger">
                 确定要删除链路「{deletingRelay?.name}」吗？
               </p>
-              <p className="text-rose-300/80 leading-relaxed">
-                解除后，主控将撤销该主力节点上的 <code className="text-rose-200 font-mono">UNLOCK_OUT</code> 出站及对应分流规则。客户端经由该主力节点将自动恢复为纯直连出站。
+              <p className="text-status-danger/80 leading-relaxed">
+                解除后，主控将撤销该主力节点上的 <code className="text-status-danger font-mono">UNLOCK_OUT</code> 出站及对应分流规则。客户端经由该主力节点将自动恢复为纯直连出站。
               </p>
             </div>
           </div>

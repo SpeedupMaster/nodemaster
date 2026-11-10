@@ -1,50 +1,109 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "../common/Button";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { apiFetch } from "../../services/api";
-import {
-  Terminal,
-  Copy,
-  Check,
-  Cpu,
-  Pulse,
-  Lightning,
-  Sliders,
-  Globe,
-  ArrowSquareOut,
-  CheckCircle,
-} from "@phosphor-icons/react";
+import { Copy, Check, Plus, Warning, CheckCircle, CircleNotch, Circle, ArrowSquareOut } from "@phosphor-icons/react";
+import type { NodeItem } from "../../types";
 
-export const ScriptView: React.FC = () => {
+interface ScriptViewProps {
+  nodes: NodeItem[];
+  onAddNode: () => void;
+}
+
+const useCopy = () => {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied((k) => (k === key ? null : k)), 2000);
+  };
+  return { copied, copy };
+};
+
+const btn =
+  "h-9 px-3.5 inline-flex items-center gap-2 rounded-lg border border-rule bg-paper-3 text-[13px] font-medium text-ink hover:border-rule-active cursor-pointer transition-colors";
+const btnPrimary =
+  "h-9 px-3.5 inline-flex items-center gap-2 rounded-lg bg-accent-fill text-white text-[13px] font-semibold hover:brightness-110 cursor-pointer transition";
+
+const StepCard: React.FC<{ n: number; done?: boolean; title: string; children: React.ReactNode; action?: React.ReactNode }> = ({
+  n,
+  done,
+  title,
+  children,
+  action,
+}) => (
+  <section className="p-4 sm:p-5 rounded-xl bg-paper-2 border border-rule flex gap-4">
+    <span
+      className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center font-mono text-[13px] font-semibold ${
+        done ? "bg-status-online-bg text-status-online" : "bg-paper-3 text-ink-secondary"
+      }`}
+      aria-hidden="true"
+    >
+      {done ? <Check weight="bold" className="w-3.5 h-3.5" /> : n}
+    </span>
+    <div className="flex-1 min-w-0 flex flex-col gap-3.5">
+      <div className="flex items-center gap-3 min-h-7">
+        <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+        {action && <div className="ml-auto">{action}</div>}
+      </div>
+      {children}
+    </div>
+  </section>
+);
+
+const CopyLine: React.FC<{ cmd: string; copied: boolean; onCopy: () => void }> = ({ cmd, copied, onCopy }) => (
+  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-paper border border-rule">
+    <code className="flex-1 min-w-0 font-mono text-xs text-ink-secondary break-all leading-relaxed select-all">{cmd}</code>
+    <button
+      type="button"
+      onClick={onCopy}
+      aria-label="复制命令"
+      className="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-ink-muted hover:text-ink hover:bg-paper-3 cursor-pointer"
+    >
+      {copied ? <Check weight="bold" className="w-3.5 h-3.5 text-status-online" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  </div>
+);
+
+export const ScriptView: React.FC<ScriptViewProps> = ({ nodes, onAddNode }) => {
   const [scriptContent, setScriptContent] = useState("");
   const [tcpTuneContent, setTcpTuneContent] = useState("");
   const [activePreview, setActivePreview] = useState<"install" | "tcp_tune">("install");
-  const [copiedGeneric, setCopiedGeneric] = useState(false);
-  const [copiedScript, setCopiedScript] = useState(false);
-  const [copiedTuneOfficial, setCopiedTuneOfficial] = useState(false);
-  const [copiedTunePanel, setCopiedTunePanel] = useState(false);
   const [deployMode, setDeployMode] = useState<"all" | "probe_only">("all");
   const [enableBbr, setEnableBbr] = useState(true);
   const [enableIpv4First, setEnableIpv4First] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const { copied, copy } = useCopy();
+
+  // Default to the first node that has never reported in, else the first node
+  const [nodeId, setNodeId] = useState<string>(() => (nodes.find((n) => !n.lastSeen) ?? nodes[0])?.id ?? "");
+  const knownIds = useRef(new Set(nodes.map((n) => n.id)));
+  useEffect(() => {
+    // Jump to a node created from the "添加节点" dialog while on this page
+    const fresh = nodes.find((n) => !knownIds.current.has(n.id));
+    nodes.forEach((n) => knownIds.current.add(n.id));
+    if (fresh) setNodeId(fresh.id);
+    else if (!nodes.some((n) => n.id === nodeId) && nodes[0]) setNodeId(nodes[0].id);
+  }, [nodes, nodeId]);
+
+  const node = nodes.find((n) => n.id === nodeId) ?? null;
+  const isProbeNode = node?.type === "probe" || node?.protocol === "probe";
+  const effectiveMode = isProbeNode ? "probe_only" : deployMode;
 
   const panelHost = window.location.origin;
+  const insecurePanel = panelHost.startsWith("http://") && !/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])/.test(panelHost);
 
-  const genericArgs: string[] = [`--panel ${panelHost}`, `--token <NODE_TOKEN>`];
-  if (deployMode === "probe_only") {
-    genericArgs.push("--probe-only");
-  }
-  if (enableBbr) {
-    genericArgs.push("--bbr");
-  }
-  if (enableIpv4First) {
-    genericArgs.push("--ipv4-first");
-  }
-  // 明文 HTTP 面板会以明文下发配置与 root 执行的脚本，安装脚本默认拒绝，需显式放行
-  const insecurePanel = panelHost.startsWith("http://");
-  if (insecurePanel) {
-    genericArgs.push("--allow-http");
-  }
+  const buildCmd = (token: string) => {
+    const args = [`--panel ${panelHost}`, `--token ${token}`];
+    if (effectiveMode === "probe_only") args.push("--probe-only");
+    if (enableBbr) args.push("--bbr");
+    if (enableIpv4First) args.push("--ipv4-first");
+    if (panelHost.startsWith("http://")) args.push("--allow-http");
+    return `curl -fsSL ${panelHost}/api/install.sh | bash -s -- ${args.join(" ")}`;
+  };
+  const token = node?.token ?? "<NODE_TOKEN>";
+  const maskedToken = token.length > 10 ? `${token.slice(0, 6)}…${token.slice(-4)}` : token;
+  const installCmd = buildCmd(token);
+  const displayCmd = showToken ? installCmd : buildCmd(maskedToken);
 
-  const genericCmd = `curl -fsSL ${panelHost}/api/install.sh | bash -s -- ${genericArgs.join(" ")}`;
   const tuneOfficialCmd = `bash <(curl -fsSL https://tcp.vpsing.de)`;
   const tunePanelCmd = `curl -fsSL ${panelHost}/api/tcp-tune.sh | bash`;
 
@@ -58,348 +117,237 @@ export const ScriptView: React.FC = () => {
     load("/api/tcp-tune.sh", setTcpTuneContent);
   }, []);
 
-  const handleCopyCmd = () => {
-    navigator.clipboard.writeText(genericCmd);
-    setCopiedGeneric(true);
-    setTimeout(() => setCopiedGeneric(false), 2000);
-  };
+  const checks = useMemo(() => {
+    if (!node) return [];
+    const heartbeat = node.status === "online" || !!node.lastSeen;
+    const list = [{ label: "探针首次心跳", done: heartbeat, hint: node.lastSeen ? `最后心跳 ${new Date(node.lastSeen).toLocaleString()}` : "运行命令后通常 30 秒内出现" }];
+    if (effectiveMode === "all") {
+      list.push({
+        label: "Xray 内核安装与配置下发",
+        done: !!node.xrayVersion && node.configSyncStatus !== "failed" && node.configSyncStatus !== "pending",
+        hint: node.configSyncStatus === "failed" ? node.configSyncError || "配置校验失败" : node.xrayVersion ? `Xray ${node.xrayVersion}` : "等待探针上报内核版本",
+      });
+    }
+    list.push({ label: "首次延迟采样", done: node.latencyMs > 0, hint: node.latencyMs > 0 ? `${node.latencyMs} ms` : "上线后约 1 分钟内完成" });
+    return list;
+  }, [node, effectiveMode]);
+  const allDone = checks.length > 0 && checks.every((c) => c.done);
 
-  const handleCopyScript = () => {
-    const textToCopy = activePreview === "install" ? scriptContent : tcpTuneContent;
-    navigator.clipboard.writeText(textToCopy);
-    setCopiedScript(true);
-    setTimeout(() => setCopiedScript(false), 2000);
-  };
-
-  const handleCopyTuneOfficial = () => {
-    navigator.clipboard.writeText(tuneOfficialCmd);
-    setCopiedTuneOfficial(true);
-    setTimeout(() => setCopiedTuneOfficial(false), 2000);
-  };
-
-  const handleCopyTunePanel = () => {
-    navigator.clipboard.writeText(tunePanelCmd);
-    setCopiedTunePanel(true);
-    setTimeout(() => setCopiedTunePanel(false), 2000);
-  };
+  const modes = [
+    { id: "all" as const, title: "节点 + 探针", desc: "安装 Xray 内核与监控探针，面板统一下发配置" },
+    { id: "probe_only" as const, title: "仅探针", desc: "只采集负载与流量，不安装代理内核" },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Overview Card */}
-      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-        <div className="flex items-center gap-2.5">
-          <Terminal weight="bold" className="w-5 h-5 text-accent" />
-          <h2 className="text-sm sm:text-base font-semibold text-ink">
-            VPS 代理节点、系统探针与 BBR 深度网络调优部署中心
-          </h2>
-        </div>
+    <div className="space-y-5">
+      <p className="text-sm text-ink-secondary">
+        四步把一台 Linux VPS 接入面板：选择节点 → 选择部署项 → 在 VPS 上运行命令 → 等待心跳。
+      </p>
 
-        <p className="text-xs text-ink-muted leading-relaxed max-w-3xl">
-          NodeMaster 采用 Master-Agent 架构。当您在面板添加节点后，可选择「同时部署探针与节点」或「仅部署探针」模式生成专属安装命令。现已深度集成开源{" "}
-          <a
-            href="https://github.com/666shen/tcp-dashboard"
-            target="_blank"
-            rel="noreferrer"
-            className="text-accent underline font-medium hover:text-accent/80"
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start">
+        <div className="flex flex-col gap-3 min-w-0">
+          <StepCard
+            n={1}
+            done={!!node}
+            title="选择要接入的节点"
+            action={
+              <button type="button" onClick={onAddNode} className={btn}>
+                <Plus className="w-4 h-4" />
+                添加新节点
+              </button>
+            }
           >
-            tcp-dashboard
-          </a>{" "}
-          网络性能调优套件，自动检测 VPS 硬件架构与内存，配置生产级高并发连接池与跨境防丢包补丁，并在目标 VPS 创建终端快捷命令{" "}
-          <code className="text-accent font-mono bg-paper-3 px-1 rounded">t</code>。
-        </p>
-
-        {/* 部署选项配置 */}
-        <div className="space-y-3 pt-1">
-          <div>
-            <label className="text-xs font-medium text-ink-secondary mb-1.5 block">
-              部署模式:
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 max-w-md p-1 bg-paper border border-rule rounded-lg gap-1.5">
-              <button
-                type="button"
-                onClick={() => setDeployMode("all")}
-                className={`py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
-                  deployMode === "all"
-                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
-                    : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
-                }`}
-              >
-                <Cpu className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>全量纳管 (内核 + 探针)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDeployMode("probe_only")}
-                className={`py-2 px-3 rounded-md text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
-                  deployMode === "probe_only"
-                    ? "bg-accent/15 text-accent border border-accent/40 shadow-sm font-semibold"
-                    : "text-ink-secondary hover:text-ink hover:bg-paper-2 border border-transparent"
-                }`}
-              >
-                <Pulse className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>仅部署探针 (纯监控)</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 网络优化微调开关 */}
-          <div className="p-3 max-w-xl rounded-lg bg-paper border border-rule space-y-2">
-            <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-accent" />
-              内核性能优化参数附加:
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors touch-manipulation">
-                <input
-                  type="checkbox"
-                  checked={enableBbr}
-                  onChange={(e) => setEnableBbr(e.target.checked)}
-                  className="rounded border-rule text-accent focus:ring-0 focus:outline-none"
-                />
-                <span className="text-ink-secondary font-medium">--bbr (开启 BBR+FQ 深度调优)</span>
+            {nodes.length === 0 ? (
+              <p className="text-[13px] text-ink-muted">还没有节点。先在面板中添加一台 VPS，系统会为它生成专属令牌。</p>
+            ) : (
+              <label className="flex flex-col gap-1.5 text-[13px] text-ink-secondary max-w-md">
+                节点
+                <select
+                  value={nodeId}
+                  onChange={(e) => setNodeId(e.target.value)}
+                  className="h-10 px-3 rounded-lg bg-paper border border-rule-active text-sm text-ink focus:outline-none focus:border-accent cursor-pointer"
+                >
+                  {nodes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.name} · {n.ip}
+                      {n.lastSeen ? "" : "（未接入）"}
+                    </option>
+                  ))}
+                </select>
               </label>
+            )}
+          </StepCard>
 
-              <label className="flex items-center gap-2 p-1.5 rounded hover:bg-paper-2 cursor-pointer transition-colors touch-manipulation">
+          <StepCard n={2} done={!!node} title="部署项">
+            <div role="radiogroup" aria-label="部署模式" className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {modes.map((m) => {
+                const sel = effectiveMode === m.id;
+                const disabled = isProbeNode && m.id === "all";
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={sel}
+                    disabled={disabled}
+                    onClick={() => setDeployMode(m.id)}
+                    className={`p-3.5 rounded-lg border text-left flex flex-col gap-1 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                      sel ? "border-accent bg-accent-subtle" : "border-rule bg-paper hover:border-rule-active"
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-ink">{m.title}</span>
+                    <span className="text-xs text-ink-secondary">{disabled ? "该节点为仅探针类型" : m.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <fieldset className="flex flex-col gap-2.5">
+              <legend className="text-[13px] text-ink-secondary mb-2">网络调优</legend>
+              <label className="flex items-start gap-2.5 text-[13px] text-ink cursor-pointer">
+                <input type="checkbox" checked={enableBbr} onChange={(e) => setEnableBbr(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[var(--color-accent-fill)]" />
+                <span>
+                  <span className="font-mono">--bbr</span> 开启 BBR + FQ 拥塞控制
+                  <span className="block text-xs text-ink-muted">推荐。显著改善高丢包跨境链路的单线程速度</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2.5 text-[13px] text-ink cursor-pointer">
                 <input
                   type="checkbox"
                   checked={enableIpv4First}
                   onChange={(e) => setEnableIpv4First(e.target.checked)}
-                  className="rounded border-rule text-accent focus:ring-0 focus:outline-none"
+                  className="mt-0.5 w-4 h-4 accent-[var(--color-accent-fill)]"
                 />
-                <span className="text-ink-secondary font-medium">--ipv4-first (IPv4 优先解析)</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
-            <span className="text-xs text-ink-secondary leading-relaxed font-medium">
-              通用纳管部署指令模板 (请将 &lt;NODE_TOKEN&gt; 替换为节点专属 Token):
-            </span>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyCmd}
-              className="self-end sm:self-auto shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
-              icon={copiedGeneric ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
-            >
-              {copiedGeneric ? "已复制命令" : "复制命令"}
-            </Button>
-          </div>
-          <div className="p-3.5 rounded-lg bg-paper border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
-            {genericCmd}
-          </div>
-          {insecurePanel && (
-            <p className="mt-2 text-xs text-amber-400">
-              当前面板通过明文 HTTP 访问：节点 Token、代理配置与升级脚本都会明文传输，可被链路劫持并以 root 执行。建议为面板配置 HTTPS 反向代理。
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* TCP/BBR 跨境性能调优独立专区 (tcp-dashboard) */}
-      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <Lightning weight="fill" className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm sm:text-base font-semibold text-ink flex items-center gap-2 flex-wrap">
-                <span>TCP-Dashboard 跨境网络深度优化套件</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono">
-                  vpsing.de
+                <span>
+                  <span className="font-mono">--ipv4-first</span> IPv4 优先解析
+                  <span className="block text-xs text-ink-muted">仅当 VPS 的 IPv6 出口质量差时开启</span>
                 </span>
-              </h3>
-              <p className="text-xs text-ink-muted mt-0.5 leading-relaxed">
-                基于 666shen/tcp-dashboard 开源项目深度融合，针对高丢包跨境物理链路与流媒体/代理节点量身打磨
-              </p>
-            </div>
-          </div>
+              </label>
+            </fieldset>
+          </StepCard>
 
-          <a
-            href="https://github.com/666shen/tcp-dashboard"
-            target="_blank"
-            rel="noreferrer"
-            className="self-start sm:self-auto text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all touch-manipulation min-h-[34px] sm:min-h-0"
-          >
-            <span>GitHub 仓库</span>
-            <ArrowSquareOut className="w-3.5 h-3.5 shrink-0" />
-          </a>
+          <StepCard n={3} title="以 root 身份在 VPS 上运行">
+            <pre className="p-3.5 rounded-lg bg-paper border border-rule font-mono text-xs text-ink-secondary whitespace-pre-wrap break-all leading-relaxed">
+              <span className="text-ink-muted select-none">$ </span>
+              {displayCmd}
+            </pre>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => copy("install", installCmd)} disabled={!node} className={`${btnPrimary} disabled:opacity-50`}>
+                {copied === "install" ? <Check weight="bold" className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied === "install" ? "已复制" : "复制命令"}
+              </button>
+              {node && (
+                <button type="button" onClick={() => setShowToken((v) => !v)} className={btn}>
+                  {showToken ? "隐藏令牌" : "显示完整令牌"}
+                </button>
+              )}
+              <span className="text-xs text-ink-muted">命令包含该节点的专属令牌，请勿公开分享</span>
+            </div>
+            {insecurePanel && (
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-status-warning-bg text-[13px] text-ink-secondary leading-relaxed">
+                <Warning weight="fill" className="w-4 h-4 text-status-warning shrink-0 mt-0.5" aria-hidden="true" />
+                <span>
+                  面板当前通过明文 HTTP 访问，令牌、代理配置与脚本可能被中间人篡改后以 root 执行。建议先为面板配置 HTTPS 反向代理。
+                </span>
+              </div>
+            )}
+          </StepCard>
+
+          <StepCard n={4} done={allDone} title={allDone ? "节点已上线" : "等待节点上线"}>
+            {!node ? (
+              <p className="text-[13px] text-ink-muted">选择节点后在这里实时查看接入进度。</p>
+            ) : (
+              <ul className="flex flex-col gap-2.5">
+                {checks.map((c, i) => {
+                  const firstPending = checks.findIndex((x) => !x.done) === i;
+                  return (
+                    <li key={c.label} className="flex items-center gap-2.5 text-[13px]">
+                      {c.done ? (
+                        <CheckCircle weight="fill" className="w-4 h-4 text-status-online shrink-0" />
+                      ) : firstPending ? (
+                        <CircleNotch className="w-4 h-4 text-accent animate-spin shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-ink-muted shrink-0" />
+                      )}
+                      <span className={c.done ? "text-ink" : "text-ink-secondary"}>{c.label}</span>
+                      <span className="ml-auto text-xs text-ink-muted truncate">{c.hint}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </StepCard>
         </div>
 
-        {/* 6 大调优特性网格 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>BBR + FQ 拥塞算法</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              激活 Linux 内核级 BBR 引擎与 FQ 步进调度，动态对抗链路丢包，大幅提升单线程下载速率。
+        <aside className="flex flex-col gap-3 min-w-0">
+          <section className="p-4 sm:p-5 rounded-xl bg-paper-2 border border-rule flex flex-col gap-3">
+            <h2 className="text-[15px] font-semibold text-ink">已有节点只想调优？</h2>
+            <p className="text-xs text-ink-muted leading-relaxed">
+              TCP-Dashboard 调优：BBR + FQ、按内存 5% 动态缓冲（16–128 MB）、somaxconn 65535 与百万文件句柄、Reality / HY2 专项补丁、网卡多队列均衡，并安装终端快捷命令{" "}
+              <code className="font-mono text-ink-secondary">t</code>。
             </p>
-          </div>
+            <span className="text-xs text-ink-secondary">官方源（推荐）</span>
+            <CopyLine cmd={tuneOfficialCmd} copied={copied === "tune-official"} onCopy={() => copy("tune-official", tuneOfficialCmd)} />
+            <span className="text-xs text-ink-secondary">面板镜像源</span>
+            <CopyLine cmd={tunePanelCmd} copied={copied === "tune-panel"} onCopy={() => copy("tune-panel", tunePanelCmd)} />
+            <a
+              href="https://github.com/666shen/tcp-dashboard"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[13px] text-accent hover:underline inline-flex items-center gap-1"
+            >
+              开源项目
+              <ArrowSquareOut className="w-3.5 h-3.5" />
+            </a>
+          </section>
 
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>5% 物理内存动态缓冲</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              精准探测系统物理内存，动态按 5% 配比设置 TCP 读写缓冲区 (16MB ~ 128MB)，杜绝内存泄漏。
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>1,048,576 句柄与连接池</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              somaxconn 65535、backlog 16384，完全解除 Linux 文件句柄上限，从容应对超 60,000+ 高并发连接。
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>Reality / HY2 专项补丁</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              tcp_notsent_lowat 降低首包 TTFB、MTU 黑洞探测、UDP Ring 扩容，ECN 智能标记轻微拥塞不丢包。
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>网卡 RPS/RSS 多队列均衡</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              解除单核心软中断（SoftIRQ）瓶颈，将物理/虚拟网卡硬件中断负载均匀平摊至 VPS 所有 CPU 核心。
-            </p>
-          </div>
-
-          <div className="p-3 rounded-xl bg-paper border border-rule space-y-1">
-            <div className="text-xs font-semibold text-ink flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>SSH 终端快捷指令「t」</span>
-            </div>
-            <p className="text-[11px] text-ink-muted leading-relaxed">
-              在服务器终端任意路径敲 <code className="text-emerald-400 font-mono font-bold">t</code> 即可进入全中文交互式面板，随时自检与回退设置。
-            </p>
-          </div>
-        </div>
-
-        {/* 独立执行命令 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-          <div className="p-3.5 rounded-xl bg-paper border border-rule space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>官方开源一键命令 (推荐):</span>
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleCopyTuneOfficial}
-                className="shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
-                icon={copiedTuneOfficial ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
-              >
-                {copiedTuneOfficial ? "已复制" : "复制"}
-              </Button>
-            </div>
-            <div className="p-2.5 rounded-lg bg-paper-2 border border-rule font-mono text-xs text-emerald-400 select-all break-all leading-relaxed">
-              {tuneOfficialCmd}
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-paper border border-rule space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-ink flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-accent shrink-0" />
-                <span>NodeMaster 面板镜像源:</span>
-              </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleCopyTunePanel}
-                className="shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
-                icon={copiedTunePanel ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
-              >
-                {copiedTunePanel ? "已复制" : "复制"}
-              </Button>
-            </div>
-            <div className="p-2.5 rounded-lg bg-paper-2 border border-rule font-mono text-xs text-accent select-all break-all leading-relaxed">
-              {tunePanelCmd}
-            </div>
-          </div>
-        </div>
+          <section className="p-4 sm:p-5 rounded-xl bg-paper-2 border border-rule flex flex-col gap-2">
+            <h2 className="text-[15px] font-semibold text-ink">支持的系统</h2>
+            <p className="text-xs text-ink-muted leading-relaxed">Debian 11/12 · Ubuntu 20/22/24 · CentOS 7/8/9 · Rocky Linux；x86_64 与 arm64。</p>
+          </section>
+        </aside>
       </div>
 
-      {/* Script Source Preview */}
-      <div className="p-4 sm:p-6 rounded-xl bg-paper-2 border border-rule space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-3.5 border-b border-rule">
-          <div>
-            <h3 className="text-sm font-semibold text-ink">
-              下发脚本源码在线预览
-            </h3>
-            <p className="text-xs text-ink-muted mt-0.5 leading-relaxed">
-              主控端动态分发，原生兼容 Debian 11/12、Ubuntu 20/22/24、CentOS 7/8/9、Rocky Linux
-            </p>
-          </div>
-
-          {/* Script Selector Tabs & Copy Button */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            {/* 切换预览的脚本 */}
-            <div className="flex items-center bg-paper border border-rule rounded-lg p-1 gap-1 flex-1 sm:flex-initial">
-              <button
-                type="button"
-                onClick={() => setActivePreview("install")}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium cursor-pointer transition-all whitespace-nowrap touch-manipulation text-center ${
-                  activePreview === "install"
-                    ? "bg-accent/15 text-accent border border-accent/40 shadow-xs font-semibold"
-                    : "text-ink-secondary hover:text-ink border border-transparent"
-                }`}
-              >
-                <span className="hidden sm:inline">install.sh (联合纳管)</span>
-                <span className="sm:hidden">install.sh (纳管)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePreview("tcp_tune")}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 sm:py-1 rounded-md text-xs font-medium cursor-pointer transition-all whitespace-nowrap touch-manipulation text-center ${
-                  activePreview === "tcp_tune"
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 shadow-xs font-semibold"
-                    : "text-ink-secondary hover:text-ink border border-transparent"
-                }`}
-              >
-                <span className="hidden sm:inline">tcp-tune.sh (TCP 调优)</span>
-                <span className="sm:hidden">tcp-tune.sh (调优)</span>
-              </button>
+      <details className="group rounded-xl bg-paper-2 border border-rule">
+        <summary className="list-none cursor-pointer select-none px-4 sm:px-5 h-12 flex items-center gap-2 text-[13px] text-ink-secondary hover:text-ink">
+          <span className="transition-transform group-open:rotate-90" aria-hidden="true">›</span>
+          查看下发脚本源码
+        </summary>
+        <div className="px-4 sm:px-5 pb-5 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="脚本" className="flex p-[3px] gap-0.5 rounded-[9px] border border-rule bg-paper">
+              {([
+                { id: "install", label: "install.sh" },
+                { id: "tcp_tune", label: "tcp-tune.sh" },
+              ] as const).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  aria-pressed={activePreview === t.id}
+                  onClick={() => setActivePreview(t.id)}
+                  className={`h-7 px-3 rounded-md font-mono text-xs cursor-pointer ${
+                    activePreview === t.id ? "bg-paper-3 text-ink" : "text-ink-secondary hover:text-ink"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
-
-            {/* 复制代码按钮 */}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCopyScript}
-              className="whitespace-nowrap shrink-0 touch-manipulation min-h-[34px] sm:min-h-0"
-              icon={copiedScript ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+            <button
+              type="button"
+              onClick={() => copy("script", activePreview === "install" ? scriptContent : tcpTuneContent)}
+              className={`${btn} ml-auto h-8`}
             >
-              {copiedScript ? "已复制" : "复制代码"}
-            </Button>
+              {copied === "script" ? <Check weight="bold" className="w-3.5 h-3.5 text-status-online" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied === "script" ? "已复制" : "复制脚本"}
+            </button>
           </div>
-        </div>
-
-        <div className="relative rounded-lg bg-paper border border-rule overflow-hidden">
-          <pre className="p-3.5 sm:p-4 text-xs font-mono text-ink-secondary overflow-x-auto max-h-[460px] leading-relaxed select-all">
+          <pre className="p-4 rounded-lg bg-paper border border-rule font-mono text-xs text-ink-secondary overflow-x-auto max-h-[460px] leading-relaxed">
             {activePreview === "install"
-              ? scriptContent || "正在获取 install.sh 脚本源码..."
-              : tcpTuneContent || "正在获取 tcp-tune.sh 脚本源码..."}
+              ? scriptContent || "正在获取 install.sh…"
+              : tcpTuneContent || "正在获取 tcp-tune.sh…"}
           </pre>
         </div>
-      </div>
+      </details>
     </div>
   );
 };

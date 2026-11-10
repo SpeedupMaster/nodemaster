@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 流量统计</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.th{font-size:12px;font-weight:500;color:#848D9A;text-align:left;padding:10px 12px;border-bottom:1px solid #232831;white-space:nowrap}
+.td{padding:12px;border-bottom:1px solid #1C2027;font-size:13px;vertical-align:middle;white-space:nowrap}
+.bar{height:4px;border-radius:2px;background:#232831;overflow:hidden}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="traffic" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 360px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">流量统计</h1>
+        <p style="margin: 0; font-size: 14px; color: #A3ABB7">来自各节点网卡的实测累计值，不含估算。历史数据保留 35 天。</p>
+      </div>
+      <div role="group" aria-label="时间范围" style="display: flex; padding: 3px; gap: 2px; border: 1px solid #232831; border-radius: 9px; background: #12151A">
+        <sc-for list="{{ranges}}" as="g" hint-placeholder-count="4">
+          <button onClick="{{g.pick}}" style="{{g.style}}">{{g.label}}</button>
+        </sc-for>
+      </div>
+      <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>导出 CSV</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+      <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; color: #A3ABB7">总流量</span>
+        <span class="mono" style="font-size: 26px">4.76 TB</span>
+        <span class="mono" style="font-size: 12px; color: #848D9A"><span style="color: #6EA8FE">↓ 3.90 TB</span> · <span style="color: #A58BFA">↑ 884.3 GB</span></span>
+      </div>
+      <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; color: #A3ABB7">峰值小时</span>
+        <span class="mono" style="font-size: 26px">488.4 GB</span>
+        <span class="mono" style="font-size: 12px; color: #848D9A">05:00 – 06:00</span>
+      </div>
+      <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; color: #A3ABB7">平均每小时</span>
+        <span class="mono" style="font-size: 26px">443.3 GB</span>
+        <span style="font-size: 12px; color: #848D9A">共 11 个统计区间</span>
+      </div>
+      <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; color: #A3ABB7">产生流量的节点</span>
+        <span class="mono" style="font-size: 26px">8<span style="font-size: 14px; color: #848D9A"> / 9</span></span>
+        <span style="font-size: 12px; color: #848D9A">KR 首尔已熔断，无流量</span>
+      </div>
+    </div>
+
+    <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">每小时流量</h2>
+        <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ABB7"><span style="width: 10px; height: 10px; border-radius: 2px; background: #6EA8FE"></span>下行</span>
+        <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ABB7"><span style="width: 10px; height: 10px; border-radius: 2px; background: #A58BFA"></span>上行</span>
+        <span style="margin-left: auto; font-size: 12px; color: #848D9A">悬停柱体查看区间明细，点击下钻到节点</span>
+      </div>
+      <div style="display: flex; gap: 10px">
+        <div class="mono" style="display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: #848D9A; height: 240px; text-align: right; width: 54px">
+          <span>500 GB</span><span>250 GB</span><span>0</span>
+        </div>
+        <div style="flex: 1; display: flex; align-items: flex-end; gap: 10px; height: 240px; border-bottom: 1px solid #232831">
+          <sc-for list="{{hours}}" as="h" hint-placeholder-count="11">
+            <div title="{{h.tip}}" style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%">
+              <div style="height: {{h.up}}; background: #A58BFA; border-radius: 3px 3px 0 0"></div>
+              <div style="height: {{h.down}}; background: #6EA8FE"></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; color: #848D9A; padding-left: 64px"><span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>10:00</span></div>
+    </section>
+
+    <section class="card" style="display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">按节点</h2>
+        <span style="font-size: 12px; color: #848D9A">占比为所选时间范围内总流量占比；配额为当月累计</span>
+      </div>
+      <div style="overflow-x: auto">
+        <table style="width: 100%; border-collapse: collapse; min-width: 860px">
+          <thead><tr>
+            <th class="th" style="padding-left: 20px">节点</th><th class="th">时段流量</th><th class="th" style="width: 260px">占比</th><th class="th">下行 / 上行</th><th class="th" style="width: 220px">本月配额</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{nodes}}" as="n" hint-placeholder-count="9">
+              <tr>
+                <td class="td" style="padding-left: 20px"><a href="NodeDetail.dc.html" style="color: #E6E9EE; display: flex; gap: 10px; align-items: center"><span class="mono" style="font-size: 11px; color: #848D9A; width: 22px">{{n.cc}}</span>{{n.name}}</a></td>
+                <td class="td mono">{{n.total}}</td>
+                <td class="td"><div style="display: flex; align-items: center; gap: 10px"><div class="bar" style="flex: 1; height: 6px"><div style="height: 100%; width: {{n.share}}; background: #6EA8FE"></div></div><span class="mono" style="font-size: 12px; color: #A3ABB7; width: 44px; text-align: right">{{n.share}}</span></div></td>
+                <td class="td mono" style="font-size: 12.5px; color: #A3ABB7">{{n.split}}</td>
+                <td class="td"><div style="display: flex; flex-direction: column; gap: 5px"><span class="mono" style="font-size: 12px; color: {{n.qColor}}">{{n.quota}}</span><div class="bar"><div style="height: 100%; width: {{n.qPct}}; background: {{n.qColor}}"></div></div></div></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { range: '今日' }; }
+  renderVals() {
+    const seg = (on) => 'height:30px;padding:0 12px;border:0;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px;' + (on ? 'background:#232A35;color:#E6E9EE;font-weight:600;' : 'background:transparent;color:#A3ABB7;');
+    const tot = [372, 403, 418, 431, 433, 488, 480, 474, 463, 449, 431];
+    const q = (used, quota) => { const p = used / quota * 100; return { quota: used + ' / ' + quota + ' GB', qPct: Math.min(p, 100).toFixed(1) + '%', qColor: p >= 100 ? '#F26D6D' : p > 80 ? '#F0B341' : '#6EA8FE' }; };
+    const n = (cc, name, total, share, split, used, quota) => Object.assign({ cc, name, total, share, split }, q(used, quota));
+    return {
+      ranges: ['今日', '近 7 天', '近 30 天', '本月'].map((label) => ({ label, style: seg(this.state.range === label), pick: () => this.setState({ range: label }) })),
+      hours: tot.map((t, i) => ({ down: (t * 0.82 / 500 * 100).toFixed(1) + '%', up: (t * 0.18 / 500 * 100).toFixed(1) + '%', tip: String(i).padStart(2, '0') + ':00 · ' + t + ' GB' })),
+      nodes: [
+        n('SG', '新加坡 · 亚太骨干枢纽', '1.40 TB', '30.4%', '1.15 TB / 252 GB', 4003.8, 8192),
+        n('HK', '香港 CN2 GIA · 极速专线', '1.10 TB', '23.5%', '902 GB / 198 GB', 4935.7, 10240),
+        n('US', '洛杉矶 AS9929 · 美西优化', '819.4 GB', '16.8%', '672 GB / 147 GB', 8622.1, 15360),
+        n('JP', '东京 BGP · 软银金融专线', '584.7 GB', '12.0%', '479 GB / 105 GB', 2805.8, 6144),
+        n('SG', '狮城原生 · 4K 流媒体解锁', '365.3 GB', '7.5%', '300 GB / 65 GB', 780.0, 3072),
+        n('US', '硅谷原生 · AI 服务住宅', '251.2 GB', '5.2%', '206 GB / 45 GB', 1177.6, 4096),
+        n('DE', '法兰克福 · 欧洲核心互联', '204.1 GB', '4.2%', '167 GB / 37 GB', 1884.2, 10240),
+        n('CN', '北京 BGP · 遥测探针站', '23.9 GB', '0.5%', '20 GB / 4 GB', 23.9, 1024),
+        n('KR', '首尔 · 低延迟游戏专线', '0 B', '0%', '— / —', 3072, 3072)
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

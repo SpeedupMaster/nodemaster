@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 概览</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+.th{font-size:12px;font-weight:500;color:#848D9A;text-align:left;padding:10px 12px;border-bottom:1px solid #232831;white-space:nowrap}
+.td{padding:12px;border-bottom:1px solid #1C2027;font-size:13px;vertical-align:middle;white-space:nowrap}
+.bar{height:4px;border-radius:2px;background:#232831;overflow:hidden}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="dashboard" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column">
+    <!-- Top bar -->
+    <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 32px; border-bottom: 1px solid #232831">
+      <label style="flex: 1 1 280px; max-width: 420px; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid #232831; border-radius: 8px; background: #12151A; color: #848D9A; font-size: 13px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input aria-label="搜索节点、IP 或命令" placeholder="搜索节点、IP 或执行命令…" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #E6E9EE; font: inherit">
+        <span class="mono" style="font-size: 11px; padding: 2px 6px; border: 1px solid #2E343E; border-radius: 5px">⌘K</span>
+      </label>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <span class="chip" style="background: #11241C; color: #3ECF8E; height: 28px; padding: 0 10px"><span style="width: 6px; height: 6px; border-radius: 50%; background: #3ECF8E"></span>熔断防护运行中</span>
+        <button class="btn" aria-label="切换主题" style="width: 36px; padding: 0; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></button>
+        <a class="btn btn-primary" href="Deploy.dc.html" style="color: #0B0D10"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>接入节点</a>
+      </div>
+    </header>
+
+    <div style="padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; max-width: 1400px; width: 100%; box-sizing: border-box">
+      <!-- Title + status sentence -->
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; justify-content: space-between">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em">概览</h1>
+          <p style="margin: 0; font-size: 14px; color: #A3ABB7"><span style="color: #3ECF8E; font-weight: 600">8 / 9 节点在线</span> · 1 台因流量耗尽已熔断 · 3 条链式解锁链路正常</p>
+        </div>
+        <div role="group" aria-label="时间范围" style="display: flex; padding: 3px; gap: 2px; border: 1px solid #232831; border-radius: 9px; background: #12151A">
+          <button class="btn" style="height: 28px; border: 0; background: #232A35">24 小时</button>
+          <button class="btn" style="height: 28px; border: 0; background: transparent; color: #A3ABB7">7 天</button>
+          <button class="btn" style="height: 28px; border: 0; background: transparent; color: #A3ABB7">本月</button>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; color: #A3ABB7">实时吞吐</span>
+          <div style="display: flex; align-items: baseline; gap: 12px">
+            <span class="mono" style="font-size: 26px; font-weight: 500">↓ 93.0<span style="font-size: 14px; color: #848D9A"> MB/s</span></span>
+            <span class="mono" style="font-size: 14px; color: #A58BFA">↑ 20.6</span>
+          </div>
+          <svg viewBox="0 0 200 32" preserveAspectRatio="none" style="width: 100%; height: 32px" aria-hidden="true"><polyline points="{{spark}}" fill="none" stroke="#6EA8FE" stroke-width="1.5"></polyline></svg>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; color: #A3ABB7">本月流量</span>
+          <span class="mono" style="font-size: 26px; font-weight: 500">26.2<span style="font-size: 14px; color: #848D9A"> / 60.4 TB</span></span>
+          <div class="bar" style="height: 6px"><div style="width: 43.5%; height: 100%; background: #6EA8FE"></div></div>
+          <span style="font-size: 12px; color: #848D9A">已用 43.5% · 每月 1 日重置</span>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; color: #A3ABB7">三网平均延迟</span>
+          <span class="mono" style="font-size: 26px; font-weight: 500">21.5<span style="font-size: 14px; color: #848D9A"> ms</span></span>
+          <span style="font-size: 12px; color: #848D9A">9 个测速点 · 丢包 0% · 抖动 ±1.3 ms</span>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-size: 13px; color: #A3ABB7">资源负载（均值）</span>
+          <div style="display: flex; gap: 20px">
+            <div style="display: flex; flex-direction: column; gap: 2px"><span class="mono" style="font-size: 26px; font-weight: 500">16.7%</span><span style="font-size: 12px; color: #848D9A">CPU</span></div>
+            <div style="display: flex; flex-direction: column; gap: 2px"><span class="mono" style="font-size: 26px; font-weight: 500">35.6%</span><span style="font-size: 12px; color: #848D9A">内存 12.1 / 34 TB</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart + Attention -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px">
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; grid-column: span 2; min-width: 0">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">全网带宽</h2>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ABB7"><span style="width: 10px; height: 2px; background: #6EA8FE"></span>下行</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ABB7"><span style="width: 10px; height: 2px; background: #A58BFA"></span>上行</span>
+            <span class="mono" style="margin-left: auto; font-size: 12px; color: #848D9A">峰值 ↓ 112.4 MB/s · 05:00</span>
+          </div>
+          <svg viewBox="0 0 720 220" preserveAspectRatio="none" style="width: 100%; height: 220px" role="img" aria-label="过去 24 小时全网上下行带宽曲线">
+            <line x1="0" y1="55" x2="720" y2="55" stroke="#1C2027"></line>
+            <line x1="0" y1="110" x2="720" y2="110" stroke="#1C2027"></line>
+            <line x1="0" y1="165" x2="720" y2="165" stroke="#1C2027"></line>
+            <polygon points="{{downArea}}" fill="#6EA8FE" fill-opacity="0.12"></polygon>
+            <polyline points="{{downPts}}" fill="none" stroke="#6EA8FE" stroke-width="2"></polyline>
+            <polyline points="{{upPts}}" fill="none" stroke="#A58BFA" stroke-width="2"></polyline>
+          </svg>
+          <div class="mono" style="display: flex; justify-content: space-between; font-size: 11px; color: #848D9A"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>现在</span></div>
+        </section>
+
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">需要关注</h2>
+            <span class="chip" style="background: #2A1618; color: #F26D6D">4</span>
+            <a href="Alerts.dc.html" style="margin-left: auto; font-size: 13px">告警中心</a>
+          </div>
+          <sc-for list="{{attention}}" as="a" hint-placeholder-count="4">
+            <div style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid #1C2027">
+              <span style="width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: none; background: {{a.color}}"></span>
+              <div style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0">
+                <span style="font-size: 13.5px; font-weight: 500">{{a.title}}</span>
+                <span style="font-size: 12px; color: #848D9A">{{a.detail}}</span>
+              </div>
+              <a href="{{a.href}}" style="font-size: 12px; white-space: nowrap; align-self: center">{{a.action}}</a>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+
+      <!-- Node table -->
+      <section class="card" style="display: flex; flex-direction: column; min-width: 0">
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 16px 20px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">节点状态</h2>
+          <div role="group" aria-label="地区筛选" style="display: flex; gap: 4px">
+            <button class="chip" style="border: 0; background: #232A35; color: #E6E9EE; height: 26px; cursor: pointer">全部 9</button>
+            <button class="chip" style="border: 0; background: transparent; color: #A3ABB7; height: 26px; cursor: pointer">亚太 5</button>
+            <button class="chip" style="border: 0; background: transparent; color: #A3ABB7; height: 26px; cursor: pointer">欧美 3</button>
+            <button class="chip" style="border: 0; background: transparent; color: #A3ABB7; height: 26px; cursor: pointer">异常 1</button>
+          </div>
+          <a href="Nodes.dc.html" style="margin-left: auto; font-size: 13px">管理全部节点 →</a>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; min-width: 980px">
+            <thead><tr>
+              <th class="th" style="padding-left: 20px">节点</th><th class="th">状态</th><th class="th">CPU</th><th class="th">内存</th><th class="th">实时网速</th><th class="th">月流量</th><th class="th">延迟</th><th class="th">到期</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{nodes}}" as="n" hint-placeholder-count="9">
+                <tr>
+                  <td class="td" style="padding-left: 20px">
+                    <a href="NodeDetail.dc.html" style="display: flex; align-items: center; gap: 10px; color: #E6E9EE">
+                      <span class="mono" style="width: 28px; height: 20px; border-radius: 4px; background: #1C2129; color: #A3ABB7; font-size: 10.5px; display: flex; align-items: center; justify-content: center">{{n.cc}}</span>
+                      <span style="display: flex; flex-direction: column; gap: 2px">
+                        <span style="font-weight: 500">{{n.name}}</span>
+                        <span class="mono" style="font-size: 11.5px; color: #848D9A">{{n.ip}} · {{n.proto}}</span>
+                      </span>
+                    </a>
+                  </td>
+                  <td class="td"><span class="chip" style="background: {{n.stBg}}; color: {{n.stFg}}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{n.stFg}}"></span>{{n.st}}</span></td>
+                  <td class="td" style="width: 110px"><div style="display: flex; flex-direction: column; gap: 5px"><span class="mono">{{n.cpu}}</span><div class="bar"><div style="height: 100%; width: {{n.cpu}}; background: #6EA8FE"></div></div></div></td>
+                  <td class="td" style="width: 110px"><div style="display: flex; flex-direction: column; gap: 5px"><span class="mono">{{n.mem}}</span><div class="bar"><div style="height: 100%; width: {{n.mem}}; background: #A58BFA"></div></div></div></td>
+                  <td class="td mono" style="font-size: 12.5px"><span style="color: #E6E9EE">↓ {{n.down}}</span><br><span style="color: #848D9A">↑ {{n.up}}</span></td>
+                  <td class="td" style="width: 150px"><div style="display: flex; flex-direction: column; gap: 5px"><span class="mono" style="font-size: 12.5px">{{n.traffic}}</span><div class="bar"><div style="height: 100%; width: {{n.tPct}}; background: {{n.tColor}}"></div></div></div></td>
+                  <td class="td mono" style="color: {{n.latColor}}">{{n.lat}}</td>
+                  <td class="td" style="color: {{n.expColor}}">{{n.exp}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1620}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const down = [62,58,55,60,78,104,112,98,86,80,77,74,79,83,88,91,85,82,90,96,93,89,92,93];
+    const up = [14,13,12,13,16,22,24,21,19,18,17,17,18,19,20,21,20,19,20,22,21,20,21,20.6];
+    const pts = (arr, max, h, w) => arr.map((v, i) => (i * w / (arr.length - 1)).toFixed(1) + ',' + (h - v / max * (h - 10)).toFixed(1)).join(' ');
+    const downPts = pts(down, 120, 220, 720);
+    const ok = { st: '在线', stBg: '#11241C', stFg: '#3ECF8E' };
+    const lat = (ms) => ms < 60 ? '#3ECF8E' : ms < 150 ? '#F0B341' : '#F26D6D';
+    const n = (cc, name, ip, proto, s, cpu, mem, d, u, used, quota, ms, exp) => {
+      const p = quota ? used / quota * 100 : 0;
+      return Object.assign({ cc, name, ip, proto, cpu: cpu + '%', mem: mem + '%', down: d, up: u,
+        traffic: used + ' / ' + quota + ' GB', tPct: p.toFixed(1) + '%', tColor: p >= 100 ? '#F26D6D' : p > 80 ? '#F0B341' : '#6EA8FE',
+        lat: ms === null ? '—' : ms + ' ms', latColor: ms === null ? '#848D9A' : lat(ms),
+        exp, expColor: exp.startsWith('25') ? '#F0B341' : '#A3ABB7' }, s);
+    };
+    return {
+      spark: pts(down.slice(-16), 120, 32, 200),
+      downPts,
+      downArea: '0,220 ' + downPts + ' 720,220',
+      upPts: pts(up, 120, 220, 720),
+      attention: [
+        { color: '#F26D6D', title: 'KR 首尔 · 低延迟游戏专线已熔断', detail: '本月流量 3072 / 3072 GB 已耗尽，代理已自动停止', action: '查看', href: 'NodeDetail.dc.html' },
+        { color: '#F0B341', title: 'JP 东京 BGP 将于 25 天后到期', detail: '¥120/月 · 已开启自动续费，请确认余额', action: '续费信息', href: 'Nodes.dc.html' },
+        { color: '#F0B341', title: '面板正通过明文 HTTP 访问', detail: '节点 Token 与安装脚本可被链路劫持，建议配置 HTTPS', action: '如何配置', href: 'Deploy.dc.html' },
+        { color: '#6EA8FE', title: '2 台节点可升级 Xray 内核', detail: '当前 v1.8.24 → 最新 v26.1', action: '升级', href: 'Nodes.dc.html' }
+      ],
+      nodes: [
+        n('HK', '香港 CN2 GIA · 极速专线', '45.154.12.88', 'Reality', ok, 23.4, 41.2, '21.6 MB/s', '4.8 MB/s', 4935.7, 10240, 18, '66 天'),
+        n('JP', '东京 BGP · 软银金融专线', '103.214.88.25', 'Reality', ok, 17.8, 35.6, '11.2 MB/s', '2.3 MB/s', 2805.8, 6144, 36, '25 天'),
+        n('SG', '新加坡 · 亚太骨干枢纽', '139.180.201.76', 'Reality', ok, 31.2, 53.4, '28.4 MB/s', '6.2 MB/s', 4003.8, 8192, 52, '140 天'),
+        n('US', '洛杉矶 AS9929 · 美西优化', '23.94.108.19', 'Reality', ok, 22.4, 38.8, '15.6 MB/s', '3.8 MB/s', 8622.1, 15360, 132, '67 天'),
+        n('DE', '法兰克福 · 欧洲核心互联', '185.242.115.42', 'Reality', ok, 12.5, 28.3, '3.8 MB/s', '921 KB/s', 1884.2, 10240, 168, '216 天'),
+        n('SG', '狮城原生 · 4K 流媒体解锁', '165.22.98.140', 'SS 落地', ok, 15.6, 24.3, '7.2 MB/s', '1.4 MB/s', 780.0, 3072, 58, '50 天'),
+        n('US', '硅谷原生 · AI 服务住宅', '142.250.72.68', 'SS 落地', ok, 14.8, 22.0, '4.8 MB/s', '1.1 MB/s', 1177.6, 4096, 142, '112 天'),
+        n('CN', '北京 BGP · 遥测探针站', '—', '仅探针', ok, 6.2, 18.4, '0.4 MB/s', '0.1 MB/s', 23.9, 1024, null, '—'),
+        n('KR', '首尔 · 低延迟游戏专线', '211.234.118.50', 'Reality', { st: '已熔断', stBg: '#2A1618', stFg: '#F26D6D' }, 0.8, 9.1, '0 B/s', '0 B/s', 3072, 3072, 42, '31 天')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

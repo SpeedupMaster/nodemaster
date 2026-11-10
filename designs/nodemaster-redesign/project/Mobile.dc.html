@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 移动端概览</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+</style>
+</helmet>
+<div style="width: 100%; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif; display: flex; flex-direction: column">
+  <header style="position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #0B0D10; border-bottom: 1px solid #232831">
+    <div style="width: 28px; height: 28px; border-radius: 7px; background: #6EA8FE; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B0D10" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="18" cy="18" r="2.5"></circle><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8"></path></svg>
+    </div>
+    <span style="font-size: 16px; font-weight: 700">概览</span>
+    <button aria-label="搜索" style="margin-left: auto; width: 44px; height: 44px; border: 0; background: transparent; color: #A3ABB7; display: flex; align-items: center; justify-content: center"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></button>
+    <span style="width: 30px; height: 30px; border-radius: 50%; background: #1E2633; color: #6EA8FE; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center">A</span>
+  </header>
+
+  <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <p style="margin: 0; font-size: 14px; color: #A3ABB7; line-height: 1.5"><span style="color: #3ECF8E; font-weight: 600">8 / 9 节点在线</span> · 1 台已熔断</p>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #A3ABB7">实时下行</span><span class="mono" style="font-size: 20px">93.0<span style="font-size: 12px; color: #848D9A"> MB/s</span></span></div>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #A3ABB7">实时上行</span><span class="mono" style="font-size: 20px">20.6<span style="font-size: 12px; color: #848D9A"> MB/s</span></span></div>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #A3ABB7">本月流量</span><span class="mono" style="font-size: 20px">43.5%</span><div style="height: 4px; border-radius: 2px; background: #232831; overflow: hidden"><div style="width: 43.5%; height: 100%; background: #6EA8FE"></div></div></div>
+      <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 12px; color: #A3ABB7">三网延迟</span><span class="mono" style="font-size: 20px">21.5<span style="font-size: 12px; color: #848D9A"> ms</span></span></div>
+    </div>
+
+    <section class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 2px">
+      <h2 style="margin: 0 0 6px; font-size: 14px; font-weight: 600">需要关注</h2>
+      <a href="#" style="display: flex; gap: 10px; align-items: center; min-height: 44px; border-top: 1px solid #1C2027; color: #E6E9EE; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #F26D6D; flex: none"></span>KR 首尔流量耗尽，已熔断<span style="margin-left: auto; color: #848D9A">›</span></a>
+      <a href="#" style="display: flex; gap: 10px; align-items: center; min-height: 44px; border-top: 1px solid #1C2027; color: #E6E9EE; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #F0B341; flex: none"></span>JP 东京 25 天后到期<span style="margin-left: auto; color: #848D9A">›</span></a>
+      <a href="#" style="display: flex; gap: 10px; align-items: center; min-height: 44px; border-top: 1px solid #1C2027; color: #E6E9EE; font-size: 13px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #F0B341; flex: none"></span>面板使用明文 HTTP<span style="margin-left: auto; color: #848D9A">›</span></a>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 4px 0; font-size: 14px; font-weight: 600">节点</h2>
+      <sc-for list="{{nodes}}" as="n" hint-placeholder-count="6">
+        <a href="#" class="card" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: #E6E9EE">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: {{n.dot}}; flex: none"></span>
+          <span style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0">
+            <span style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"><span class="mono" style="color: #848D9A; font-size: 11px; margin-right: 6px">{{n.cc}}</span>{{n.name}}</span>
+            <span class="mono" style="font-size: 11.5px; color: #848D9A">↓ {{n.down}} · CPU {{n.cpu}}</span>
+          </span>
+          <span class="mono" style="font-size: 13px; color: {{n.latColor}}">{{n.lat}}</span>
+        </a>
+      </sc-for>
+    </section>
+  </div>
+
+  <nav aria-label="底部导航" style="position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: #0E1014; border-top: 1px solid #232831; padding: 4px 0 10px">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+      <a href="#" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: {{t.color}}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.d}}"></path></svg>{{t.label}}
+      </a>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const lc = (ms) => ms < 60 ? '#3ECF8E' : ms < 150 ? '#F0B341' : '#F26D6D';
+    const n = (cc, name, down, cpu, ms, dot) => ({ cc, name, down, cpu, lat: ms + ' ms', latColor: lc(ms), dot: dot || '#3ECF8E' });
+    return {
+      nodes: [
+        n('HK', '香港 CN2 GIA · 极速专线', '21.6 MB/s', '23%', 18),
+        n('JP', '东京 BGP · 软银金融专线', '11.2 MB/s', '18%', 36),
+        n('SG', '新加坡 · 亚太骨干枢纽', '28.4 MB/s', '31%', 52),
+        n('US', '洛杉矶 AS9929 · 美西优化', '15.6 MB/s', '22%', 132),
+        n('DE', '法兰克福 · 欧洲核心互联', '3.8 MB/s', '13%', 168),
+        n('KR', '首尔 · 低延迟游戏专线', '0 B/s', '1%', 42, '#F26D6D')
+      ],
+      tabs: [
+        { label: '概览', color: '#6EA8FE', d: 'M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z' },
+        { label: '节点', color: '#A3ABB7', d: 'M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01' },
+        { label: '网络', color: '#A3ABB7', d: 'M3 12h4l3-8 4 16 3-8h4' },
+        { label: '告警', color: '#A3ABB7', d: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

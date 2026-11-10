@@ -163,17 +163,17 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
   const getLogTypeBadge = (type: TelegramAlertLog["type"]) => {
     switch (type) {
       case "offline":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/15 text-red-400 border border-red-500/30">离线故障</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-status-danger/15 text-status-danger border border-status-danger/30">离线故障</span>;
       case "recovery":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">恢复上线</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-status-online/15 text-status-online border border-status-online/30">恢复上线</span>;
       case "traffic":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30">流量预警</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-status-warning/15 text-status-warning border border-status-warning/30">流量预警</span>;
       case "renewal":
         return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">续费提醒</span>;
       case "cpu":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/15 text-orange-400 border border-orange-500/30">CPU负载</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-status-warning/15 text-status-warning border border-status-warning/30">CPU负载</span>;
       case "mem":
-        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/15 text-sky-400 border border-sky-500/30">内存耗尽</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent/15 text-accent border border-accent/30">内存耗尽</span>;
       case "test":
         return <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-accent/15 text-accent border border-accent/30">连通测试</span>;
       default:
@@ -188,15 +188,15 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
         <div
           className={`fixed top-16 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 p-3.5 rounded-xl border shadow-2xl flex items-center justify-between text-xs transition-all backdrop-blur-md ${
             banner.type === "success"
-              ? "bg-emerald-950/95 border-emerald-500/50 text-emerald-200 shadow-emerald-950/50"
-              : "bg-red-950/95 border-red-500/50 text-red-200 shadow-red-950/50"
+              ? "bg-status-online/95 border-status-online/50 text-status-online shadow-status-online/50"
+              : "bg-status-danger/95 border-status-danger/50 text-status-danger shadow-status-danger/50"
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
             {banner.type === "success" ? (
-              <CheckCircle className="w-5 h-5 shrink-0 text-emerald-400" />
+              <CheckCircle className="w-5 h-5 shrink-0 text-status-online" />
             ) : (
-              <WarningCircle className="w-5 h-5 shrink-0 text-red-400" />
+              <WarningCircle className="w-5 h-5 shrink-0 text-status-danger" />
             )}
             <span className="font-medium leading-relaxed">{banner.message}</span>
           </div>
@@ -230,13 +230,13 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
               <span
                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono border ${
                   config.enabled
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    ? "bg-status-online/10 text-status-online border-status-online/30"
                     : "bg-paper-3 text-ink-muted border-rule"
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
-                    config.enabled ? "bg-emerald-400 animate-pulse" : "bg-ink-muted/50"
+                    config.enabled ? "bg-status-online animate-pulse" : "bg-ink-muted/50"
                   }`}
                 />
                 {config.enabled ? "推送已激活" : "推送未开启"}
@@ -260,7 +260,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             }}
             className={`h-11 sm:h-9 px-3.5 rounded-xl border flex items-center justify-between sm:justify-start gap-3 transition-all cursor-pointer select-none touch-manipulation ${
               config.enabled
-                ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20"
+                ? "bg-status-online/10 border-status-online/40 text-status-online hover:bg-status-online/20"
                 : "bg-paper border-rule text-ink-muted hover:border-rule-active hover:text-ink-secondary"
             }`}
           >
@@ -269,7 +269,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             </span>
             <div
               className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors ${
-                config.enabled ? "bg-emerald-500" : "bg-paper-3 border border-rule"
+                config.enabled ? "bg-status-online" : "bg-paper-3 border border-rule"
               }`}
             >
               <div
@@ -429,7 +429,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-status-danger" />
                   <span className="text-xs font-bold text-ink">
                     节点离线与故障熔断
                   </span>
@@ -447,7 +447,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   <div
                     className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors ${
                       config.offlineAlert
-                        ? "bg-emerald-500"
+                        ? "bg-status-online"
                         : "bg-paper-3 border border-rule"
                     }`}
                   >
@@ -485,7 +485,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-status-warning" />
                   <span className="text-xs font-bold text-ink">
                     月度流量超额预警
                   </span>
@@ -503,7 +503,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   <div
                     className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors ${
                       config.trafficAlert
-                        ? "bg-emerald-500"
+                        ? "bg-status-online"
                         : "bg-paper-3 border border-rule"
                     }`}
                   >
@@ -523,7 +523,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
               <div className="mt-3 bg-paper p-2.5 rounded-xl border border-rule space-y-2">
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-ink-muted text-[11px]">预警触发百分比:</span>
-                  <span className="text-amber-400 font-bold">
+                  <span className="text-status-warning font-bold">
                     {config.trafficThresholdPercent}%
                   </span>
                 </div>
@@ -540,7 +540,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   }
                   onMouseUp={() => handleSaveConfig()}
                   onTouchEnd={() => handleSaveConfig()}
-                  className="w-full accent-amber-400 cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
+                  className="w-full accent-status-warning cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
                 />
               </div>
             </div>
@@ -553,7 +553,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("traffic")}
                 disabled={simulatingType === "traffic"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-amber-500/15 text-amber-400 text-xs font-medium border border-rule hover:border-amber-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-status-warning/15 text-status-warning text-xs font-medium border border-rule hover:border-status-warning/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "traffic" ? "模拟中..." : "模拟流量预警"}</span>
@@ -584,7 +584,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   <div
                     className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors ${
                       config.renewalAlert
-                        ? "bg-emerald-500"
+                        ? "bg-status-online"
                         : "bg-paper-3 border border-rule"
                     }`}
                   >
@@ -651,7 +651,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-orange-400" />
+                  <Cpu className="w-3.5 h-3.5 text-status-warning" />
                   <span className="text-xs font-bold text-ink">
                     CPU 负载过高预警
                   </span>
@@ -669,7 +669,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   <div
                     className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors ${
                       config.cpuAlert
-                        ? "bg-emerald-500"
+                        ? "bg-status-online"
                         : "bg-paper-3 border border-rule"
                     }`}
                   >
@@ -689,7 +689,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
               <div className="mt-3 bg-paper p-2.5 rounded-xl border border-rule space-y-2">
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-ink-muted text-[11px]">触发 CPU 阈值:</span>
-                  <span className="text-orange-400 font-bold">
+                  <span className="text-status-warning font-bold">
                     {config.cpuThresholdPercent}%
                   </span>
                 </div>
@@ -706,7 +706,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   }
                   onMouseUp={() => handleSaveConfig()}
                   onTouchEnd={() => handleSaveConfig()}
-                  className="w-full accent-orange-400 cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
+                  className="w-full accent-status-warning cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
                 />
               </div>
             </div>
@@ -719,7 +719,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("cpu")}
                 disabled={simulatingType === "cpu"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-orange-500/15 text-orange-400 text-xs font-medium border border-rule hover:border-orange-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-status-warning/15 text-status-warning text-xs font-medium border border-rule hover:border-status-warning/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "cpu" ? "模拟中..." : "模拟 CPU 预警"}</span>
@@ -732,7 +732,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <HardDrive className="w-3.5 h-3.5 text-sky-400" />
+                  <HardDrive className="w-3.5 h-3.5 text-accent" />
                   <span className="text-xs font-bold text-ink">
                     内存 (RAM) 耗尽预警
                   </span>
@@ -750,7 +750,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   <div
                     className={`w-11 h-6 flex items-center rounded-full p-0.5 transition-colors ${
                       config.memAlert
-                        ? "bg-emerald-500"
+                        ? "bg-status-online"
                         : "bg-paper-3 border border-rule"
                     }`}
                   >
@@ -770,7 +770,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
               <div className="mt-3 bg-paper p-2.5 rounded-xl border border-rule space-y-2">
                 <div className="flex justify-between text-xs font-mono">
                   <span className="text-ink-muted text-[11px]">触发内存阈值:</span>
-                  <span className="text-sky-400 font-bold">
+                  <span className="text-accent font-bold">
                     {config.memThresholdPercent}%
                   </span>
                 </div>
@@ -787,7 +787,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                   }
                   onMouseUp={() => handleSaveConfig()}
                   onTouchEnd={() => handleSaveConfig()}
-                  className="w-full accent-sky-400 cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
+                  className="w-full accent-accent cursor-pointer h-2 bg-paper-3 rounded-lg touch-none"
                 />
               </div>
             </div>
@@ -800,7 +800,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                 type="button"
                 onClick={() => handleSimulateAlert("mem")}
                 disabled={simulatingType === "mem"}
-                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-sky-500/15 text-sky-400 text-xs font-medium border border-rule hover:border-sky-500/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
+                className="px-2.5 py-1.5 rounded-lg bg-paper-3 hover:bg-accent/15 text-accent text-xs font-medium border border-rule hover:border-accent/30 transition-all flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[36px]"
               >
                 <Play weight="fill" className="w-3 h-3" />
                 <span>{simulatingType === "mem" ? "模拟中..." : "模拟内存预警"}</span>
@@ -889,7 +889,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                       </td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         {log.success ? (
-                          <span className="text-emerald-400 font-medium text-[11px]">
+                          <span className="text-status-online font-medium text-[11px]">
                             ✓ 已送达
                           </span>
                         ) : (
@@ -923,7 +923,7 @@ export const TelegramNotificationView: React.FC<TelegramNotificationViewProps> =
                     </div>
                     <div className="shrink-0">
                       {log.success ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-status-online/10 text-status-online border border-status-online/30">
                           ✓ 已送达
                         </span>
                       ) : (

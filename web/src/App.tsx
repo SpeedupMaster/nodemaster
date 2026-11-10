@@ -2,9 +2,10 @@ import { lazy, Suspense, useState, useRef, useEffect, useCallback } from "react"
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useData } from "./hooks/useData";
+import type { NodeItem } from "./types";
 import { Sidebar } from "./components/layout/Sidebar";
 import { Header } from "./components/layout/Header";
-import { Footer } from "./components/layout/Footer";
+import { CommandPalette } from "./components/layout/CommandPalette";
 import { OverviewCards } from "./components/dashboard/OverviewCards";
 const NodeList = lazy(() => import("./components/nodes/NodeList").then(m => ({ default: m.NodeList })));
 const ProbeDashboard = lazy(() => import("./components/probe/ProbeDashboard").then(m => ({ default: m.ProbeDashboard })));
@@ -14,15 +15,13 @@ const ScriptView = lazy(() => import("./components/dashboard/ScriptView").then(m
 const TelegramNotificationView = lazy(() => import("./components/notifications/TelegramNotificationView").then(m => ({ default: m.TelegramNotificationView })));
 import { NodeForm } from "./components/nodes/NodeForm";
 const LatencyMonitorView = lazy(() => import("./components/ping/LatencyMonitorView").then(m => ({ default: m.LatencyMonitorView })));
-const NodeDetailModal = lazy(() => import("./components/probe/NodeDetailModal").then(m => ({ default: m.NodeDetailModal })));
+const NodeDetailPage = lazy(() => import("./components/probe/NodeDetailPage").then(m => ({ default: m.NodeDetailPage })));
 import { GlobalTooltip } from "./components/common/Tooltip";
 const TrafficAnalyticsView = lazy(() => import("./components/traffic/TrafficAnalyticsView").then(m => ({ default: m.TrafficAnalyticsView })));
-import { Broadcast, ArrowUpRight, ArrowDownRight } from "@phosphor-icons/react";
 import { Logo } from "./components/common/Logo";
 import { useAuth } from "./context/AuthContext";
 import { LoginPage } from "./components/auth/LoginPage";
 import { PWAStatusBanner } from "./components/common/PWAStatusBanner";
-import { formatSpeed } from "./utils/format";
 
 /* Hallmark · genre: modern-minimal · macrostructure: Workbench · theme: Cobalt · enrichment: E2-telemetry-stream · nav: N3 · footer: Ft2 */
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
@@ -53,7 +52,7 @@ const TAB_TITLES: Record<string, string> = {
 
 const getTabFromUrl = (): string => {
   if (typeof window === "undefined") return "dashboard";
-  const path = window.location.pathname.replace(/^\/+|\/+$/g, "").toLowerCase();
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, "").split("/")[0].toLowerCase();
   if (path && (VALID_TABS as readonly string[]).includes(path)) {
     return path;
   }
@@ -62,6 +61,13 @@ const getTabFromUrl = (): string => {
     return hash;
   }
   return "dashboard";
+};
+
+/** `/nodes/<id>` deep-links to a node's detail page */
+const getNodeIdFromUrl = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const m = window.location.pathname.match(/^\/nodes\/([^/]+)\/?$/);
+  return m ? decodeURIComponent(m[1]) : null;
 };
 
 /** Placeholder layout shown while a lazily loaded page chunk downloads */
@@ -83,13 +89,15 @@ export function App() {
   const { isAuthenticated, loading: authLoading, token } = useAuth();
   const [currentTab, setCurrentTab] = useState<string>(() => getTabFromUrl());
   const [isAddNodeOpen, setIsAddNodeOpen] = useState(false);
-  // Keep the id only: the node itself is read from live data so the modal tracks updates
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  // Keep the id only: the node itself is read from live data so the page tracks updates
+  const [detailNodeId, setDetailNodeId] = useState<string | null>(() => getNodeIdFromUrl());
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   const handleSelectTab = useCallback((tab: string) => {
     setCurrentTab(tab);
+    setDetailNodeId(null);
     const targetPath = tab === "dashboard" ? "/" : `/${tab}`;
     if (window.location.pathname !== targetPath) {
       window.history.pushState({ tab }, "", targetPath);
@@ -99,6 +107,7 @@ export function App() {
   useEffect(() => {
     const handlePopState = () => {
       setCurrentTab(getTabFromUrl());
+      setDetailNodeId(getNodeIdFromUrl());
     };
     window.addEventListener("popstate", handlePopState);
     return () => {
@@ -144,7 +153,14 @@ export function App() {
     totalTrafficLimit,
     onlineNodesCount,
   } = useData(isAuthenticated, token);
-  const selectedNodeDetail = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const openNode = useCallback((node: NodeItem) => {
+    setCurrentTab("nodes");
+    setDetailNodeId(node.id);
+    const targetPath = `/nodes/${encodeURIComponent(node.id)}`;
+    if (window.location.pathname !== targetPath) window.history.pushState({ tab: "nodes" }, "", targetPath);
+    window.scrollTo({ top: 0 });
+  }, []);
+  const detailNode = detailNodeId ? nodes.find((n) => n.id === detailNodeId) ?? null : null;
 
   // Tab switch GSAP transition
   useGSAP(() => {
@@ -156,8 +172,17 @@ export function App() {
     );
   }, { dependencies: [currentTab] });
 
-  const mobileUp = formatSpeed(totalUpSpeed);
-  const mobileDown = formatSpeed(totalDownSpeed);
+  // ⌘K / Ctrl+K opens the quick switcher anywhere in the console
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (authLoading) {
     return (
@@ -188,8 +213,6 @@ export function App() {
         currentTab={currentTab}
         onSelectTab={handleSelectTab}
         wsConnected={wsConnected}
-        totalUpSpeed={totalUpSpeed}
-        totalDownSpeed={totalDownSpeed}
         onlineCount={onlineNodesCount}
         totalCount={nodes.length}
         isMobileOpen={isMobileNavOpen}
@@ -206,34 +229,18 @@ export function App() {
           onToggleMobileMenu={() => setIsMobileNavOpen((prev) => !prev)}
           onOpenMobileMenu={() => setIsMobileNavOpen(true)}
           isMobileMenuOpen={isMobileNavOpen}
+          onOpenSearch={() => setIsPaletteOpen(true)}
         />
 
-        {/* Mobile Global Real-time Throughput (Sticky below Header on mobile < 768px) */}
-        <div className="md:hidden sticky top-16 z-10 bg-paper-2/95 backdrop-blur-md border-b border-rule px-4 py-2 flex items-center justify-between text-xs select-none">
-          <div className="flex items-center gap-1.5 font-mono text-ink-muted">
-            <Broadcast weight="duotone" className="w-3.5 h-3.5 text-accent animate-pulse-soft" />
-            <span className="text-[11px] font-medium">全局吞吐</span>
-          </div>
-          <div className="flex items-center gap-3.5 font-mono text-xs">
-            <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400">
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span className="text-[10px] text-ink-muted">上行:</span>
-              <span className="font-semibold">{mobileUp.val.toFixed(1)} {mobileUp.unit}</span>
-            </div>
-            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <ArrowDownRight className="w-3.5 h-3.5" />
-              <span className="text-[10px] text-ink-muted">下行:</span>
-              <span className="font-semibold">{mobileDown.val.toFixed(1)} {mobileDown.unit}</span>
-            </div>
-          </div>
-        </div>
-
-        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-4 sm:space-y-6">
+        <main className="flex-1 px-4 py-5 sm:px-8 sm:py-7 max-w-[1400px] w-full space-y-4 sm:space-y-6">
           <div ref={mainContentRef}>
             <Suspense fallback={<PageSkeleton />}>
             {currentTab === "dashboard" && (
               <div className="space-y-6">
                 <OverviewCards
+                  nodes={nodes}
+                  onSelectNode={openNode}
+                  onSelectTab={handleSelectTab}
                   totalTrafficUsed={totalTrafficUsed}
                   totalTrafficLimit={totalTrafficLimit}
                   totalUpSpeed={totalUpSpeed}
@@ -244,18 +251,43 @@ export function App() {
                 />
                 <ProbeDashboard
                   nodes={nodes}
-                  onSelectNode={(node) => setSelectedNodeId(node.id)}
+                  onSelectNode={openNode}
                 />
               </div>
             )}
 
-            {currentTab === "nodes" && (
+            {currentTab === "nodes" && detailNodeId && (
+              detailNode ? (
+                <NodeDetailPage
+                  key={detailNode.id}
+                  node={detailNode}
+                  nodes={nodes}
+                  relays={relays}
+                  onBack={() => handleSelectTab("nodes")}
+                  onOpenNode={openNode}
+                  onUpdate={updateNode}
+                  onSelectTab={handleSelectTab}
+                />
+              ) : loading && nodes.length === 0 ? (
+                <PageSkeleton />
+              ) : (
+                <div className="p-12 rounded-xl border border-dashed border-rule text-center space-y-3">
+                  <p className="text-sm text-ink-secondary">找不到这个节点，它可能已被删除。</p>
+                  <button type="button" onClick={() => handleSelectTab("nodes")} className="text-sm text-accent hover:underline cursor-pointer">
+                    返回节点列表
+                  </button>
+                </div>
+              )
+            )}
+
+            {currentTab === "nodes" && !detailNodeId && (
               <NodeList
                 nodes={nodes}
                 onResetTraffic={resetTraffic}
                 onDelete={deleteNode}
                 onUpdate={updateNode}
                 onRefreshData={fetchData}
+                onOpenNode={openNode}
               />
             )}
 
@@ -272,7 +304,7 @@ export function App() {
                 onDeleteTask={deleteLatencyTask}
                 onResetTasks={resetLatencyTasks}
                 onReorderTasks={reorderLatencyTasks}
-                onOpenNodeDetail={(node) => setSelectedNodeId(node.id)}
+                onOpenNodeDetail={openNode}
               />
             )}
 
@@ -297,7 +329,7 @@ export function App() {
               />
             )}
 
-            {currentTab === "script" && <ScriptView />}
+            {currentTab === "script" && <ScriptView nodes={nodes} onAddNode={() => setIsAddNodeOpen(true)} />}
 
             {currentTab === "notifications" && (
               <TelegramNotificationView nodes={nodes} />
@@ -306,7 +338,6 @@ export function App() {
           </div>
         </main>
 
-        <Footer />
       </div>
 
       {/* Global Add Node Modal */}
@@ -316,12 +347,13 @@ export function App() {
         onSubmit={addNode}
       />
 
-      {/* Global Node Detail & Latency Time Series Modal */}
-      {selectedNodeDetail && <Suspense fallback={null}><NodeDetailModal
-        node={selectedNodeDetail}
-        isOpen
-        onClose={() => setSelectedNodeId(null)}
-      /></Suspense>}
+      <CommandPalette
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        nodes={nodes}
+        onSelectTab={handleSelectTab}
+        onOpenNode={openNode}
+      />
 
       {/* Global Unified Tooltip Portal & Native Title Interceptor */}
       <GlobalTooltip />

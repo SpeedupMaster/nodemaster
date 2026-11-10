@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 告警中心</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+.inp{height:40px;padding:0 12px;border-radius:8px;border:1px solid #2E343E;background:#0F1216;color:#E6E9EE;font-family:inherit;font-size:13.5px;width:100%;box-sizing:border-box}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:#A3ABB7}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="alerts" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 360px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">告警中心</h1>
+        <p style="margin: 0; font-size: 14px; color: #A3ABB7">节点离线、流量超额、续费到期与资源过载，通过 Telegram 实时推送。</p>
+      </div>
+      <label style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid #1C3A2C; background: #0F1D17; font-size: 13px; color: #B9EBD2; cursor: pointer">
+        推送已开启
+        <input type="checkbox" checked role="switch" aria-label="全局推送" style="width: 16px; height: 16px; accent-color: #3ECF8E">
+      </label>
+      <button class="btn">发送测试消息</button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <div style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+        <section class="card" style="display: flex; flex-direction: column">
+          <div style="display: flex; align-items: center; padding: 16px 20px; gap: 12px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">告警规则</h2>
+            <span style="font-size: 12px; color: #848D9A">修改后立即生效</span>
+          </div>
+          <sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 20px; border-top: 1px solid #1C2027">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: {{r.color}}; flex: none"></span>
+              <div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 14px; font-weight: 600">{{r.title}}</span>
+                <span style="font-size: 12.5px; color: #848D9A; line-height: 1.5">{{r.desc}}</span>
+              </div>
+              <div style="flex: 0 1 260px; display: flex; align-items: center; gap: 10px">
+                <sc-if value="{{r.range}}" hint-placeholder-val="{{ true }}">
+                  <input type="range" min="50" max="100" value="{{r.val}}" aria-label="{{r.title}} 阈值" style="flex: 1; accent-color: {{r.color}}">
+                  <span class="mono" style="font-size: 13px; width: 44px; text-align: right">{{r.val}}%</span>
+                </sc-if>
+                <sc-if value="{{r.days}}" hint-placeholder-val="{{ false }}">
+                  <select class="inp" aria-label="提前提醒天数" style="height: 32px; font-size: 12.5px"><option>到期前 7 天</option><option>到期前 3 天</option><option>到期前 15 天</option><option>到期前 30 天</option></select>
+                </sc-if>
+                <sc-if value="{{r.plain}}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size: 12.5px; color: #A3ABB7">状态变化即推送</span>
+                </sc-if>
+              </div>
+              <button class="btn" style="height: 30px; font-size: 12.5px">模拟一次</button>
+              <input type="checkbox" checked role="switch" aria-label="启用{{r.title}}" style="width: 18px; height: 18px; accent-color: #6EA8FE">
+            </div>
+          </sc-for>
+        </section>
+
+        <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">Telegram 机器人</h2>
+            <span class="chip" style="background: #11241C; color: #3ECF8E">已连接</span>
+            <button class="btn btn-primary" style="margin-left: auto; height: 32px">保存</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px">
+            <label class="lbl">Bot Token<input class="inp mono" type="password" value="0000000000:placeholder-token"><span style="font-size: 12px; color: #848D9A">由 <a href="https://t.me/BotFather">@BotFather</a> 创建</span></label>
+            <label class="lbl">接收者 Chat ID<input class="inp mono" value="-1001982736450"><span style="font-size: 12px; color: #848D9A">私聊 <a href="https://t.me/userinfobot">@userinfobot</a> 获取</span></label>
+            <label class="lbl">API 地址（可选）<input class="inp mono" value="https://api.telegram.org"><span style="font-size: 12px; color: #848D9A">受限网络可填反向代理地址</span></label>
+          </div>
+        </section>
+      </div>
+
+      <aside class="card" style="flex: 1 1 320px; padding: 20px; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; margin-bottom: 8px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">最近告警</h2>
+          <span style="margin-left: auto; font-size: 12px; color: #848D9A">7 天内 6 条</span>
+        </div>
+        <sc-for list="{{history}}" as="h" hint-placeholder-count="6">
+          <div style="display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid #1C2027">
+            <span style="width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: {{h.color}}; flex: none"></span>
+            <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-size: 13.5px">{{h.title}}</span>
+              <span class="mono" style="font-size: 11.5px; color: #848D9A">{{h.t}} · {{h.state}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const r = (color, title, desc, kind, val) => ({ color, title, desc, val: val || 0, range: kind === 'range', days: kind === 'days', plain: kind === 'plain' });
+    return {
+      rules: [
+        r('#F26D6D', '节点离线与熔断', '节点失联或因流量耗尽熔断时推送，恢复后再推送一次恢复通知', 'plain'),
+        r('#F0B341', '月流量超额预警', '用量达到阈值时推送；同一节点 6 小时内不重复', 'range', 80),
+        r('#A58BFA', '续费到期提醒', '到期前每日提醒一次，并标明是否已开启自动续费', 'days'),
+        r('#6EA8FE', 'CPU 持续过载', '连续 5 分钟高于阈值时推送，可能是代理异常或被滥用', 'range', 85),
+        r('#6EA8FE', '内存即将耗尽', '高于阈值时推送，避免 Xray 进程被系统 OOM 终止', 'range', 85)
+      ],
+      history: [
+        { color: '#F26D6D', title: 'KR 首尔 · 流量耗尽，已熔断', t: '11-09 23:12', state: '持续中' },
+        { color: '#F0B341', title: 'KR 首尔 · 流量已用 80%', t: '11-07 14:30', state: '已推送' },
+        { color: '#A58BFA', title: 'JP 东京 · 30 天后到期', t: '11-06 09:00', state: '已推送' },
+        { color: '#F26D6D', title: 'HK 香港 · 广东移动丢包 12%', t: '11-08 20:51', state: '6 分钟后恢复' },
+        { color: '#6EA8FE', title: 'SG 新加坡 · CPU 91%', t: '11-05 03:44', state: '9 分钟后恢复' },
+        { color: '#3ECF8E', title: '测试消息', t: '11-04 18:02', state: '发送成功' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

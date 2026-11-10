@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LatencyMatrix } from "./LatencyMatrix";
 import {
   Plus,
   Trash,
@@ -8,10 +9,8 @@ import {
   HardDrives,
   Info,
   Target,
-  ArrowSquareOut,
 } from "@phosphor-icons/react";
 import { LatencyTask, NodeItem } from "../../types";
-import { Badge } from "../common/Badge";
 import { Input } from "../common/Input";
 import { Modal } from "../common/Modal";
 import { Tooltip } from "../common/Tooltip";
@@ -37,7 +36,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
   onReorderTasks,
   onOpenNodeDetail,
 }) => {
-  const [activeTab, setActiveTab] = useState<"tasks" | "servers">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "servers">("servers");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<LatencyTask | null>(null);
 
@@ -217,84 +216,54 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-        <div>
-          <h2 className="text-xl font-bold text-ink tracking-tight">延迟监测</h2>
-          <p className="text-xs text-ink-muted mt-1">
-            基于 TCP / ICMP 协议的多测速目标时序质量监控，毫秒级网络丢包与抖动分析
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
-          <Tooltip content="一键恢复默认三网测速目标预设">
-            <button
-              onClick={handleResetPresets}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-md bg-paper-2 hover:bg-paper-hover text-ink-secondary hover:text-ink text-xs font-medium border border-rule transition-colors cursor-pointer touch-manipulation min-h-[38px] sm:min-h-0"
-            >
-              <ArrowsClockwise className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">重置三网测试点</span>
-            </button>
-          </Tooltip>
-          <button
-            onClick={openCreateModal}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-md bg-accent hover:bg-accent-hover text-paper text-xs font-semibold shadow transition-colors cursor-pointer touch-manipulation min-h-[38px] sm:min-h-0"
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span className="truncate">新建监控任务</span>
-          </button>
-        </div>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="flex-1 min-w-[260px] text-sm text-ink-secondary">
+          每台节点对测速点的回程质量。{tasks.length} 个任务 · 每 60 秒采样 · 保留 7 天。
+        </p>
+        <button
+          type="button"
+          onClick={handleResetPresets}
+          className="h-9 px-3.5 flex items-center gap-2 rounded-lg border border-rule bg-paper-2 text-[13px] font-medium text-ink hover:border-rule-active cursor-pointer transition-colors"
+        >
+          <ArrowsClockwise className="w-4 h-4" />
+          恢复默认三网测速点
+        </button>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="h-9 px-3.5 flex items-center gap-2 rounded-lg bg-accent-fill text-white text-[13px] font-semibold hover:brightness-110 cursor-pointer transition"
+        >
+          <Plus className="w-4 h-4" />
+          新建监测任务
+        </button>
       </div>
 
-      {/* View Mode Tabs */}
-      <div className="border-b border-rule flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-6">
+      <div role="tablist" aria-label="视图" className="flex items-end gap-6 border-b border-rule">
+        {([
+          { id: "servers", label: "质量矩阵" },
+          { id: "tasks", label: `监测任务 · ${tasks.length}` },
+        ] as const).map((t) => (
           <button
-            onClick={() => setActiveTab("tasks")}
-            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative whitespace-nowrap touch-manipulation ${
-              activeTab === "tasks"
-                ? "text-accent font-semibold"
-                : "text-ink-muted hover:text-ink"
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`relative pb-2.5 text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${
+              activeTab === t.id ? "text-ink" : "text-ink-muted hover:text-ink"
             }`}
           >
-            任务视图
-            {activeTab === "tasks" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
-            )}
+            {t.label}
+            {activeTab === t.id && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-accent" />}
           </button>
-          <button
-            onClick={() => setActiveTab("servers")}
-            className={`pb-2.5 text-sm font-medium transition-colors cursor-pointer relative whitespace-nowrap touch-manipulation ${
-              activeTab === "servers"
-                ? "text-accent font-semibold"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            服务器视图
-            {activeTab === "servers" && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent rounded-full" />
-            )}
-          </button>
-        </div>
-
-        {/* Desktop Meta Info */}
-        <div className="hidden sm:flex items-center gap-2 text-xs text-ink-muted pb-2.5">
-          <span>共 {tasks.length} 个监测任务</span>
-          <span>·</span>
-          <span>采样周期 60s</span>
-          <span>·</span>
-          <span className="text-accent/90 flex items-center gap-0.5">
-            <DotsSixVertical className="w-3.5 h-3.5 inline" />
-            支持拖拽排序
+        ))}
+        {activeTab === "tasks" && (
+          <span className="hidden sm:flex ml-auto pb-2.5 items-center gap-1 text-xs text-ink-muted">
+            <DotsSixVertical className="w-3.5 h-3.5" />
+            拖拽排序
           </span>
-        </div>
-      </div>
-
-      {/* Mobile Sub Meta (Shown only on small screens) */}
-      <div className="sm:hidden -mt-3 flex items-center justify-between text-[11px] text-ink-muted px-0.5">
-        <span>共 {tasks.length} 个任务 · 采样周期 60s</span>
-        <span className="text-ink-secondary">点击卡片快捷操作</span>
+        )}
       </div>
 
       {/* Tab 1: Task View */}
@@ -377,7 +346,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
 
                         {/* Protocol Type */}
                         <td className="py-3 px-3 whitespace-nowrap">
-                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
                             {task.type}
                           </span>
                         </td>
@@ -405,7 +374,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                                     onDeleteTask(task.id);
                                   }
                                 }}
-                                className="p-1.5 rounded-md hover:bg-rose-500/10 text-ink-muted hover:text-rose-400 transition-colors cursor-pointer"
+                                className="p-1.5 rounded-md hover:bg-status-danger/10 text-ink-muted hover:text-status-danger transition-colors cursor-pointer"
                               >
                                 <Trash className="w-4 h-4" />
                               </button>
@@ -442,7 +411,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                       <span className="font-semibold text-ink text-sm leading-tight break-words">
                         {task.name}
                       </span>
-                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 font-semibold shrink-0">
+                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-semibold shrink-0">
                         {task.type}
                       </span>
                       {!task.enabled && (
@@ -475,7 +444,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
                           onDeleteTask(task.id);
                         }
                       }}
-                      className="w-8 h-8 rounded-lg bg-paper-3 hover:bg-rose-500/10 active:scale-95 text-ink-secondary hover:text-rose-400 flex items-center justify-center border border-rule transition-all cursor-pointer touch-manipulation"
+                      className="w-8 h-8 rounded-lg bg-paper-3 hover:bg-status-danger/10 active:scale-95 text-ink-secondary hover:text-status-danger flex items-center justify-center border border-rule transition-all cursor-pointer touch-manipulation"
                       title="删除任务"
                       aria-label="删除任务"
                     >
@@ -516,65 +485,8 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
         </div>
       )}
 
-      {/* Tab 2: Server View */}
       {activeTab === "servers" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {nodes.map((node) => {
-            const nodeTasks = tasks.filter(
-              (t) => t.enabled && (t.nodeIds.length === 0 || t.nodeIds.includes(node.id))
-            );
-
-            return (
-              <div
-                key={node.id}
-                className="p-4 rounded-lg bg-paper-2 border border-rule hover:border-rule-active transition-all space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-ink text-sm">
-                        {node.name}
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-paper-3 text-ink-muted border border-rule font-mono">
-                        {node.countryName.split(" ")[0]}
-                      </span>
-                    </div>
-                    <div className="text-xs font-mono text-ink-muted mt-0.5">
-                      {node.ip}:{node.port}
-                    </div>
-                  </div>
-
-                  <Badge
-                    variant={node.status === "online" ? "online" : "danger"}
-                    size="sm"
-                    pulse={node.status === "online"}
-                  >
-                    {node.status === "online" ? "在线" : "离线"}
-                  </Badge>
-                </div>
-
-                <div className="p-2.5 rounded bg-paper/60 border border-rule-subtle text-xs space-y-1.5 font-mono">
-                  <div className="flex items-center justify-between text-ink-muted">
-                    <span>监测目标任务</span>
-                    <span className="font-semibold text-ink">{nodeTasks.length} 个目标</span>
-                  </div>
-                  <div className="flex items-center justify-between text-ink-muted">
-                    <span>基准往返延迟</span>
-                    <span className="font-semibold text-accent">{node.latencyMs} ms</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onOpenNodeDetail(node)}
-                  className="w-full py-2.5 px-3 rounded-lg bg-paper-3 hover:bg-paper-hover text-ink text-xs font-medium border border-rule flex items-center justify-center gap-1.5 transition-colors cursor-pointer touch-manipulation min-h-[38px]"
-                >
-                  <ArrowSquareOut className="w-3.5 h-3.5 text-accent" />
-                  <span>查看详细延迟与时序图表</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        <LatencyMatrix nodes={nodes} tasks={tasks} onOpenNodeDetail={onOpenNodeDetail} />
       )}
 
       {/* Modal: Create or Edit Latency Task */}
@@ -589,7 +501,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
           <div className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-9rem)]">
             <div>
               <label className="block text-xs font-medium text-ink-secondary mb-1">
-                任务名称 <span className="text-rose-400">*</span>
+                任务名称 <span className="text-status-danger">*</span>
               </label>
               <Input
                 value={formName}
@@ -601,7 +513,7 @@ export const LatencyMonitorView: React.FC<LatencyMonitorViewProps> = ({
 
             <div>
               <label className="block text-xs font-medium text-ink-secondary mb-1">
-                目标地址 (Host:Port 或 IP) <span className="text-rose-400">*</span>
+                目标地址 (Host:Port 或 IP) <span className="text-status-danger">*</span>
               </label>
               <Input
                 value={formTarget}

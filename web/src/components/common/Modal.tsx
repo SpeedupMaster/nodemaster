@@ -215,7 +215,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-6 animate-fadeIn">
             <div className="w-full max-w-sm bg-paper-2 border border-rule-active/70 rounded-2xl p-5 shadow-2xl space-y-4 animate-scaleUp">
               <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-status-warning/15 border border-status-warning/30 flex items-center justify-center text-status-warning shrink-0 mt-0.5">
                   <Warning weight="bold" className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ export const Modal: React.FC<ModalProps> = ({
                     setShowDiscardConfirm(false);
                     onClose();
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer touch-manipulation text-center"
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] rounded-xl bg-status-danger hover:brightness-110 text-white dark:text-paper text-xs font-semibold shadow-xs transition-colors cursor-pointer touch-manipulation text-center"
                 >
                   放弃修改
                 </button>

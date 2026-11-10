@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 延迟监测</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:500}
+.th{font-size:12px;font-weight:500;color:#848D9A;text-align:left;padding:10px 12px;border-bottom:1px solid #232831;white-space:nowrap}
+.td{padding:11px 12px;border-bottom:1px solid #1C2027;font-size:13px;vertical-align:middle;white-space:nowrap}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="latency" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 6px; flex: 1 1 360px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">延迟监测</h1>
+        <p style="margin: 0; font-size: 14px; color: #A3ABB7">每台节点对国内三网测速点的回程质量。9 个任务 · 每 60 秒采样 · 保留 7 天。</p>
+      </div>
+      <button class="btn">恢复默认三网测速点</button>
+      <button class="btn btn-primary"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>新建监测任务</button>
+    </div>
+
+    <div role="tablist" style="display: flex; gap: 24px; border-bottom: 1px solid #232831">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button role="tab" aria-selected="{{t.sel}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{showMatrix}}" hint-placeholder-val="{{ true }}">
+      <section class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">质量矩阵</h2>
+          <span style="font-size: 12px; color: #848D9A">过去 1 小时平均 RTT，单元格颜色表示质量等级</span>
+          <div style="margin-left: auto; display: flex; gap: 14px; font-size: 12px; color: #A3ABB7; flex-wrap: wrap">
+            <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #143426"></span>&lt; 60 ms</span>
+            <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #1A2A42"></span>60–150</span>
+            <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #3A2D12"></span>150–200</span>
+            <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #3D1A1C"></span>&gt; 200 或丢包</span>
+          </div>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="border-collapse: separate; border-spacing: 4px; width: 100%; min-width: 980px">
+            <thead>
+              <tr>
+                <th style="text-align: left; font-size: 12px; font-weight: 500; color: #848D9A; padding: 0 8px 4px 0">节点 \ 测速点</th>
+                <sc-for list="{{targets}}" as="t" hint-placeholder-count="9">
+                  <th style="font-size: 12px; font-weight: 500; color: #A3ABB7; padding: 0 0 4px; white-space: nowrap">{{t}}</th>
+                </sc-for>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+                <tr>
+                  <td style="font-size: 13px; white-space: nowrap; padding-right: 8px"><a href="NodeDetail.dc.html" style="color: #E6E9EE"><span class="mono" style="font-size: 11px; color: #848D9A; margin-right: 8px">{{r.cc}}</span>{{r.name}}</a></td>
+                  <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="9">
+                    <td class="mono" title="{{c.tip}}" style="text-align: center; height: 40px; border-radius: 6px; font-size: 12.5px; background: {{c.bg}}; color: {{c.fg}}">{{c.ms}}</td>
+                  </sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px">
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; color: #A3ABB7">最佳回程</span>
+          <span style="font-size: 15px; font-weight: 600">香港 CN2 GIA → 四川电信</span>
+          <span class="mono" style="font-size: 13px; color: #3ECF8E">16.4 ms · 丢包 0% · ±0.9 ms</span>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; color: #A3ABB7">最差回程</span>
+          <span style="font-size: 15px; font-weight: 600">法兰克福 → 四川移动</span>
+          <span class="mono" style="font-size: 13px; color: #F0B341">191 ms · 丢包 0.5% · ±6.1 ms</span>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; color: #A3ABB7">过去 24 小时异常</span>
+          <span style="font-size: 15px; font-weight: 600">1 次丢包事件</span>
+          <span style="font-size: 13px; color: #A3ABB7">香港 → 广东移动 · 20:51 起持续 6 分钟</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showTasks}}" hint-placeholder-val="{{ false }}">
+      <section class="card" style="display: flex; flex-direction: column">
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; min-width: 820px">
+            <thead><tr><th class="th" style="padding-left: 20px; width: 24px"></th><th class="th">名称</th><th class="th">目标</th><th class="th">协议</th><th class="th">间隔</th><th class="th">范围</th><th class="th" style="text-align: right; padding-right: 20px">操作</th></tr></thead>
+            <tbody>
+              <sc-for list="{{tasks}}" as="t" hint-placeholder-count="9">
+                <tr>
+                  <td class="td" style="padding-left: 20px; color: #848D9A" aria-hidden="true">⋮⋮</td>
+                  <td class="td" style="font-weight: 500">{{t.name}}</td>
+                  <td class="td mono" style="color: #A3ABB7">{{t.host}}</td>
+                  <td class="td"><span class="chip" style="background: #1A2232; color: #6EA8FE">TCP</span></td>
+                  <td class="td mono">60 s</td>
+                  <td class="td" style="color: #A3ABB7">全部节点（9）</td>
+                  <td class="td" style="text-align: right; padding-right: 20px"><button class="btn" style="height: 30px">编辑</button></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <p style="margin: 0; padding: 14px 20px; font-size: 12.5px; color: #848D9A">预计占用磁盘 18.18 MB/天，按 7 天保留共约 127.26 MB。拖拽左侧手柄可调整显示顺序。</p>
+      </section>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: '质量矩阵' }; }
+  renderVals() {
+    const tabStyle = (on) => 'background:none;border:0;padding:0 0 12px;cursor:pointer;font-family:inherit;font-size:14px;' + (on ? 'color:#E6E9EE;font-weight:600;box-shadow:inset 0 -2px 0 #6EA8FE;' : 'color:#A3ABB7;font-weight:500;');
+    const provs = [['广东', 'gd'], ['湖北', 'hb'], ['四川', 'sc']];
+    const isps = [['移动', 'cm'], ['联通', 'cu'], ['电信', 'ct']];
+    const targets = [], tasks = [], offs = [];
+    provs.forEach(([p, pk], pi) => isps.forEach(([i, ik], ii) => {
+      targets.push(p + i);
+      tasks.push({ name: p + i, host: pk + '-' + ik + '-v4.ip.zstaticcdn.com:80' });
+      offs.push(pi * 2.2 + [5, 1.5, -1.5][ii]);
+    }));
+    const tier = (ms) => ms < 60 ? ['#143426', '#7BE3B1'] : ms < 150 ? ['#1A2A42', '#9CC3FF'] : ms < 200 ? ['#3A2D12', '#F5C76A'] : ['#3D1A1C', '#F59A9A'];
+    const nodes = [['HK', '香港 CN2 GIA', 18], ['JP', '东京 BGP', 36], ['SG', '新加坡骨干', 52], ['SG', '狮城原生', 58], ['KR', '首尔游戏专线', 42], ['US', '洛杉矶 AS9929', 132], ['US', '硅谷原生', 142], ['DE', '法兰克福', 168]];
+    return {
+      tabs: ['质量矩阵', '监测任务'].map((label) => ({ label, sel: String(this.state.tab === label), style: tabStyle(this.state.tab === label), pick: () => this.setState({ tab: label }) })),
+      showMatrix: this.state.tab === '质量矩阵',
+      showTasks: this.state.tab === '监测任务',
+      targets, tasks,
+      rows: nodes.map(([cc, name, base]) => ({ cc, name, cells: offs.map((o, k) => {
+        const ms = Math.max(8, base + o * (base / 30) + ((k * 7 + base) % 5) - 2);
+        const [bg, fg] = tier(ms);
+        return { ms: ms.toFixed(ms < 100 ? 1 : 0), bg, fg, tip: name + ' → ' + targets[k] + ' · ' + ms.toFixed(1) + ' ms' };
+      }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

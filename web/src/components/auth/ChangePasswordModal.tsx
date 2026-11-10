@@ -76,14 +76,14 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     <Modal isOpen={isOpen} onClose={handleClose} title="修改管理员密码" maxWidth="sm">
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-status-danger/10 border border-status-danger/20 text-status-danger text-xs flex items-center gap-2">
             <WarningCircle weight="bold" className="w-4 h-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-lg bg-status-online/10 border border-status-online/20 text-status-online text-xs flex items-center gap-2">
             <CheckCircle weight="bold" className="w-4 h-4 shrink-0" />
             <span>{successMsg}</span>
           </div>

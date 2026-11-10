@@ -16,8 +16,6 @@ import {
   SquaresFour,
   MagnifyingGlass,
   Database,
-  Lightning,
-  ShieldCheck,
 } from "@phosphor-icons/react";
 import { formatSpeed, formatBytes, toGB, formatPct, formatUptime } from "../../utils/format";
 
@@ -78,82 +76,8 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
     );
   }, { scope: containerRef, dependencies: [viewMode, regionFilter] });
 
-  // Calculate Aggregates
-  const totalUpBytes = nodes.reduce((acc, n) => acc + (n.status === "online" ? n.uplinkSpeedBytes : 0), 0);
-  const totalDownBytes = nodes.reduce((acc, n) => acc + (n.status === "online" ? n.downlinkSpeedBytes : 0), 0);
-  const totalMemTotal = nodes.reduce((acc, n) => acc + (n.memTotalBytes || 2147483648), 0);
-  const totalMemUsed = nodes.reduce((acc, n) => acc + (n.memUsedBytes || Math.floor((n.memTotalBytes || 2147483648) * (n.memUsage / 100))), 0);
-  const avgCpu = (nodes.reduce((acc, n) => acc + n.cpuUsage, 0) / (nodes.length || 1)).toFixed(1);
-  const onlineCount = nodes.filter((n) => n.status === "online").length;
-
-  const aggUp = formatSpeed(totalUpBytes);
-  const aggDown = formatSpeed(totalDownBytes);
-
   return (
     <div ref={containerRef} className="space-y-4">
-      {/* Probe Telemetry Summary Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-        {/* Card 1: 在管探针总数 */}
-        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">在管探针总数</div>
-            <div className="text-base sm:text-lg font-bold text-ink mt-0.5 flex items-baseline gap-1 truncate">
-              <span className="font-mono">{onlineCount}</span>
-              <span className="text-xs text-ink-muted font-normal">/ <span className="font-mono">{nodes.length}</span> 在线</span>
-            </div>
-          </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 ml-1.5">
-            <ShieldCheck weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-          </div>
-        </div>
-
-        {/* Card 2: 全网出入吞吐 */}
-        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">全网出入吞吐</div>
-            <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 flex flex-col xs:flex-row items-start xs:items-center gap-0.5 sm:gap-2 truncate">
-              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 truncate">
-                <ArrowDown className="w-3 h-3 shrink-0" />
-                <RollingCounter value={aggDown.val} decimals={1} suffix={` ${aggDown.unit}`} />
-              </span>
-              <span className="text-sky-600 dark:text-sky-400 flex items-center gap-0.5 truncate">
-                <ArrowUp className="w-3 h-3 shrink-0" />
-                <RollingCounter value={aggUp.val} decimals={1} suffix={` ${aggUp.unit}`} />
-              </span>
-            </div>
-          </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 shrink-0 ml-1.5">
-            <Lightning weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-          </div>
-        </div>
-
-        {/* Card 3: 全网平均 CPU 负载 */}
-        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">平均 CPU 负载</div>
-            <div className="text-base sm:text-lg font-bold font-mono text-ink mt-0.5">
-              {avgCpu}%
-            </div>
-          </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-accent/10 text-accent border border-accent/20 shrink-0 ml-1.5">
-            <Cpu weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-          </div>
-        </div>
-
-        {/* Card 4: 物理内存总占用 */}
-        <div className="group card-lift p-3 sm:p-3.5 rounded-xl bg-paper-2 border border-rule flex items-center justify-between min-w-0">
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] sm:text-[11px] font-medium text-ink-muted truncate">物理内存总占用</div>
-            <div className="text-xs sm:text-sm font-bold font-mono text-ink mt-1 truncate">
-              {formatBytes(totalMemUsed)} <span className="text-[10px] font-normal text-ink-muted">/ {formatBytes(totalMemTotal)}</span>
-            </div>
-          </div>
-          <div className="icon-tile w-8 h-8 sm:w-9 sm:h-9 bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20 shrink-0 ml-1.5">
-            <Database weight="duotone" className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar: Filter, Search & View Mode Toggle */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-paper-2 p-2.5 sm:p-3 rounded-lg border border-rule">
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-0.5 sm:pb-0">
@@ -179,7 +103,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
           </div>
 
           <div className="hidden lg:flex items-center gap-1.5 text-xs text-ink-muted font-mono pl-2 shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-online animate-pulse" />
             <span>实时探针心跳 (3s 采样)</span>
           </div>
         </div>
@@ -306,7 +230,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                         node.cpuUsage > 80
                           ? "bg-status-danger"
                           : node.cpuUsage > 50
-                          ? "bg-amber-400"
+                          ? "bg-status-warning"
                           : "bg-accent"
                       }`}
                       style={{ width: `${node.cpuUsage}%` }}
@@ -322,7 +246,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                 <div className="bg-paper/60 p-2 rounded-lg border border-rule">
                   <div className="flex items-center justify-between text-[11px] mb-1">
                     <span className="text-ink-muted flex items-center gap-1">
-                      <Database className="w-3 h-3 text-sky-400" />
+                      <Database className="w-3 h-3 text-accent" />
                       <span>内存占用</span>
                     </span>
                     <span className="font-mono font-semibold text-ink">{formatPct(node.memUsage)}%</span>
@@ -330,7 +254,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        node.memUsage > 85 ? "bg-status-danger" : "bg-sky-500"
+                        node.memUsage > 85 ? "bg-status-danger" : "bg-accent-fill"
                       }`}
                       style={{ width: `${node.memUsage}%` }}
                     />
@@ -345,11 +269,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
               <div className="bg-paper/60 p-2.5 rounded-lg border border-rule space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3 font-mono text-[11px]">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+                    <span className="text-status-online dark:text-status-online font-semibold flex items-center gap-0.5">
                       <ArrowDown className="w-3 h-3" />
                       <span>{down.val.toFixed(1)} {down.unit}</span>
                     </span>
-                    <span className="text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-0.5">
+                    <span className="text-accent dark:text-accent font-semibold flex items-center gap-0.5">
                       <ArrowUp className="w-3 h-3" />
                       <span>{up.val.toFixed(1)} {up.unit}</span>
                     </span>
@@ -457,7 +381,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                             <span
                               className={`px-1 py-0.2 rounded text-[10px] font-mono border shrink-0 ${
                                 node.tcpCongestion.toLowerCase() === "bbr"
-                                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                                  ? "text-status-online dark:text-status-online bg-status-online/10 border-status-online/30"
                                   : "text-ink-muted bg-paper-3 border-rule"
                               }`}
                               title={`TCP 算法: ${node.tcpCongestion}`}
@@ -490,7 +414,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                               node.cpuUsage > 80
                                 ? "bg-status-danger"
                                 : node.cpuUsage > 50
-                                ? "bg-amber-400"
+                                ? "bg-status-warning"
                                 : "bg-accent"
                             }`}
                             style={{ width: `${node.cpuUsage}%` }}
@@ -509,7 +433,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                         <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-300 ${
-                              node.memUsage > 85 ? "bg-status-danger" : "bg-sky-500"
+                              node.memUsage > 85 ? "bg-status-danger" : "bg-accent-fill"
                             }`}
                             style={{ width: `${node.memUsage}%` }}
                           />
@@ -534,11 +458,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
 
                       {/* Network Speeds */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold text-xs whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-status-online dark:text-status-online font-semibold text-xs whitespace-nowrap">
                           <ArrowDown className="w-3 h-3 shrink-0" />
                           <RollingCounter value={down.val} decimals={1} suffix={` ${down.unit}`} />
                         </div>
-                        <div className="flex items-center gap-1 text-sky-600 dark:text-sky-400 font-semibold text-xs mt-0.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-accent dark:text-accent font-semibold text-xs mt-0.5 whitespace-nowrap">
                           <ArrowUp className="w-3 h-3 shrink-0" />
                           <RollingCounter value={up.val} decimals={1} suffix={` ${up.unit}`} />
                         </div>
@@ -636,7 +560,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                           <span>•</span>
                           <span className={`text-[10px] font-mono px-1 py-0.2 rounded border ${
                             node.tcpCongestion.toLowerCase() === "bbr"
-                              ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/25"
+                              ? "text-status-online dark:text-status-online bg-status-online/10 border-status-online/25"
                               : "text-ink-muted bg-paper-3 border-rule"
                           }`}>
                             {node.tcpCongestion.toUpperCase()}
@@ -644,7 +568,7 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                         </>
                       )}
                       <span>•</span>
-                      <span className="text-emerald-400 font-medium">
+                      <span className="text-status-online font-medium">
                         {node.bandwidthMbps ? `${node.bandwidthMbps >= 1000 ? node.bandwidthMbps / 1000 + " Gbps" : node.bandwidthMbps + " Mbps"}` : "1 Gbps"}
                       </span>
                     </div>
@@ -690,13 +614,13 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                   <div>
                     <div className="flex items-center justify-between text-ink-muted mb-1 text-[11px]">
                       <span className="flex items-center gap-1">
-                        <Database className="w-3 h-3 text-sky-400" /> 内存
+                        <Database className="w-3 h-3 text-accent" /> 内存
                       </span>
                       <span className="font-semibold text-ink">{formatPct(node.memUsage)}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-paper-3 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-sky-500"
+                        className="h-full rounded-full bg-accent-fill"
                         style={{ width: `${node.memUsage}%` }}
                       />
                     </div>
@@ -727,11 +651,11 @@ export const ProbeDashboard: React.FC<ProbeDashboardProps> = ({ nodes, onSelectN
                 {/* Network & Uptime Footer */}
                 <div className="pt-3 border-t border-rule flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-3">
-                    <span className="text-emerald-400 flex items-center gap-1">
+                    <span className="text-status-online flex items-center gap-1">
                       <ArrowDown className="w-3 h-3" />
                       <RollingCounter value={down.val} decimals={1} suffix={` ${down.unit}`} />
                     </span>
-                    <span className="text-sky-400 flex items-center gap-1">
+                    <span className="text-accent flex items-center gap-1">
                       <ArrowUp className="w-3 h-3" />
                       <RollingCounter value={up.val} decimals={1} suffix={` ${up.unit}`} />
                     </span>

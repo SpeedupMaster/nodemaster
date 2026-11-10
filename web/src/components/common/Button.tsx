@@ -38,7 +38,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary:
-      "bg-gradient-accent text-white font-semibold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_1px_2px_0_rgba(0,0,0,0.3)] hover:shadow-glow hover:brightness-110",
+      "bg-accent-fill text-white font-semibold hover:brightness-110",
     secondary:
       "bg-paper-2 text-ink border border-rule shadow-xs hover:bg-paper-hover hover:border-rule-active hover:text-ink active:bg-paper-active",
     danger:

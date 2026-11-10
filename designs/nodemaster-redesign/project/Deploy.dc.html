@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 接入节点</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.card{background:#12151A;border:1px solid #232831;border-radius:12px}
+.btn{height:36px;padding:0 14px;border-radius:8px;border:1px solid #2E343E;background:#161A20;color:#E6E9EE;font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.btn-primary{background:#6EA8FE;border-color:#6EA8FE;color:#0B0D10;font-weight:600}
+.inp{height:40px;padding:0 12px;border-radius:8px;border:1px solid #2E343E;background:#0F1216;color:#E6E9EE;font-family:inherit;font-size:13.5px;width:100%;box-sizing:border-box}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:#A3ABB7}
+.num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none}
+</style>
+</helmet>
+<div style="display: flex; flex-wrap: wrap; min-height: 100vh; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <dc-import name="Sidebar" active="deploy" hint-size="232px,100%"></dc-import>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; max-width: 1440px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 700">接入节点</h1>
+      <p style="margin: 0; font-size: 14px; color: #A3ABB7">四步把一台 Linux VPS 接入面板：填写信息 → 选择部署项 → 在 VPS 上运行命令 → 等待心跳。</p>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <div style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <!-- Step 1 -->
+        <section class="card" style="padding: 20px; display: flex; gap: 16px">
+          <span class="num" style="background: #11241C; color: #3ECF8E">✓</span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: center"><h2 style="margin: 0; font-size: 15px; font-weight: 600">节点信息</h2><button class="btn" style="margin-left: auto; height: 28px; font-size: 12px">修改</button></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+              <label class="lbl">名称<input class="inp" value="大阪 IIJ · 关西专线"></label>
+              <label class="lbl">IP / 域名<input class="inp mono" value="203.0.113.24"></label>
+              <label class="lbl">角色<select class="inp"><option>主力直连（VLESS-Reality）</option><option>解锁落地（Shadowsocks 2022）</option><option>仅探针</option></select></label>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+              <label class="lbl">月流量配额（GB）<input class="inp mono" value="4096"></label>
+              <label class="lbl">月费<input class="inp" placeholder="例如 ¥88/月"></label>
+              <label class="lbl">到期日<input class="inp mono" placeholder="YYYY-MM-DD"></label>
+              <label class="lbl">超额后<select class="inp"><option>自动熔断</option><option>仅告警</option></select></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="card" style="padding: 20px; display: flex; gap: 16px">
+          <span class="num" style="background: #11241C; color: #3ECF8E">✓</span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">部署项</h2>
+            <div role="radiogroup" aria-label="部署模式" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px">
+              <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+                <button role="radio" aria-checked="{{m.sel}}" onClick="{{m.pick}}" style="{{m.style}}">
+                  <span style="font-size: 14px; font-weight: 600">{{m.title}}</span>
+                  <span style="font-size: 12.5px; color: #A3ABB7; line-height: 1.5">{{m.desc}}</span>
+                </button>
+              </sc-for>
+            </div>
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+              <legend style="font-size: 12.5px; color: #A3ABB7; margin-bottom: 8px">网络调优</legend>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px"><input type="checkbox" checked style="width: 16px; height: 16px; margin-top: 2px; accent-color: #6EA8FE"><span><span class="mono">--bbr</span> 开启 BBR + FQ 拥塞控制<br><span style="font-size: 12px; color: #848D9A">推荐。显著改善高丢包跨境链路的单线程速度</span></span></label>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px"><input type="checkbox" checked style="width: 16px; height: 16px; margin-top: 2px; accent-color: #6EA8FE"><span>TCP-Dashboard 深度调优<br><span style="font-size: 12px; color: #848D9A">按内存 5% 设置缓冲区、扩大连接池、网卡多队列均衡，并安装终端快捷命令 <span class="mono">t</span></span></span></label>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px"><input type="checkbox" style="width: 16px; height: 16px; margin-top: 2px; accent-color: #6EA8FE"><span><span class="mono">--ipv4-first</span> IPv4 优先解析<br><span style="font-size: 12px; color: #848D9A">仅当 VPS 的 IPv6 出口质量差时开启</span></span></label>
+            </fieldset>
+          </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="card" style="padding: 20px; display: flex; gap: 16px; border-color: #2B4166">
+          <span class="num" style="background: #6EA8FE; color: #0B0D10">3</span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600">以 root 身份在 VPS 上运行</h2>
+            <div style="position: relative; border-radius: 10px; background: #08090B; border: 1px solid #232831; padding: 16px 16px 16px 16px">
+              <pre class="mono" style="margin: 0; font-size: 13px; line-height: 1.7; color: #C5CBD3; white-space: pre-wrap; word-break: break-all"><span style="color: #848D9A">$</span> curl -fsSL http://panel.example.com/api/install.sh | bash -s -- \
+    --panel http://panel.example.com \
+    --token <span style="color: #F0B341">nm_7Qx2…k9Fa</span> --bbr --tune</pre>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <button class="btn btn-primary">复制命令</button>
+              <button class="btn">查看脚本内容</button>
+              <span style="margin-left: auto; font-size: 12px; color: #848D9A; align-self: center">令牌 24 小时内有效，仅可使用一次</span>
+            </div>
+            <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; background: #1F1A0E; border: 1px solid #3A2F14; font-size: 13px; color: #F5D9A0; line-height: 1.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F0B341" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M12 3l9.5 17h-19zM12 10v4M12 17h.01"></path></svg>
+              <span>面板当前通过明文 HTTP 访问，令牌与脚本可能被中间人篡改后以 root 执行。建议先为面板配置 HTTPS 反向代理。<a href="#">配置指南</a></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="card" style="padding: 20px; display: flex; gap: 16px">
+          <span class="num" style="background: #1C2129; color: #A3ABB7">4</span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #A3ABB7">等待节点上线</h2>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #848D9A">
+              <span>○ 探针首次心跳</span>
+              <span>○ Xray 内核安装与配置下发</span>
+              <span>○ 首次三网测速</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Aside -->
+      <aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px">
+        <section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 14px; font-weight: 600">TCP-Dashboard 调优包含</h2>
+          <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #A3ABB7; line-height: 1.5">
+            <li>BBR + FQ 拥塞控制</li>
+            <li>按物理内存 5% 动态设置读写缓冲（16–128 MB）</li>
+            <li>somaxconn 65535 · 文件句柄 1,048,576</li>
+            <li>Reality / HY2 专项补丁：低首包延迟、MTU 黑洞探测</li>
+            <li>网卡 RPS/RSS 多队列均衡</li>
+            <li>终端输入 <span class="mono">t</span> 进入交互面板</li>
+          </ul>
+          <a href="https://github.com/666shen/tcp-dashboard" style="font-size: 13px">开源项目 →</a>
+        </section>
+        <section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 14px; font-weight: 600">已有节点只想调优？</h2>
+          <pre class="mono" style="margin: 0; padding: 10px 12px; border-radius: 8px; background: #08090B; font-size: 12px; color: #C5CBD3; white-space: pre-wrap; word-break: break-all">bash &lt;(curl -fsSL https://tcp.vpsing.de)</pre>
+          <button class="btn" style="align-self: flex-start; height: 30px; font-size: 12.5px">复制</button>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { mode: 0 }; }
+  renderVals() {
+    const st = (on) => 'text-align:left;display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:10px;cursor:pointer;font-family:inherit;color:#E6E9EE;' + (on ? 'background:#141C2A;border:1px solid #6EA8FE;' : 'background:#161A20;border:1px solid #2E343E;');
+    const modes = [
+      { title: '代理节点 + 探针', desc: '安装 Xray 内核与系统探针，节点出现在订阅里并上报监控数据' },
+      { title: '仅探针', desc: '只做监控与三网测速，不安装代理，不出现在订阅中' }
+    ];
+    return { modes: modes.map((m, i) => Object.assign({}, m, { sel: String(this.state.mode === i), style: st(this.state.mode === i), pick: () => this.setState({ mode: i }) })) };
+  }
+}
+</script>
+</body>
+</html>

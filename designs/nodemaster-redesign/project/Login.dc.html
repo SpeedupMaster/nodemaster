@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>NodeMaster · 登录</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0B0D10}
+a{color:#6EA8FE;text-decoration:none}a:hover{color:#9CC3FF}
+.inp{height:44px;padding:0 12px;border-radius:8px;border:1px solid #2E343E;background:#0F1216;color:#E6E9EE;font-family:inherit;font-size:14px;width:100%;box-sizing:border-box}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 48px 20px; box-sizing: border-box; background: #0B0D10; color: #E6E9EE; font-family: 'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">
+  <div style="width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #6EA8FE; display: flex; align-items: center; justify-content: center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B0D10" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="6" r="2.5"></circle><circle cx="18" cy="18" r="2.5"></circle><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8"></path></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">登录 NodeMaster</h1>
+        <p style="margin: 0; font-size: 14px; color: #A3ABB7">多 VPS 节点管理与分流控制面板</p>
+      </div>
+    </div>
+
+    <form style="display: flex; flex-direction: column; gap: 16px">
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB7">用户名
+        <input class="inp" autocomplete="username" placeholder="admin">
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3ABB7">密码
+        <span style="position: relative; display: block">
+          <input class="inp" type="password" autocomplete="current-password" placeholder="••••••••" style="padding-right: 48px">
+          <button type="button" aria-label="显示密码" style="position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: #A3ABB7; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+        </span>
+      </label>
+      <label style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #C5CBD3; cursor: pointer">
+        <input type="checkbox" checked style="width: 16px; height: 16px; accent-color: #6EA8FE">保持登录 7 天
+      </label>
+      <a href="Main.dc.html" style="height: 44px; border-radius: 8px; background: #6EA8FE; color: #0B0D10; font-size: 14.5px; font-weight: 600; display: flex; align-items: center; justify-content: center">登录</a>
+    </form>
+
+    <details style="font-size: 13px; color: #A3ABB7; border-top: 1px solid #232831; padding-top: 16px">
+      <summary style="cursor: pointer">忘记密码？</summary>
+      <p style="margin: 10px 0 0; line-height: 1.6">为面板设置以下环境变量并重启，管理员密码会被重置、旧会话全部失效。生效后请立即删除该变量：</p>
+      <pre style="margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; background: #08090B; border: 1px solid #232831; font-family: 'JetBrains Mono',monospace; font-size: 12px; color: #C5CBD3; white-space: pre-wrap">NODEMASTER_RESET_ADMIN_PASSWORD="新的强密码"</pre>
+    </details>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

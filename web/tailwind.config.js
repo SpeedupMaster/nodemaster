@@ -45,6 +45,7 @@ export default {
         },
         accent: {
           DEFAULT: token("--color-accent"),
+          fill: token("--color-accent-fill"),
           subtle: token("--color-accent-subtle"),
           hover: token("--color-accent-hover"),
           focus: token("--color-focus"),

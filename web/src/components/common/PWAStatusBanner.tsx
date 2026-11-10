@@ -12,9 +12,9 @@ export const PWAStatusBanner: React.FC = () => {
         <aside
           role="status"
           aria-live="polite"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-950/90 border border-amber-600/40 text-amber-200 text-xs shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom duration-200 pointer-events-auto select-none"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-status-warning/90 border border-status-warning/40 text-status-warning text-xs shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom duration-200 pointer-events-auto select-none"
         >
-          <WifiSlash weight="bold" className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+          <WifiSlash weight="bold" className="w-4 h-4 text-status-warning shrink-0 animate-pulse" />
           <span>网络已离线，当前显示本地缓存视图</span>
         </aside>
       )}
@@ -33,7 +33,7 @@ export const PWAStatusBanner: React.FC = () => {
           <button
             type="button"
             onClick={updateServiceWorker}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent text-white font-medium hover:bg-accent-hover transition-colors cursor-pointer text-xs"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-fill text-white font-medium hover:brightness-110 transition-colors cursor-pointer text-xs"
           >
             <ArrowClockwise weight="bold" className="w-3.5 h-3.5" />
             <span>立即更新</span>
